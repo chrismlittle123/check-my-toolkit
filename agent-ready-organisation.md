@@ -14,7 +14,7 @@ Core Principles
 
 1.  **Everything in Git.** Code, documentation, architecture decisions, process definitions, infrastructure-as-code, CI/CD pipelines, and standards all live in version-controlled repositories. If it\'s not in Git, it doesn\'t exist to the agent.
 
-2.  **Enforcement through CI.** Documentation isn\'t optional. A tool (docguard) runs in CI and fails builds when required documentation is missing, malformed, or incomplete. ADRs must follow templates. New services must have READMEs. Specs must exist before implementation.
+2.  **Enforcement through CI.** Documentation isn\'t optional. A documentation checking tool runs in CI and fails builds when required documentation is missing, malformed, or incomplete. ADRs must follow templates. New services must have READMEs. Specs must exist before implementation.
 
 3.  **Ephemeral tools for workflow only.** Linear manages tickets, assignments, and priorities---workflow state. Slack handles communication. Meetings enable synchronous alignment. But decisions, outcomes, and knowledge flow from these tools into Git. They are inputs to the system, not the system itself.
 
@@ -28,7 +28,7 @@ What Lives in Git
 
 - **Code:** Application code, tests, Dockerfiles, service definitions
 
-- **Documentation:** ADRs, RFCs, specs, runbooks, onboarding guides, meeting notes with decisions
+- **Documentation:** ADRs, RFCs, specs, runbooks, onboarding guides, decisions made
 
 - **Processes:** Coding standards, PR rules, workflow definitions, templates, agent guardrails
 
@@ -58,8 +58,6 @@ Human vs Agent Zones
 
 **Agents handle:** implementation from specs, test writing, documentation updates, bug fixes with clear reproduction steps, refactoring, dependency upgrades, and CI/CD maintenance. These are well-defined, repeatable, and benefit from tireless execution.
 
-Like Musk\'s Tesla factory lesson: excessive automation fails. The optimal system is human + agent, with clear boundaries and handoffs.
-
 Known Gaps to Solve
 
 1.  **Capture automation.** How do Slack decisions and meeting outcomes actually get into Git? Manual discipline isn\'t reliable. Need bots, transcription summaries, or agent-assisted capture.
@@ -73,19 +71,3 @@ Known Gaps to Solve
 5.  **Feedback loops.** When humans review agent PRs, how do we capture what went wrong and improve agent performance over time?
 
 6.  **Observability.** Need dashboards showing agent throughput, quality metrics, escalation rates, and cost per ticket.
-
-Next Steps
-
-1.  Define the spec format and documentation templates (ADRs, RFCs, service READMEs)
-
-2.  Build docguard---the CI tool that enforces documentation requirements
-
-3.  Design the registry schema and system map format
-
-4.  Build the MCP server with Git, Linear, and context servers
-
-5.  Define agent guardrails and human touchpoints
-
-6.  Pilot with one service: human writes spec, agent implements, measure results
-
-*This is not about replacing engineers. It\'s about building a software production system where humans do what humans do best---think, decide, relate---and agents do what agents do best---execute, maintain, repeat. The organisation that figures this out first wins.*
