@@ -16,7 +16,7 @@ Core Principles
 
 2.  **Enforcement through CI.** Documentation isn\'t optional. A documentation checking tool runs in CI and fails builds when required documentation is missing, malformed, or incomplete. ADRs must follow templates. New services must have READMEs. Specs must exist before implementation.
 
-3.  **Ephemeral tools for workflow only.** Linear manages tickets, assignments, and priorities---workflow state. Slack handles communication. Meetings enable synchronous alignment. But decisions, outcomes, and knowledge flow from these tools into Git. They are inputs to the system, not the system itself.
+3.  **Git is the source of truth.** Linear is a dashboard for Git---a visibility layer, not the system of record. Ticket state, specs, and progress are defined in Git. Linear reflects this state for human convenience. Like infrastructure-as-code, this is "workflow-as-code": agents run sync commands that update Linear from Git, not the other way around. If there's a conflict, Git wins.
 
 4.  **MCP as the agent interface.** A Model Context Protocol server provides agents with unified access to Git repositories, Linear tickets, organisational context, and system maps. Guardrails define what agents can read, write, and when they must stop and ask humans.
 
@@ -36,9 +36,9 @@ What Lives in Git
 
 - **Registry:** System map of all repositories, services, tools, and how to access them
 
-What Stays Outside Git
+What Stays Outside Git (Ephemeral Tools)
 
-- **Linear:** Ticket state, assignments, priorities---accessed by agents via MCP, not synced to Git
+- **Linear:** A visibility dashboard that syncs from Git. Agents run skills like `sync-linear` to push ticket state from Git to Linear. Humans use Linear to view progress, but changes flow Git → Linear, never the reverse.
 
 - **Slack:** Communication---decisions extracted to Git, conversations stay ephemeral
 
