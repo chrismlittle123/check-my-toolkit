@@ -361,9 +361,7 @@ allowed_states = ["In Progress", "In Review"]
 [stack.services]
 docker_compose = true
 required_containers = ["postgres", "redis"]
-
-[stack.ports]
-required = [3000, 5432, 6379]
+required_ports = [3000, 5432, 6379]
 ```
 
 ### Stack: AI Settings Fix
