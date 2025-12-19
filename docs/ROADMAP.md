@@ -17,7 +17,7 @@ The three domains and their subdomains map directly to `check.toml` sections:
 ```
 check.toml
 ├── [code]                    # Static analysis & conventions
-│   ├── [code.megalinter]     # Multi-language linting (ESLint, Ruff, Prettier, etc.)
+│   ├── [code.linting]        # ESLint, Ruff
 │   ├── [code.types]          # tsc, ty
 │   ├── [code.unused]         # Knip, Vulture
 │   ├── [code.limits]         # File/function size, nesting
@@ -66,24 +66,17 @@ check.toml
 
 ## v0.1 — MVP
 
-### Code: MegaLinter
+### Code: Linting
 
-Wraps 100+ linters in a unified interface. Runs via Docker or GitHub Action.
-
-| Check | Description | Linters Included |
-|-------|-------------|------------------|
-| TypeScript/JS | Linting, formatting | ESLint, Prettier, StandardJS |
-| Python | Linting, formatting | Ruff, Pylint, Black, isort |
-| JSON | Validation, formatting | jsonlint, prettier |
-| YAML | Validation | yamllint |
-| Markdown | Linting | markdownlint |
-| Spelling | Code comments, strings | cspell |
-| Copy-paste | Duplication detection | jscpd |
+| Check | Description | Tool Wrapped |
+|-------|-------------|--------------|
+| ESLint | JavaScript/TypeScript linting | ESLint |
+| Ruff | Python linting | Ruff |
 
 ```toml
-[code.megalinter]
-enabled = true
-languages = ["typescript", "python", "json", "yaml", "markdown"]
+[code.linting]
+eslint = true
+ruff = true
 ```
 
 ### Code: Type Checking
@@ -251,13 +244,15 @@ required = ["CLAUDE.md", "knip.json", ".coderabbit.yaml"]
 
 | Check | Description | Data Source |
 |-------|-------------|-------------|
-| MegaLinter config | .mega-linter.yml exists | Local filesystem |
+| ESLint config | eslint.config.js exists | Local filesystem |
+| Ruff config | ruff.toml exists | Local filesystem |
 | Knip config | knip.json exists | Local filesystem |
 | TypeScript config | tsconfig.json exists | Local filesystem |
 
 ```toml
 [code.configs]
-megalinter = true
+eslint = true
+ruff = true
 knip = true
 tsconfig = true
 ```
@@ -317,12 +312,13 @@ required = [".nvmrc", ".tool-versions"]
 
 | Check | Description | Data Source |
 |-------|-------------|-------------|
-| Docker | Required for MegaLinter | Local system |
+| Linters | ESLint, Ruff installed | Local system |
 | Security tools | Gitleaks, Semgrep installed | Local system |
 
 ```toml
 [stack.installed]
-docker = true
+eslint = true
+ruff = true
 gitleaks = true
 semgrep = true
 ```
@@ -350,7 +346,8 @@ rulesets = "github:org/standards/rulesets@v1.0.0"
 
 | Command | Description |
 |---------|-------------|
-| `cm code generate megalinter` | Generate .mega-linter.yml from check.toml |
+| `cm code generate eslint` | Generate eslint.config.js from check.toml |
+| `cm code generate ruff` | Generate ruff.toml from check.toml |
 | `cm code generate tsc` | Generate tsconfig.json from check.toml |
 | `cm code audit` | Verify linter configs match check.toml |
 | `cm code context` | Output rules for AI agents |
@@ -515,7 +512,7 @@ readme_required_sections = ["Overview", "Setup", "API", "Deployment"]
 | CLI | Commander.js |
 | Config | check.toml via @iarna/toml + Zod |
 | Schema validation | JSON Schema |
-| Linting | MegaLinter (Docker/GitHub Action) |
+| Linting | ESLint, Ruff |
 | GitHub API | @octokit/rest |
 | Linear API | @linear/sdk |
 | Version detection | node --version, docker --version, etc. |
