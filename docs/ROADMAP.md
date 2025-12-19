@@ -35,13 +35,8 @@ check.toml
 │   └── [process.linear]      # Ticket state, estimates
 │
 └── [stack]                   # Environment & infrastructure
-    ├── [stack.node]          # Node.js version
-    ├── [stack.npm]           # Package manager version
-    ├── [stack.docker]        # Docker version
-    ├── [stack.git]           # Git version
-    ├── [stack.tools]         # Installer config (mise/brew)
+    ├── [stack.tools]         # CLI tools installed (node, npm, docker, git, aws, etc.)
     ├── [stack.files]         # Dev files (.nvmrc, .tool-versions)
-    ├── [stack.installed]     # Tools installed locally
     ├── [stack.services]      # Containers, ports, databases
     ├── [stack.env]           # Environment variables
     ├── [stack.docs]          # ADRs, RFCs, runbooks
@@ -114,15 +109,15 @@ pattern = "[A-Z]+-[0-9]+"
 check_in = ["title", "branch", "body"]
 ```
 
-### Stack
+### Stack: Tools
 
 | Check | Description | Data Source |
 |-------|-------------|-------------|
 | Node version | Installed version matches required | Local system |
 
 ```toml
-[stack.node]
-version = "20"
+[stack.tools]
+node = "20"
 ```
 
 ---
@@ -176,7 +171,7 @@ require_codeowners = true
 required = ["README.md", "LICENSE", "CONTRIBUTING.md"]
 ```
 
-### Stack: Tool Version Checks
+### Stack: More Tools
 
 | Check | Description | Data Source |
 |-------|-------------|-------------|
@@ -185,15 +180,11 @@ required = ["README.md", "LICENSE", "CONTRIBUTING.md"]
 | Git | Git version | Local system |
 
 ```toml
-[stack.npm]
-version = "10"
-
-[stack.docker]
-required = true
-version = "24"
-
-[stack.git]
-version = "2.40"
+[stack.tools]
+node = "20"
+npm = "10"
+docker = "24"
+git = "2.40"
 ```
 
 ---
@@ -295,6 +286,12 @@ cm stack fix    # Install missing tools
 ```toml
 [stack.tools]
 installer = "mise"  # or "brew", "manual"
+node = "20"
+npm = "10"
+eslint = true       # Just check installed, no version
+ruff = true
+gitleaks = true
+semgrep = true
 ```
 
 ### Stack: Required Files
@@ -306,21 +303,6 @@ installer = "mise"  # or "brew", "manual"
 ```toml
 [stack.files]
 required = [".nvmrc", ".tool-versions"]
-```
-
-### Stack: Tools Installed
-
-| Check | Description | Data Source |
-|-------|-------------|-------------|
-| Linters | ESLint, Ruff installed | Local system |
-| Security tools | Gitleaks, Semgrep installed | Local system |
-
-```toml
-[stack.installed]
-eslint = true
-ruff = true
-gitleaks = true
-semgrep = true
 ```
 
 ---
