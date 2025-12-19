@@ -16,6 +16,8 @@ The three domains and their subdomains map directly to `check.toml` sections:
 
 ```
 check.toml
+├── [extends]                 # Remote config inheritance
+│
 ├── [code]                    # Static analysis & conventions
 │   ├── [code.linting]        # ESLint, Ruff
 │   ├── [code.types]          # tsc, ty
