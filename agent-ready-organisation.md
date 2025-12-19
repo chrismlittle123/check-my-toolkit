@@ -71,3 +71,8 @@ Known Gaps to Solve
 5.  **Feedback loops.** When humans review agent PRs, how do we capture what went wrong and improve agent performance over time?
 
 6.  **Observability.** Need dashboards showing agent throughput, quality metrics, escalation rates, and cost per ticket.
+
+
+____
+
+"The entire organisation — specs, decisions, standards, processes, business rules, infrastructure — should be TypeScript objects in Git, validated by Zod, enforced by CI, rendered by React for humans, and queryable by agents."
