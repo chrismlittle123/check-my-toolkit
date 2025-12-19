@@ -25,7 +25,7 @@ export default tseslint.config(
 
   // Source files configuration
   {
-    files: ['packages/*/src/**/*.ts'],
+    files: ['src/**/*.ts'],
     plugins: {
       'simple-import-sort': simpleImportSort,
     },
@@ -34,7 +34,7 @@ export default tseslint.config(
         ...globals.node,
       },
       parserOptions: {
-        project: ['./packages/*/tsconfig.json'],
+        project: './tsconfig.json',
         tsconfigRootDir: import.meta.dirname,
       },
     },
@@ -180,7 +180,7 @@ export default tseslint.config(
 
   // Test files configuration - more relaxed
   {
-    files: ['packages/*/tests/**/*.ts'],
+    files: ['tests/**/*.ts'],
     plugins: {
       'simple-import-sort': simpleImportSort,
     },
@@ -189,7 +189,7 @@ export default tseslint.config(
         ...globals.node,
       },
       parserOptions: {
-        project: ['./packages/*/tsconfig.json'],
+        project: './tsconfig.json',
         tsconfigRootDir: import.meta.dirname,
       },
     },
