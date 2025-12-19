@@ -10,28 +10,91 @@ cm stack check    # Environment & infrastructure
 
 ---
 
-## Domains
+## Domain Hierarchy
+
+The three domains and their subdomains map directly to `check.toml` sections:
+
+```
+check.toml
+├── [code]                    # Static analysis & conventions
+│   ├── [code.megalinter]     # Multi-language linting (ESLint, Ruff, Prettier, etc.)
+│   ├── [code.types]          # tsc, ty
+│   ├── [code.unused]         # Knip, Vulture
+│   ├── [code.limits]         # File/function size, nesting
+│   ├── [code.security]       # Gitleaks, Semgrep, audits
+│   ├── [code.files]          # Required config files (CLAUDE.md, knip.json)
+│   └── [code.configs]        # Tool configs exist (eslint.config.js)
+│
+├── [process]                 # Workflow & policy enforcement
+│   ├── [process.pr]          # Size limits, approvals
+│   ├── [process.branch]      # Naming patterns
+│   ├── [process.ticket]      # Linear references
+│   ├── [process.github]      # Branch protection, CODEOWNERS
+│   ├── [process.files]       # Required repo files (README, LICENSE)
+│   ├── [process.ci]          # GitHub Actions configured
+│   └── [process.linear]      # Ticket state, estimates
+│
+└── [stack]                   # Environment & infrastructure
+    ├── [stack.node]          # Node.js version
+    ├── [stack.npm]           # Package manager version
+    ├── [stack.docker]        # Docker version
+    ├── [stack.git]           # Git version
+    ├── [stack.tools]         # Installer config (mise/brew)
+    ├── [stack.files]         # Dev files (.nvmrc, .tool-versions)
+    ├── [stack.installed]     # Tools installed locally
+    ├── [stack.services]      # Containers, ports, databases
+    ├── [stack.env]           # Environment variables
+    ├── [stack.docs]          # ADRs, RFCs, runbooks
+    └── [stack.ai]            # AI tool settings (Claude)
+```
+
+---
+
+## Domain Overview
 
 | Domain | Purpose |
 |--------|---------|
-| `code` | Static analysis, linting, security scanning |
-| `process` | PR validation, GitHub settings, Linear workflow |
-| `stack` | Local tools, services, architecture docs |
+| `code` | Static analysis, linting, type checking, configs exist, code structure |
+| `process` | PR validation, GitHub settings, CI/CD configured, Linear workflow |
+| `stack` | Local tools installed, services running, dev environment |
+
+**Note:** Some features span multiple domains:
+- **Tool enforcement**: Code checks configs exist, Stack checks tools installed, Process checks CI/CD runs
+- **Required files**: Code-related files (CLAUDE.md) vs Stack-related files (.nvmrc)
 
 ---
 
 ## v0.1 — MVP
 
-### Code
+### Code: MegaLinter
+
+Wraps 100+ linters in a unified interface. Runs via Docker or GitHub Action.
+
+| Check | Description | Linters Included |
+|-------|-------------|------------------|
+| TypeScript/JS | Linting, formatting | ESLint, Prettier, StandardJS |
+| Python | Linting, formatting | Ruff, Pylint, Black, isort |
+| JSON | Validation, formatting | jsonlint, prettier |
+| YAML | Validation | yamllint |
+| Markdown | Linting | markdownlint |
+| Spelling | Code comments, strings | cspell |
+| Copy-paste | Duplication detection | jscpd |
+
+```toml
+[code.megalinter]
+enabled = true
+languages = ["typescript", "python", "json", "yaml", "markdown"]
+```
+
+### Code: Type Checking
 
 | Check | Description | Tool Wrapped |
 |-------|-------------|--------------|
-| Linting | ESLint with project config | ESLint |
+| TypeScript | Type checking | tsc |
 
 ```toml
-[code.linting]
-enabled = true
-eslint = true
+[code.types]
+tsc = true
 ```
 
 ### Process
@@ -77,11 +140,30 @@ version = "20"
 
 | Check | Description | Tool Wrapped |
 |-------|-------------|--------------|
-| Unused exports | Dead exports, files, dependencies | Knip |
+| Unused exports (TS) | Dead exports, files, dependencies | Knip |
+| Unused code (Python) | Dead code detection | Vulture |
 
 ```toml
 [code.unused]
-enabled = true
+knip = true
+vulture = true
+```
+
+### Code: Code Limits
+
+| Check | Description | Tool Wrapped |
+|-------|-------------|--------------|
+| Max file lines | Maximum lines per file | Native AST |
+| Max function lines | Maximum lines per function | Native AST |
+| Max parameters | Maximum function parameters | Native AST |
+| Max nesting depth | Maximum nesting depth | Native AST |
+
+```toml
+[code.limits]
+max_file_lines = 500
+max_function_lines = 50
+max_parameters = 5
+max_nesting_depth = 4
 ```
 
 ### Process: GitHub Repo Settings
@@ -125,18 +207,59 @@ version = "2.40"
 
 ## v0.3
 
+### Code: Type Checking (Python)
+
+| Check | Description | Tool Wrapped |
+|-------|-------------|--------------|
+| ty | Python type checking | ty (Astral) |
+
+```toml
+[code.types]
+tsc = true
+ty = true
+```
+
 ### Code: Security Scanning
 
 | Check | Description | Tool Wrapped |
 |-------|-------------|--------------|
 | Secrets | Hardcoded secrets detection | Gitleaks |
 | SAST | Static security analysis | Semgrep |
+| Dependency audit (TS) | Vulnerability scanning | npm-audit |
+| Dependency audit (Python) | Vulnerability scanning | pip-audit |
 
 ```toml
 [code.security]
-enabled = true
 secrets = true
 sast = true
+npm_audit = true
+pip_audit = true
+```
+
+### Code: Required Files
+
+| Check | Description | Data Source |
+|-------|-------------|-------------|
+| Code config files | CLAUDE.md, knip.json, .coderabbit.yaml | Local filesystem |
+
+```toml
+[code.files]
+required = ["CLAUDE.md", "knip.json", ".coderabbit.yaml"]
+```
+
+### Code: Tool Configs Exist
+
+| Check | Description | Data Source |
+|-------|-------------|-------------|
+| MegaLinter config | .mega-linter.yml exists | Local filesystem |
+| Knip config | knip.json exists | Local filesystem |
+| TypeScript config | tsconfig.json exists | Local filesystem |
+
+```toml
+[code.configs]
+megalinter = true
+knip = true
+tsconfig = true
 ```
 
 ### Process: Sync to GitHub
@@ -150,6 +273,19 @@ sast = true
 ```bash
 cm process diff   # Preview changes
 cm process sync   # Apply changes
+```
+
+### Process: CI/CD Checks
+
+| Check | Description | Data Source |
+|-------|-------------|-------------|
+| GitHub Actions exist | Required workflows in .github/workflows | Local filesystem |
+| Actions configured | Required checks run on PRs | GitHub API |
+
+```toml
+[process.ci]
+required_workflows = ["lint.yml", "test.yml"]
+require_status_checks = true
 ```
 
 ### Stack: Fix Command
@@ -166,23 +302,58 @@ cm stack fix    # Install missing tools
 installer = "mise"  # or "brew", "manual"
 ```
 
+### Stack: Required Files
+
+| Check | Description | Data Source |
+|-------|-------------|-------------|
+| Dev environment files | .nvmrc, .tool-versions | Local filesystem |
+
+```toml
+[stack.files]
+required = [".nvmrc", ".tool-versions"]
+```
+
+### Stack: Tools Installed
+
+| Check | Description | Data Source |
+|-------|-------------|-------------|
+| Docker | Required for MegaLinter | Local system |
+| Security tools | Gitleaks, Semgrep installed | Local system |
+
+```toml
+[stack.installed]
+docker = true
+gitleaks = true
+semgrep = true
+```
+
 ---
 
 ## v0.4
 
-### Code: MegaLinter Integration
+### Code: Remote Config Inheritance
 
-| Check | Description | Tool Wrapped |
-|-------|-------------|--------------|
-| Multi-language linting | All languages, formatting | MegaLinter |
-| Spelling | Code comments, strings | cspell |
-| Duplication | Copy-paste detection | jscpd |
+| Feature | Description |
+|---------|-------------|
+| Extends support | `[extends]` section in check.toml |
+| Remote fetching | `github:owner/repo/path@version` format |
+| Version pinning | `@v1.0.0`, `@latest` via manifest |
+| SSH auth | Uses ambient git credentials for private repos |
+| Additive-only | Block local rules from conflicting with inherited |
 
 ```toml
-[code.megalinter]
-enabled = true
-languages = ["typescript", "javascript", "json", "yaml", "markdown"]
+[extends]
+rulesets = "github:org/standards/rulesets@v1.0.0"
 ```
+
+### Code: Generate & Audit Commands
+
+| Command | Description |
+|---------|-------------|
+| `cm code generate megalinter` | Generate .mega-linter.yml from check.toml |
+| `cm code generate tsc` | Generate tsconfig.json from check.toml |
+| `cm code audit` | Verify linter configs match check.toml |
+| `cm code context` | Output rules for AI agents |
 
 ### Process: Linear Integration
 
@@ -216,9 +387,46 @@ required_containers = ["postgres", "redis"]
 required = [3000, 5432, 6379]
 ```
 
+### Stack: AI Settings Fix
+
+| Command | Description |
+|---------|-------------|
+| `cm stack fix claude` | Generate .claude/settings.json from remote |
+
+```toml
+[stack.ai.claude]
+extends = "github:org/standards/claude@v1.0.0"
+```
+
 ---
 
 ## v0.5
+
+### Code: MCP Server
+
+| Tool | Description |
+|------|-------------|
+| `check_files` | Lint specific files |
+| `check_project` | Lint entire project |
+| `fix_files` | Auto-fix violations |
+| `get_guidelines` | Fetch coding standards |
+| `get_status` | Get session state |
+| `suggest_config` | Generate check.toml from description |
+| `validate_config` | Validate check.toml against schema |
+
+```bash
+cm code mcp-server
+```
+
+### Code: Validation & Registry
+
+| Command | Description |
+|---------|-------------|
+| `cm code validate` | Validate check.toml against JSON schema |
+| `cm code registry list` | List prompts/rulesets with filtering |
+| `cm code registry check` | Verify if entry exists |
+| `cm code registry sync` | Detect sync issues |
+| `cm code registry bump` | Create new versions |
 
 ### Stack: Environment Variables
 
@@ -306,8 +514,36 @@ readme_required_sections = ["Overview", "Setup", "API", "Deployment"]
 | Language | TypeScript |
 | CLI | Commander.js |
 | Config | check.toml via @iarna/toml + Zod |
+| Schema validation | JSON Schema |
+| Linting | MegaLinter (Docker/GitHub Action) |
 | GitHub API | @octokit/rest |
 | Linear API | @linear/sdk |
 | Version detection | node --version, docker --version, etc. |
 | Tool installation | mise, brew |
 | Output | chalk (text), JSON |
+| MCP | Model Context Protocol server |
+
+---
+
+## CLI Flags
+
+| Flag | Description |
+|------|-------------|
+| `--json` | JSON output format |
+| `--quiet` | Minimal output (exit code only) |
+| `--ci` | CI mode (exit 1 on failure) |
+| `--force` | Overwrite existing files |
+| `--stdout` | Output to stdout instead of file |
+| `--skip-requirements` | Skip requirements validation |
+| `--skip-limits` | Skip code limits validation |
+
+---
+
+## Exit Codes
+
+| Code | Meaning |
+|------|---------|
+| 0 | Success |
+| 1 | Check failures found |
+| 2 | Configuration error |
+| 3 | Tool/runtime error |
