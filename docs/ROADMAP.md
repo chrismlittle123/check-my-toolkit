@@ -24,7 +24,7 @@ check.toml
 │   ├── [code.types]            # tsc, ty
 │   ├── [code.unused]           # Knip, Vulture
 │   ├── [code.complexity]       # File/function size, nesting, cyclomatic
-│   ├── [code.tests]            # Coverage thresholds, test patterns
+│   ├── [code.tests]            # Test files exist, naming patterns
 │   ├── [code.security]         # Secrets, SAST, dependency audits
 │   └── [code.files]            # Required files & configs
 │
@@ -33,14 +33,15 @@ check.toml
 │   ├── [process.commits]       # Conventional commits, sign-off
 │   ├── [process.branches]      # Naming patterns
 │   ├── [process.tickets]       # Linear/Jira references required
-│   ├── [process.ci]            # Required workflows exist
+│   ├── [process.ci]            # Required workflows, coverage enforcement
 │   └── [process.repo]          # Branch protection, CODEOWNERS, labels
 │
 └── [stack]                     # Developer environment & infrastructure
     ├── [stack.tools]           # CLI tools: name, version, installer (mise/brew/system)
     ├── [stack.services]        # Docker containers, databases, ports
     ├── [stack.env]             # Required environment variables
-    └── [stack.ai]              # AI tool settings (Claude, Cursor, etc.)
+    ├── [stack.editor]          # IDE configs: .vscode/settings.json, .idea/
+    └── [stack.ai]              # AI configs: CLAUDE.md, .cursorrules, .claude/settings.json
 ```
 ---
 
@@ -53,8 +54,8 @@ check.toml
 | `stack` | Local tools installed, services running, dev environment |
 
 **Note:** Some features span multiple domains:
-- **Tool enforcement**: Code checks configs exist, Stack checks tools installed, Process checks CI/CD runs
-- **Required files**: Code-related files (CLAUDE.md) vs Stack-related files (.nvmrc)
+- **Tool enforcement**: Code checks configs exist, Stack checks tools installed, Process checks CI runs
+- **Files**: All committed files (configs, docs, .nvmrc) are in `code.files`. Stack only checks runtime state.
 
 ---
 
@@ -122,6 +123,32 @@ node = "20"
 ---
 
 ## v0.2
+
+### Code: Formatting
+
+| Check | Description | Tool Wrapped |
+|-------|-------------|--------------|
+| Prettier | JavaScript/TypeScript formatting | Prettier |
+| Black | Python formatting | Black |
+
+```toml
+[code.formatting]
+prettier = true
+black = true
+```
+
+### Code: Tests
+
+| Check | Description | Data Source |
+|-------|-------------|-------------|
+| Test files exist | At least one test file present | Local filesystem |
+| Test naming | Files match pattern (*.test.ts, *.spec.ts) | Local filesystem |
+
+```toml
+[code.tests]
+pattern = "**/*.{test,spec}.{ts,tsx,js,jsx,py}"
+min_test_files = 1
+```
 
 ### Code: Unused Code Detection
 
@@ -245,17 +272,33 @@ cm process diff   # Preview changes
 cm process sync   # Apply changes
 ```
 
+### Process: Commits
+
+| Check | Description | Data Source |
+|-------|-------------|-------------|
+| Conventional commits | Commit messages follow convention | Git log |
+| Sign-off | Commits have DCO sign-off | Git log |
+
+```toml
+[process.commits]
+conventional = true
+require_signoff = false
+```
+
 ### Process: CI/CD Checks
 
 | Check | Description | Data Source |
 |-------|-------------|-------------|
 | GitHub Actions exist | Required workflows in .github/workflows | Local filesystem |
 | Actions configured | Required checks run on PRs | GitHub API |
+| Coverage enforcement | Coverage threshold is a required check | GitHub API |
 
 ```toml
 [process.ci]
 required_workflows = ["lint.yml", "test.yml"]
 require_status_checks = true
+require_coverage_check = true
+min_coverage_threshold = 80
 ```
 
 ### Stack: Fix Command
@@ -338,15 +381,30 @@ required_containers = ["postgres", "redis"]
 required_ports = [3000, 5432, 6379]
 ```
 
-### Stack: AI Settings Fix
+### Stack: Editor Settings
+
+| Check | Description | Data Source |
+|-------|-------------|-------------|
+| VS Code settings | .vscode/settings.json exists and valid | Local filesystem |
+| VS Code extensions | Required extensions in recommendations | Local filesystem |
+
+```toml
+[stack.editor]
+vscode_settings = true
+vscode_extensions = ["dbaeumer.vscode-eslint", "esbenp.prettier-vscode"]
+```
+
+### Stack: AI Settings
 
 | Command | Description |
 |---------|-------------|
 | `cm stack fix claude` | Generate .claude/settings.json from remote |
+| `cm stack fix cursor` | Generate .cursorrules from remote |
 
 ```toml
-[stack.ai.claude]
-extends = "github:org/standards/claude@v1.0.0"
+[stack.ai]
+claude_settings = "github:org/standards/claude@v1.0.0"
+cursorrules = "github:org/standards/cursor@v1.0.0"
 ```
 
 ---
