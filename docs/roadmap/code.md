@@ -143,6 +143,56 @@ knip = true
 vulture = true
 ```
 
+#### Knip Configuration: `[code.unused.knip]`
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `exports` | Check for unused exports | `true` |
+| `files` | Check for unused files | `true` |
+| `dependencies` | Check for unused dependencies | `true` |
+| `devDependencies` | Check for unused devDependencies | `true` |
+| `types` | Check for unused types/interfaces | `true` |
+| `duplicates` | Check for duplicate exports | `true` |
+| `enumMembers` | Check for unused enum members | `false` |
+| `classMembers` | Check for unused class members | `false` |
+| `ignore` | Patterns to ignore | `[]` |
+| `entry` | Custom entry files | `[]` |
+| `project` | Custom project files | `[]` |
+
+```toml
+[code.unused.knip]
+exports = true
+files = true
+dependencies = true
+devDependencies = true
+types = true
+duplicates = true
+enumMembers = false
+classMembers = false
+ignore = ["**/generated/**", "**/*.d.ts"]
+entry = ["src/index.ts", "src/cli.ts"]
+project = ["src/**/*.ts"]
+```
+
+#### Vulture Configuration: `[code.unused.vulture]`
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `min_confidence` | Minimum confidence threshold (60-100) | `80` |
+| `ignore_names` | Names to ignore (supports wildcards) | `[]` |
+| `ignore_decorators` | Decorators that mark code as used | `[]` |
+| `paths` | Paths to scan | `["."]` |
+| `exclude` | Patterns to exclude | `[]` |
+
+```toml
+[code.unused.vulture]
+min_confidence = 80
+ignore_names = ["visit_*", "test_*", "_*"]
+ignore_decorators = ["@app.route", "@pytest.fixture", "@property"]
+paths = ["src/", "tests/"]
+exclude = ["**/migrations/**", "**/vendor/**"]
+```
+
 ### Complexity: `[code.complexity]`
 
 | Check | Description | Tool Wrapped |
