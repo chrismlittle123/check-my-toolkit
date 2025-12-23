@@ -13,12 +13,37 @@ cm stack check    # Validate tools, services, env
 
 ---
 
-## Domain Hierarchy
+## Development Order
 
-The three domains and their subdomains map directly to `check.toml` sections:
+The three domains are developed sequentially:
 
-check.toml
-```
+| Phase | Domain | Focus |
+|-------|--------|-------|
+| **Phase 1** | [CODE](roadmap/code.md) | Static analysis, linting, type checking, security |
+| **Phase 2** | [PROCESS](roadmap/process.md) | PR validation, GitHub settings, CI/CD |
+| **Phase 3** | [STACK](roadmap/stack.md) | Local tools, services, dev environment, MCP |
+
+---
+
+## Domain Overview
+
+| Domain | Purpose |
+|--------|---------|
+| `code` | Static analysis, linting, type checking, configs exist, code structure |
+| `process` | PR validation, GitHub settings, CI/CD configured, Linear workflow |
+| `stack` | Local tools installed, services running, dev environment |
+
+**Note:** Some features span multiple domains:
+- **Tool enforcement**: Code checks configs exist, Stack checks tools installed, Process checks CI runs
+- **Files**: All committed files (configs, docs, .nvmrc) are in `code.files`. Stack only checks runtime state.
+
+---
+
+## Config Structure
+
+The three domains map to `check.toml` sections:
+
+```toml
 ├── [extends]                   # Remote config inheritance (stricter-only)
 │
 ├── [code]                      # Static analysis, security & code quality
@@ -46,518 +71,50 @@ check.toml
     ├── [stack.editor]          # IDE configs: .vscode/settings.json, .idea/
     └── [stack.ai]              # AI configs: CLAUDE.md, .cursorrules, .claude/settings.json
 ```
----
-
-## Domain Overview
-
-| Domain | Purpose |
-|--------|---------|
-| `code` | Static analysis, linting, type checking, configs exist, code structure |
-| `process` | PR validation, GitHub settings, CI/CD configured, Linear workflow |
-| `stack` | Local tools installed, services running, dev environment |
-
-**Note:** Some features span multiple domains:
-- **Tool enforcement**: Code checks configs exist, Stack checks tools installed, Process checks CI runs
-- **Files**: All committed files (configs, docs, .nvmrc) are in `code.files`. Stack only checks runtime state.
 
 ---
 
-## v0.1 — MVP
-
-### Code: Linting
-
-| Check | Description | Tool Wrapped |
-|-------|-------------|--------------|
-| ESLint | JavaScript/TypeScript linting | ESLint |
-| Ruff | Python linting | Ruff |
-
-```toml
-[code.linting]
-eslint = true
-ruff = true
-```
-
-### Code: Type Checking
-
-| Check | Description | Tool Wrapped |
-|-------|-------------|--------------|
-| TypeScript | Type checking | tsc |
-
-```toml
-[code.types]
-tsc = true
-```
-
-### Process
-
-| Check | Description | Data Source |
-|-------|-------------|-------------|
-| PR size (files) | Max files changed in PR | GitHub API |
-| PR size (lines) | Max lines changed | GitHub API |
-| Branch naming | Branch name matches pattern | GitHub API |
-| Ticket reference | Linear ticket in title/body/branch | GitHub API |
-| Approvals | Minimum approvals received | GitHub API |
-
-```toml
-[process.pr]
-max_files = 20
-max_lines = 400
-min_approvals = 1
-
-[process.branches]
-pattern = "^(feature|fix|hotfix)/[A-Z]+-[0-9]+-[a-z0-9-]+$"
-
-[process.tickets]
-pattern = "[A-Z]+-[0-9]+"
-check_in = ["title", "branch", "body"]
-```
-
-### Stack: Tools
-
-| Check | Description | Data Source |
-|-------|-------------|-------------|
-| Node version | Installed version matches required | Local system |
-
-```toml
-[stack.tools]
-node = "20"
-```
-
-### Audit Command
-
-`cm audit` verifies configs exist and match `check.toml` without running tools.
-
-| Check | Description |
-|-------|-------------|
-| Config exists | eslint.config.js, ruff.toml, tsconfig.json exist |
-| Config matches | Generated config matches check.toml rules |
-| Required files | README.md, LICENSE, etc. exist |
-
-```bash
-$ cm audit
-
-[code.linting]
-  ✓ eslint.config.js exists
-  ✗ ruff.toml missing
-
-[code.types]
-  ✓ tsconfig.json exists
-
-[code.files]
-  ✓ README.md exists
-  ✗ LICENSE missing
-
-audit: 2 issues found
-```
-
----
-
-## v0.2
-
-### Code: Formatting
-
-| Check | Description | Tool Wrapped |
-|-------|-------------|--------------|
-| Prettier | JavaScript/TypeScript formatting | Prettier |
-| Black | Python formatting | Black |
-
-```toml
-[code.formatting]
-prettier = true
-black = true
-```
-
-### Code: Tests
-
-| Check | Description | Data Source |
-|-------|-------------|-------------|
-| Test files exist | At least one test file present | Local filesystem |
-| Test naming | Files match pattern (*.test.ts, *.spec.ts) | Local filesystem |
-
-```toml
-[code.tests]
-pattern = "**/*.{test,spec}.{ts,tsx,js,jsx,py}"
-min_test_files = 1
-```
-
-### Code: Unused Code Detection
-
-| Check | Description | Tool Wrapped |
-|-------|-------------|--------------|
-| Unused exports (TS) | Dead exports, files, dependencies | Knip |
-| Unused code (Python) | Dead code detection | Vulture |
-
-```toml
-[code.unused]
-knip = true
-vulture = true
-```
-
-### Code: Complexity
-
-| Check | Description | Tool Wrapped |
-|-------|-------------|--------------|
-| Max file lines | Maximum lines per file | Native AST |
-| Max function lines | Maximum lines per function | Native AST |
-| Max parameters | Maximum function parameters | Native AST |
-| Max nesting depth | Maximum nesting depth | Native AST |
-
-```toml
-[code.complexity]
-max_file_lines = 500
-max_function_lines = 50
-max_parameters = 5
-max_nesting_depth = 4
-```
-
-### Process: Repo Settings
-
-| Check | Description | Data Source |
-|-------|-------------|-------------|
-| Branch protection | Required reviews, status checks | GitHub API |
-| CODEOWNERS | File exists and valid | Local + GitHub |
-| Labels | Required labels exist | GitHub API |
-
-```toml
-[process.repo]
-require_branch_protection = true
-require_codeowners = true
-required_labels = ["bug", "feature", "breaking"]
-```
-
-### Stack: More Tools
-
-| Check | Description | Data Source |
-|-------|-------------|-------------|
-| npm/pnpm/yarn | Package manager version | Local system |
-| Docker | Docker version + running | Local system |
-| Git | Git version | Local system |
-
-```toml
-[stack.tools]
-node = "20"
-npm = "10"
-docker = "24"
-git = "2.40"
-```
-
----
-
-## v0.3
-
-### Code: Type Checking (Python)
-
-| Check | Description | Tool Wrapped |
-|-------|-------------|--------------|
-| ty | Python type checking | ty (Astral) |
-
-```toml
-[code.types]
-tsc = true
-ty = true
-```
-
-### Code: Security Scanning
-
-| Check | Description | Tool Wrapped |
-|-------|-------------|--------------|
-| Secrets | Hardcoded secrets detection | Gitleaks |
-| SAST | Static security analysis | Semgrep |
-| Dependency audit (TS) | Vulnerability scanning | npm-audit |
-| Dependency audit (Python) | Vulnerability scanning | pip-audit |
-
-```toml
-[code.security]
-secrets = true
-sast = true
-npm_audit = true
-pip_audit = true
-```
-
-### Code: Required Files
-
-| Check | Description | Data Source |
-|-------|-------------|-------------|
-| Repo files | README.md, LICENSE, SECURITY.md | Local filesystem |
-| Tooling configs | eslint.config.js, ruff.toml, tsconfig.json | Local filesystem |
-| Docs | CLAUDE.md, ADRs | Local filesystem |
-
-```toml
-[code.files]
-repo = ["README.md", "LICENSE", "SECURITY.md"]
-tooling = ["eslint.config.js", "ruff.toml", "tsconfig.json"]
-docs = ["CLAUDE.md"]
-```
-
-### Process: Sync to GitHub
-
-`cm process sync` pushes config to GitHub API:
-
-- Update branch protection rules
-- Set merge strategy
-- Configure required status checks
-
-```bash
-cm process diff   # Preview changes
-cm process sync   # Apply changes
-```
-
-### Process: Commits
-
-| Check | Description | Data Source |
-|-------|-------------|-------------|
-| Conventional commits | Commit messages follow convention | Git log |
-| Sign-off | Commits have DCO sign-off | Git log |
-
-```toml
-[process.commits]
-conventional = true
-require_signoff = false
-```
-
-### Process: CI/CD Checks
-
-| Check | Description | Data Source |
-|-------|-------------|-------------|
-| GitHub Actions exist | Required workflows in .github/workflows | Local filesystem |
-| Actions configured | Required checks run on PRs | GitHub API |
-| Coverage enforcement | Coverage threshold is a required check | GitHub API |
-
-```toml
-[process.ci]
-required_workflows = ["lint.yml", "test.yml"]
-require_status_checks = true
-require_coverage_check = true
-min_coverage_threshold = 80
-```
-
-### Stack: Fix Command
-
-`cm stack fix` installs missing tools via mise/brew:
-
-```bash
-cm stack diff   # Preview what would be installed
-cm stack fix    # Install missing tools
-```
-
-```toml
-[stack.tools]
-installer = "mise"  # or "brew", "manual"
-node = "20"
-npm = "10"
-eslint = true       # Just check installed, no version
-ruff = true
-gitleaks = true
-semgrep = true
-```
-
----
-
-## v0.4
-
-### Code: Remote Config Inheritance
-
-| Feature | Description |
-|---------|-------------|
-| Extends support | `[extends]` section in check.toml |
-| Remote fetching | `github:owner/repo/path@version` format |
-| Version pinning | `@v1.0.0`, `@latest` via manifest |
-| SSH auth | Uses ambient git credentials for private repos |
-| Additive-only | Block local rules from conflicting with inherited |
-
-```toml
-[extends]
-rulesets = "github:org/standards/rulesets@v1.0.0"
-```
-
-### Code: Generate & Audit Commands
-
-| Command | Description |
-|---------|-------------|
-| `cm code generate eslint` | Generate eslint.config.js from check.toml |
-| `cm code generate ruff` | Generate ruff.toml from check.toml |
-| `cm code generate tsc` | Generate tsconfig.json from check.toml |
-| `cm code audit` | Verify linter configs match check.toml |
-| `cm code context` | Output rules for AI agents |
-
-### Process: Tickets (Linear/Jira)
-
-| Check | Description | Data Source |
-|-------|-------------|-------------|
-| Ticket state | Required states, labels | Linear/Jira API |
-| Estimates | Required estimates | Linear/Jira API |
-| Assignees | Required assignees | Linear/Jira API |
-
-```toml
-[process.tickets]
-provider = "linear"  # or "jira"
-require_estimate = true
-require_assignee = true
-allowed_states = ["In Progress", "In Review"]
-```
-
-### Stack: Services Check
-
-| Check | Description | Data Source |
-|-------|-------------|-------------|
-| Docker containers | Required containers running | Docker API |
-| Ports | Required ports available | Local system |
-| Databases | Connection check | Connection test |
-
-```toml
-[stack.services]
-docker_compose = true
-required_containers = ["postgres", "redis"]
-required_ports = [3000, 5432, 6379]
-```
-
-### Stack: Editor Settings
-
-| Check | Description | Data Source |
-|-------|-------------|-------------|
-| VS Code settings | .vscode/settings.json exists and valid | Local filesystem |
-| VS Code extensions | Required extensions in recommendations | Local filesystem |
-
-```toml
-[stack.editor]
-vscode_settings = true
-vscode_extensions = ["dbaeumer.vscode-eslint", "esbenp.prettier-vscode"]
-```
-
-### Stack: AI Settings
-
-| Command | Description |
-|---------|-------------|
-| `cm stack fix claude` | Generate .claude/settings.json from remote |
-| `cm stack fix cursor` | Generate .cursorrules from remote |
-
-```toml
-[stack.ai]
-claude_settings = "github:org/standards/claude@v1.0.0"
-cursorrules = "github:org/standards/cursor@v1.0.0"
-```
-
-### Stack: MCP Server
-
-MCP (Model Context Protocol) server for AI agent integration. Exposes check-my-toolkit functionality to Claude Code, Cursor, and other MCP-compatible tools.
-
-| Tool | Description |
-|------|-------------|
-| `check_files` | Lint specific files for violations |
-| `check_project` | Lint entire project or subdirectory |
-| `fix_files` | Auto-fix violations via ESLint --fix and Ruff --fix |
-| `get_guidelines` | Fetch coding standards/templates from check.toml |
-| `get_status` | Get current session state and project info |
-| `suggest_config` | Generate check.toml from project description |
-| `validate_config` | Validate TOML content against check.toml schema |
-
-```bash
-cm stack mcp-server   # Start MCP server (stdio transport)
-```
-
-```json
-// Claude Code MCP config (~/.claude/settings.json)
-{
-  "mcpServers": {
-    "cm": {
-      "command": "cm",
-      "args": ["stack", "mcp-server"]
-    }
-  }
-}
-```
-
----
-
-## v0.5
-
-### Code: Validation & Registry
-
-| Command | Description |
-|---------|-------------|
-| `cm code validate` | Validate check.toml against JSON schema |
-| `cm code registry list` | List prompts/rulesets with filtering |
-| `cm code registry check` | Verify if entry exists |
-| `cm code registry sync` | Detect sync issues |
-| `cm code registry bump` | Create new versions |
-
-### Stack: Environment Variables
-
-| Check | Description | Data Source |
-|-------|-------------|-------------|
-| Required env vars | Variables exist | Environment |
-| .env file | File exists with required keys | Local filesystem |
-
-```toml
-[stack.env]
-required = ["DATABASE_URL", "API_KEY"]
-env_file = ".env"
-```
-
----
-
-## v0.6
-
-### Code: Documentation Files
-
-| Check | Description | Data Source |
-|-------|-------------|-------------|
-| ADRs | Required ADRs exist, follow template | Local filesystem |
-| RFCs | Required for major changes | Local filesystem |
-| Service READMEs | Required sections present | Local filesystem |
-| Runbooks | Required for production services | Local filesystem |
-
-```toml
-[code.files]
-docs = ["CLAUDE.md"]
-adr_directory = "docs/adr"
-adr_template = "docs/adr/template.md"
-require_service_readme = true
-readme_required_sections = ["Overview", "Setup", "API", "Deployment"]
-```
-
----
-
-## Future
-
-### Code
-
-| Check | Description | Tool Wrapped |
-|-------|-------------|--------------|
-| Naming conventions | Files, directories | ls-lint |
-| Complexity | Cyclomatic/cognitive | ESLint plugins |
-| Commit messages | Conventional commits | commitlint |
-| License headers | Required headers | addlicense |
-| API contracts | OpenAPI/GraphQL | Spectral |
-| Dependency health | Outdated, deprecated | npm-check |
-| Import ordering | Consistent structure | ESLint plugins |
-| TODO/FIXME tracking | Stale todos | custom |
-| Test coverage | Minimum thresholds | nyc |
-| Bundle size | Max artifact size | size-limit |
-
-### Process
-
-| Check | Description | Tool/API |
-|-------|-------------|----------|
-| PR templates | Required template usage | GitHub API |
-| Review SLAs | Max time to review | GitHub API |
-| Changelog | Enforced updates | changesets |
-| Release process | Tag format, versioning | semantic-release |
-| CI/CD checks | Required workflows | GitHub API |
-| Deployment gates | Environment protection | GitHub API |
-| Stale issues | Auto-close stale | actions/stale |
-
-### Stack
-
-| Check | Description | Tool/API |
-|-------|-------------|----------|
-| IaC compliance | CDK/Terraform best practices | checkov, tflint, cdk-nag |
-| Container security | Image scanning | Trivy |
-| System map | Registry of services | Custom |
-| Dependency graphs | Cross-service deps | Custom |
-| Database schemas | Migration hygiene | Custom |
-| Observability | Required metrics/logs | Custom |
-| Cost tagging | Required tags | Cloud APIs |
+## Version Summary
+
+### CODE Domain (v0.x)
+
+| Version | Features |
+|---------|----------|
+| v0.1 | ESLint, Ruff, tsc, audit command |
+| v0.2 | Prettier, Black, tests, unused code, complexity |
+| v0.3 | Python types (ty), security scanning, required files |
+| v0.4 | Config inheritance, generate commands |
+| v0.5 | Validation, registry |
+| v0.6 | Documentation files |
+
+→ [Full CODE roadmap](roadmap/code.md)
+
+### PROCESS Domain (v1.x)
+
+| Version | Features |
+|---------|----------|
+| v1.0 | PR checks, branch naming, ticket references |
+| v1.1 | Repo settings (branch protection, CODEOWNERS) |
+| v1.2 | Conventional commits, CI checks |
+| v1.3 | Sync to GitHub |
+| v1.4 | Linear/Jira integration |
+
+→ [Full PROCESS roadmap](roadmap/process.md)
+
+### STACK Domain (v2.x)
+
+| Version | Features |
+|---------|----------|
+| v2.0 | Tool version checking (node) |
+| v2.1 | More tools (npm, docker, git) |
+| v2.2 | Fix command (mise/brew install) |
+| v2.3 | Services check (docker, ports) |
+| v2.4 | Editor settings |
+| v2.5 | AI settings |
+| v2.6 | Environment variables |
+| v2.7 | MCP server |
+
+→ [Full STACK roadmap](roadmap/stack.md)
 
 ---
 
