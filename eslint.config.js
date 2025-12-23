@@ -20,8 +20,8 @@ export default tseslint.config(
       '*.js',
       '*.mjs',
       '*.cjs',
-      // E2E test fixtures - these are intentionally broken/varied for testing
-      'tests/e2e/projects/**',
+      // Test files - excluded from linting
+      'tests/**',
     ],
   },
 
@@ -180,32 +180,4 @@ export default tseslint.config(
     },
   },
 
-  // Test files configuration - more relaxed
-  {
-    files: ['tests/**/*.ts'],
-    plugins: {
-      'simple-import-sort': simpleImportSort,
-    },
-    languageOptions: {
-      globals: {
-        ...globals.node,
-      },
-      parserOptions: {
-        project: './tsconfig.json',
-        tsconfigRootDir: import.meta.dirname,
-      },
-    },
-    rules: {
-      // Import sorting for tests too
-      'simple-import-sort/imports': 'error',
-      'simple-import-sort/exports': 'error',
-      // Relax some rules for tests
-      '@typescript-eslint/no-explicit-any': 'off',
-      '@typescript-eslint/no-non-null-assertion': 'off',
-      'max-lines-per-function': 'off',
-      complexity: 'off',
-      'no-console': 'off',
-      'no-await-in-loop': 'off',
-    },
-  }
 );

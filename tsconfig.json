@@ -13,6 +13,6 @@
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true
   },
-  "include": ["src", "tests/e2e/*.ts"],
+  "include": ["src", "tests/unit/*.ts", "tests/e2e/*.ts"],
   "exclude": ["node_modules", "dist", "tests/e2e/projects"]
 }

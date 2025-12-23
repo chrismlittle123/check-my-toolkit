@@ -23,9 +23,12 @@
     "start": "node dist/cli.js",
     "test": "vitest",
     "test:coverage": "vitest run --coverage",
+    "test:e2e": "vitest run --config vitest.e2e.config.ts",
+    "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "knip": "knip"
+    "knip": "knip",
+    "version": "changeset version"
   },
   "keywords": [
     "linting",
@@ -37,6 +40,7 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
+    "@changesets/cli": "^2.27.1",
     "@eslint/js": "^9.39.2",
     "@types/node": "^22.10.2",
     "@vitest/coverage-v8": "^2.1.9",
