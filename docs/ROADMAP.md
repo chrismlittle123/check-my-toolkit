@@ -100,10 +100,10 @@ max_files = 20
 max_lines = 400
 min_approvals = 1
 
-[process.branch]
+[process.branches]
 pattern = "^(feature|fix|hotfix)/[A-Z]+-[0-9]+-[a-z0-9-]+$"
 
-[process.ticket]
+[process.tickets]
 pattern = "[A-Z]+-[0-9]+"
 check_in = ["title", "branch", "body"]
 ```
@@ -136,7 +136,7 @@ knip = true
 vulture = true
 ```
 
-### Code: Code Limits
+### Code: Complexity
 
 | Check | Description | Tool Wrapped |
 |-------|-------------|--------------|
@@ -146,28 +146,26 @@ vulture = true
 | Max nesting depth | Maximum nesting depth | Native AST |
 
 ```toml
-[code.limits]
+[code.complexity]
 max_file_lines = 500
 max_function_lines = 50
 max_parameters = 5
 max_nesting_depth = 4
 ```
 
-### Process: GitHub Repo Settings
+### Process: Repo Settings
 
 | Check | Description | Data Source |
 |-------|-------------|-------------|
 | Branch protection | Required reviews, status checks | GitHub API |
 | CODEOWNERS | File exists and valid | Local + GitHub |
-| Required files | README, LICENSE, etc. | Local filesystem |
+| Labels | Required labels exist | GitHub API |
 
 ```toml
-[process.github]
+[process.repo]
 require_branch_protection = true
 require_codeowners = true
-
-[process.files]
-required = ["README.md", "LICENSE", "CONTRIBUTING.md"]
+required_labels = ["bug", "feature", "breaking"]
 ```
 
 ### Stack: More Tools
@@ -223,28 +221,15 @@ pip_audit = true
 
 | Check | Description | Data Source |
 |-------|-------------|-------------|
-| Code config files | CLAUDE.md, knip.json, .coderabbit.yaml | Local filesystem |
+| Repo files | README.md, LICENSE, SECURITY.md | Local filesystem |
+| Tooling configs | eslint.config.js, ruff.toml, tsconfig.json | Local filesystem |
+| Docs | CLAUDE.md, ADRs | Local filesystem |
 
 ```toml
 [code.files]
-required = ["CLAUDE.md", "knip.json", ".coderabbit.yaml"]
-```
-
-### Code: Tool Configs Exist
-
-| Check | Description | Data Source |
-|-------|-------------|-------------|
-| ESLint config | eslint.config.js exists | Local filesystem |
-| Ruff config | ruff.toml exists | Local filesystem |
-| Knip config | knip.json exists | Local filesystem |
-| TypeScript config | tsconfig.json exists | Local filesystem |
-
-```toml
-[code.configs]
-eslint = true
-ruff = true
-knip = true
-tsconfig = true
+repo = ["README.md", "LICENSE", "SECURITY.md"]
+tooling = ["eslint.config.js", "ruff.toml", "tsconfig.json"]
+docs = ["CLAUDE.md"]
 ```
 
 ### Process: Sync to GitHub
@@ -293,17 +278,6 @@ gitleaks = true
 semgrep = true
 ```
 
-### Stack: Required Files
-
-| Check | Description | Data Source |
-|-------|-------------|-------------|
-| Dev environment files | .nvmrc, .tool-versions | Local filesystem |
-
-```toml
-[stack.files]
-required = [".nvmrc", ".tool-versions"]
-```
-
 ---
 
 ## v0.4
@@ -333,16 +307,17 @@ rulesets = "github:org/standards/rulesets@v1.0.0"
 | `cm code audit` | Verify linter configs match check.toml |
 | `cm code context` | Output rules for AI agents |
 
-### Process: Linear Integration
+### Process: Tickets (Linear/Jira)
 
 | Check | Description | Data Source |
 |-------|-------------|-------------|
-| Ticket state | Required states, labels | Linear API |
-| Estimates | Required estimates | Linear API |
-| Assignees | Required assignees | Linear API |
+| Ticket state | Required states, labels | Linear/Jira API |
+| Estimates | Required estimates | Linear/Jira API |
+| Assignees | Required assignees | Linear/Jira API |
 
 ```toml
-[process.linear]
+[process.tickets]
+provider = "linear"  # or "jira"
 require_estimate = true
 require_assignee = true
 allowed_states = ["In Progress", "In Review"]
@@ -421,7 +396,7 @@ env_file = ".env"
 
 ## v0.6
 
-### Stack: Architecture Documentation
+### Code: Documentation Files
 
 | Check | Description | Data Source |
 |-------|-------------|-------------|
@@ -431,7 +406,8 @@ env_file = ".env"
 | Runbooks | Required for production services | Local filesystem |
 
 ```toml
-[stack.docs]
+[code.files]
+docs = ["CLAUDE.md"]
 adr_directory = "docs/adr"
 adr_template = "docs/adr/template.md"
 require_service_readme = true
