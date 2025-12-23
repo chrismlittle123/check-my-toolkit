@@ -1,0 +1,6 @@
+[code.linting.ruff]
+enabled = true
+
+[code.linting.ruff.lint]
+select = ["F", "E"]
+ignore = ["E501"]

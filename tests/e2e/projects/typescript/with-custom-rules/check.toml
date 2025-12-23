@@ -1,0 +1,6 @@
+[code.linting.eslint]
+enabled = true
+
+[code.linting.eslint.rules]
+"no-console" = "error"
+eqeqeq = "error"

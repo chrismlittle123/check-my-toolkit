@@ -14,6 +14,7 @@ interface TestCase {
   name: string;
   config: string;
   command: "check" | "audit" | "validate";
+  format?: "text" | "json";
   expectedExitCode: number;
   expectedPatterns: string[];
   notExpectedPatterns?: string[];
@@ -290,13 +291,117 @@ const testCases: TestCase[] = [
     expectedExitCode: 1,
     expectedPatterns: ["✗ ESLint:"],
   },
+
+  // ============================================================
+  // JSON output format
+  // ============================================================
+  {
+    name: "check with JSON output format",
+    config: "tests/e2e/projects/typescript/default/check.toml",
+    command: "check",
+    format: "json",
+    expectedExitCode: 1,
+    expectedPatterns: ['"version":', '"domains":', '"code":', '"violations":'],
+  },
+  {
+    name: "validate with JSON output format - valid",
+    config: "tests/e2e/projects/typescript/clean-project/check.toml",
+    command: "validate",
+    format: "json",
+    expectedExitCode: 0,
+    expectedPatterns: ['"valid": true', '"configPath":'],
+  },
+  {
+    name: "validate with JSON output format - invalid",
+    config: "tests/e2e/projects/config-errors/invalid-toml/check.toml",
+    command: "validate",
+    format: "json",
+    expectedExitCode: 2,
+    expectedPatterns: ['"valid": false', '"error":'],
+  },
+  {
+    name: "audit with JSON output format",
+    config: "tests/e2e/projects/typescript/clean-project/check.toml",
+    command: "audit",
+    format: "json",
+    expectedExitCode: 0,
+    expectedPatterns: ['"version":', '"domains":', '"summary":'],
+  },
+
+  // ============================================================
+  // Python clean project
+  // ============================================================
+  {
+    name: "python/clean-project passes Ruff checks",
+    config: "tests/e2e/projects/python/clean-project/check.toml",
+    command: "check",
+    expectedExitCode: 0,
+    expectedPatterns: ["✓ Ruff: passed", "✓ All checks passed"],
+  },
+
+  // ============================================================
+  // Mixed TypeScript + Python project
+  // ============================================================
+  {
+    name: "mixed-ts-python catches violations in both languages",
+    config: "tests/e2e/projects/mixed-ts-python/check.toml",
+    command: "check",
+    expectedExitCode: 1,
+    expectedPatterns: ["✗ ESLint:", "✗ Ruff:", "no-var", "F401"],
+  },
+
+  // ============================================================
+  // TypeScript type checking - clean
+  // ============================================================
+  {
+    name: "typescript/tsc-clean passes type checking",
+    config: "tests/e2e/projects/typescript/tsc-clean/check.toml",
+    command: "check",
+    expectedExitCode: 0,
+    expectedPatterns: ["✓ TypeScript: passed"],
+  },
+
+  // ============================================================
+  // Custom ESLint rules
+  // ============================================================
+  {
+    name: "typescript/with-custom-rules catches custom rule violations",
+    config: "tests/e2e/projects/typescript/with-custom-rules/check.toml",
+    command: "check",
+    expectedExitCode: 1,
+    expectedPatterns: ["✗ ESLint:", "no-console", "eqeqeq"],
+  },
+
+  // ============================================================
+  // Ruff with select/ignore
+  // ============================================================
+  {
+    name: "python/with-select-ignore uses select and ignore",
+    config: "tests/e2e/projects/python/with-select-ignore/check.toml",
+    command: "check",
+    expectedExitCode: 1,
+    expectedPatterns: ["✗ Ruff:", "F401"],
+    notExpectedPatterns: ["E501"],
+  },
+
+  // ============================================================
+  // Missing config file
+  // ============================================================
+  {
+    name: "config-errors/no-config returns error for missing config",
+    config: "tests/e2e/projects/config-errors/no-config/nonexistent.toml",
+    command: "check",
+    expectedExitCode: 2,
+    expectedPatterns: ["Config error:", "not found"],
+  },
 ];
 
-function runCli(command: string, config: string): { stdout: string; exitCode: number } {
+function runCli(command: string, config: string, format = "text"): { stdout: string; exitCode: number } {
+  const formatArg = format !== "text" ? ` -f ${format}` : "";
   const cmd =
     command === "validate"
-      ? `node dist/cli.js validate -c "${config}"`
-      : `node dist/cli.js code ${command} -c "${config}"`;
+      ? `node dist/cli.js validate -c "${config}"${formatArg}`
+      : `node dist/cli.js code ${command} -c "${config}"${formatArg}`;
 
   try {
     const stdout = execSync(cmd, {
@@ -314,7 +419,7 @@ function runCli(command: string, config: string): { stdout: string; exitCode: nu
 describe("E2E Tests", () => {
   for (const tc of testCases) {
     it.concurrent(tc.name, async () => {
-      const { stdout, exitCode } = runCli(tc.command, tc.config);
+      const { stdout, exitCode } = runCli(tc.command, tc.config, tc.format);
 
       // Check exit code
       expect(exitCode, `Expected exit code ${tc.expectedExitCode}, got ${exitCode}\nOutput:\n${stdout}`).toBe(
