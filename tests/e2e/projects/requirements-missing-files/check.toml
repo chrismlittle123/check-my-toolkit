@@ -1,0 +1,3 @@
+# Requirements test - some files exist, some don't
+[code.files]
+repo = ["CLAUDE.md", "MISSING.md"]

@@ -1,0 +1,15 @@
+[code.linting.eslint]
+enabled = true
+
+[code.linting.eslint.rules]
+"no-var" = "error"
+"prefer-const" = "error"
+"eqeqeq" = ["error", "always"]
+
+[code.linting.ruff]
+enabled = true
+line-length = 100
+
+[code.linting.ruff.lint]
+select = ["E", "F", "I"]
+ignore = ["E501"]

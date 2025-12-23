@@ -1,0 +1,7 @@
+# Ruff explicitly disabled - even with config, it should not run
+[code.linting.ruff]
+enabled = false
+line-length = 100
+
+[code.linting.ruff.lint]
+select = ["F"]

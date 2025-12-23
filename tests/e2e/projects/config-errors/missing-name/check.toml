@@ -1,0 +1,6 @@
+# Valid check.toml - cm schema doesn't require a project name
+[code.linting.eslint]
+enabled = true
+
+[code.linting.eslint.rules]
+"no-var" = "error"

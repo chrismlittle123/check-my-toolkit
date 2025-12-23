@@ -437,25 +437,39 @@ claude_settings = "github:org/standards/claude@v1.0.0"
 cursorrules = "github:org/standards/cursor@v1.0.0"
 ```
 
----
+### Stack: MCP Server
 
-## v0.5
-
-### Code: MCP Server
+MCP (Model Context Protocol) server for AI agent integration. Exposes check-my-toolkit functionality to Claude Code, Cursor, and other MCP-compatible tools.
 
 | Tool | Description |
 |------|-------------|
-| `check_files` | Lint specific files |
-| `check_project` | Lint entire project |
-| `fix_files` | Auto-fix violations |
-| `get_guidelines` | Fetch coding standards |
-| `get_status` | Get session state |
-| `suggest_config` | Generate check.toml from description |
-| `validate_config` | Validate check.toml against schema |
+| `check_files` | Lint specific files for violations |
+| `check_project` | Lint entire project or subdirectory |
+| `fix_files` | Auto-fix violations via ESLint --fix and Ruff --fix |
+| `get_guidelines` | Fetch coding standards/templates from check.toml |
+| `get_status` | Get current session state and project info |
+| `suggest_config` | Generate check.toml from project description |
+| `validate_config` | Validate TOML content against check.toml schema |
 
 ```bash
-cm code mcp-server
+cm stack mcp-server   # Start MCP server (stdio transport)
 ```
+
+```json
+// Claude Code MCP config (~/.claude/settings.json)
+{
+  "mcpServers": {
+    "cm": {
+      "command": "cm",
+      "args": ["stack", "mcp-server"]
+    }
+  }
+}
+```
+
+---
+
+## v0.5
 
 ### Code: Validation & Registry
 

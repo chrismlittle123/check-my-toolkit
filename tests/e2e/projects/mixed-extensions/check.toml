@@ -1,0 +1,6 @@
+# Both linters disabled
+[code.linting.eslint]
+enabled = false
+
+[code.linting.ruff]
+enabled = false

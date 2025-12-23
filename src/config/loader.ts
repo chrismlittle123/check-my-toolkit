@@ -96,12 +96,25 @@ function mergeWithDefaults(config: Config): Config {
   return {
     code: {
       linting: {
-        eslint: config.code?.linting?.eslint ?? defaultConfig.code?.linting?.eslint ?? false,
-        ruff: config.code?.linting?.ruff ?? defaultConfig.code?.linting?.ruff ?? false,
+        eslint: {
+          enabled: config.code?.linting?.eslint?.enabled ?? defaultConfig.code?.linting?.eslint?.enabled ?? false,
+          rules: config.code?.linting?.eslint?.rules,
+        },
+        ruff: {
+          enabled: config.code?.linting?.ruff?.enabled ?? defaultConfig.code?.linting?.ruff?.enabled ?? false,
+          "line-length": config.code?.linting?.ruff?.["line-length"],
+          lint: config.code?.linting?.ruff?.lint,
+        },
       },
       types: {
-        tsc: config.code?.types?.tsc ?? defaultConfig.code?.types?.tsc ?? false,
+        tsc: {
+          enabled: config.code?.types?.tsc?.enabled ?? defaultConfig.code?.types?.tsc?.enabled ?? false,
+          strict: config.code?.types?.tsc?.strict,
+          noImplicitAny: config.code?.types?.tsc?.noImplicitAny,
+          strictNullChecks: config.code?.types?.tsc?.strictNullChecks,
+        },
       },
+      complexity: config.code?.complexity ?? defaultConfig.code?.complexity ?? {},
       files: {
         repo: config.code?.files?.repo ?? defaultConfig.code?.files?.repo ?? [],
         tooling: config.code?.files?.tooling ?? defaultConfig.code?.files?.tooling ?? [],

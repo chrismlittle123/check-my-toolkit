@@ -21,13 +21,13 @@ export { BaseToolRunner } from "./tools/index.js";
 function getEnabledTools(config: Config): IToolRunner[] {
   const tools: IToolRunner[] = [];
 
-  if (config.code?.linting?.eslint) {
+  if (config.code?.linting?.eslint?.enabled) {
     tools.push(eslint);
   }
-  if (config.code?.linting?.ruff) {
+  if (config.code?.linting?.ruff?.enabled) {
     tools.push(ruff);
   }
-  if (config.code?.types?.tsc) {
+  if (config.code?.types?.tsc?.enabled) {
     tools.push(tsc);
   }
 

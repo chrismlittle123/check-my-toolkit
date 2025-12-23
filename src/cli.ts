@@ -95,4 +95,34 @@ codeCommand
 
 program.addCommand(codeCommand);
 
+// cm validate - top-level command to validate check.toml
+program
+  .command("validate")
+  .description("Validate check.toml configuration file")
+  .option("-c, --config <path>", "Path to check.toml config file")
+  .option("-f, --format <format>", "Output format: text or json", "text")
+  .action((options: { config?: string; format: string }) => {
+    try {
+      const { configPath } = loadConfig(options.config);
+
+      if (options.format === "json") {
+        process.stdout.write(`${JSON.stringify({ valid: true, configPath }, null, 2)}\n`);
+      } else {
+        process.stdout.write(`✓ Valid: ${configPath}\n`);
+      }
+      process.exit(ExitCode.SUCCESS);
+    } catch (error) {
+      if (error instanceof ConfigError) {
+        if (options.format === "json") {
+          process.stdout.write(`${JSON.stringify({ valid: false, error: error.message }, null, 2)}\n`);
+        } else {
+          console.error(`✗ Invalid: ${error.message}`);
+        }
+        process.exit(ExitCode.CONFIG_ERROR);
+      }
+      console.error(`Error: ${error instanceof Error ? error.message : "Unknown error"}`);
+      process.exit(ExitCode.RUNTIME_ERROR);
+    }
+  });
+
 program.parse();

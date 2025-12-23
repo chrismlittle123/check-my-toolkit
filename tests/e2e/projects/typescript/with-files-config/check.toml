@@ -1,0 +1,5 @@
+[code.linting.eslint]
+enabled = true
+
+[code.files]
+repo = ["src/**/*.ts"]

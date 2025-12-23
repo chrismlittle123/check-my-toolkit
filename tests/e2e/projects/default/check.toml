@@ -1,0 +1,12 @@
+[code.linting.eslint]
+enabled = true
+
+[code.linting.eslint.rules]
+"no-var" = "error"
+
+[code.linting.ruff]
+enabled = true
+line-length = 100
+
+[code.linting.ruff.lint]
+select = ["E", "F"]

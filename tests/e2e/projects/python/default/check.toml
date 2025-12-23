@@ -1,0 +1,6 @@
+[code.linting.ruff]
+enabled = true
+line-length = 100
+
+[code.linting.ruff.lint]
+select = ["E", "F"]

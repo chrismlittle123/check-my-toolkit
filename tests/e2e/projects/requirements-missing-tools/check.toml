@@ -1,0 +1,4 @@
+# Requirements test - tools that should be installed
+# Note: cm doesn't have tool requirements yet, using empty config
+[code.linting.eslint]
+enabled = false
