@@ -39,6 +39,10 @@
   ],
   "author": "",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/chrismlittle123/check-my-toolkit.git"
+  },
   "devDependencies": {
     "@changesets/cli": "^2.27.1",
     "@eslint/js": "^9.39.2",
