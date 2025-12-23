@@ -53,6 +53,52 @@ ruff = true
 tsc = true
 ```
 
+#### TypeScript Configuration: `[code.types.tsc]`
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `strict` | Enable all strict type checking options | `false` |
+| `noImplicitAny` | Error on expressions/declarations with implied `any` | `false` |
+| `strictNullChecks` | Enable strict null checks | `false` |
+| `strictFunctionTypes` | Enable strict checking of function types | `false` |
+| `strictBindCallApply` | Enable strict bind/call/apply methods | `false` |
+| `strictPropertyInitialization` | Ensure class properties are initialized | `false` |
+| `noImplicitThis` | Error on `this` with implied `any` type | `false` |
+| `useUnknownInCatchVariables` | Type catch clause variables as `unknown` | `false` |
+| `alwaysStrict` | Parse in strict mode and emit "use strict" | `false` |
+| `noUnusedLocals` | Error on unused local variables | `false` |
+| `noUnusedParameters` | Error on unused parameters | `false` |
+| `noImplicitReturns` | Error on missing return statements | `false` |
+| `noFallthroughCasesInSwitch` | Error on fallthrough cases in switch | `false` |
+| `noUncheckedIndexedAccess` | Add `undefined` to index signature results | `false` |
+| `exactOptionalPropertyTypes` | Differentiate `undefined` vs missing | `false` |
+| `skipLibCheck` | Skip type checking of declaration files | `true` |
+
+```toml
+[code.types.tsc]
+# Preset: use "strict" to enable all strict options at once
+strict = true
+
+# Or configure individually:
+noImplicitAny = true
+strictNullChecks = true
+strictFunctionTypes = true
+strictBindCallApply = true
+strictPropertyInitialization = true
+noImplicitThis = true
+useUnknownInCatchVariables = true
+alwaysStrict = true
+
+# Additional strictness (not included in "strict")
+noUnusedLocals = true
+noUnusedParameters = true
+noImplicitReturns = true
+noFallthroughCasesInSwitch = true
+noUncheckedIndexedAccess = true
+exactOptionalPropertyTypes = true
+skipLibCheck = true
+```
+
 **Behavior:**
 - Skip if no `tsconfig.json` found (warn)
 - Report type errors in unified format
@@ -226,6 +272,53 @@ tsc = true
 ty = true
 ```
 
+#### Python Type Checker Configuration: `[code.types.ty]`
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `strict` | Enable all strict type checking options | `false` |
+| `warn_return_any` | Warn when returning `Any` from typed function | `false` |
+| `warn_unreachable` | Warn about unreachable code | `false` |
+| `disallow_untyped_defs` | Disallow defining functions without types | `false` |
+| `disallow_untyped_calls` | Disallow calling untyped functions | `false` |
+| `disallow_incomplete_defs` | Disallow partially typed function definitions | `false` |
+| `disallow_any_generics` | Disallow `Any` in generic type parameters | `false` |
+| `disallow_any_unimported` | Disallow `Any` types from unimported modules | `false` |
+| `disallow_any_expr` | Disallow all expressions with `Any` type | `false` |
+| `disallow_any_decorated` | Disallow `Any` in decorated functions | `false` |
+| `disallow_any_explicit` | Disallow explicit `Any` annotations | `false` |
+| `disallow_subclassing_any` | Disallow subclassing `Any` | `false` |
+| `check_untyped_defs` | Type check inside untyped functions | `false` |
+| `ignore_missing_imports` | Suppress errors for missing imports | `false` |
+| `follow_imports` | How to handle imports (`normal`, `silent`, `skip`, `error`) | `"normal"` |
+| `python_version` | Target Python version | `"3.11"` |
+| `exclude` | Patterns to exclude from checking | `[]` |
+
+```toml
+[code.types.ty]
+# Preset: use "strict" to enable all strict options at once
+strict = true
+
+# Or configure individually:
+warn_return_any = true
+warn_unreachable = true
+disallow_untyped_defs = true
+disallow_untyped_calls = true
+disallow_incomplete_defs = true
+disallow_any_generics = true
+check_untyped_defs = true
+
+# Import handling
+ignore_missing_imports = false
+follow_imports = "normal"
+
+# Target version
+python_version = "3.11"
+
+# Exclusions
+exclude = ["**/migrations/**", "**/vendor/**", "**/__pycache__/**"]
+```
+
 ### Security Scanning: `[code.security]`
 
 | Check | Description | Tool Wrapped |
@@ -318,20 +411,3 @@ adr_template = "docs/adr/template.md"
 require_service_readme = true
 readme_required_sections = ["Overview", "Setup", "API", "Deployment"]
 ```
-
----
-
-## Future
-
-| Check | Description | Tool Wrapped |
-|-------|-------------|--------------|
-| Naming conventions | Files, directories | ls-lint |
-| Complexity | Cyclomatic/cognitive | ESLint plugins |
-| Commit messages | Conventional commits | commitlint |
-| License headers | Required headers | addlicense |
-| API contracts | OpenAPI/GraphQL | Spectral |
-| Dependency health | Outdated, deprecated | npm-check |
-| Import ordering | Consistent structure | ESLint plugins |
-| TODO/FIXME tracking | Stale todos | custom |
-| Test coverage | Minimum thresholds | nyc |
-| Bundle size | Max artifact size | size-limit |
