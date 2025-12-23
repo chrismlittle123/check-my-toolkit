@@ -5,7 +5,7 @@ import TOML from "@iarna/toml";
 
 import { type Config, configSchema, defaultConfig } from "./schema.js";
 
-export interface LoadConfigResult {
+interface LoadConfigResult {
   config: Config;
   configPath: string;
 }

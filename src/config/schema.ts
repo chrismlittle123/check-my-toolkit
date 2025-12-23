@@ -9,13 +9,13 @@ import { z } from "zod";
 // =============================================================================
 
 /** ESLint rule values: "off", "warn", "error", or array like ["error", "always"] */
-export const eslintRuleValueSchema = z.union([
+const eslintRuleValueSchema = z.union([
   z.enum(["off", "warn", "error"]),
   z.tuple([z.string()]).rest(z.unknown()),
 ]);
 
 /** ESLint configuration */
-export const eslintConfigSchema = z
+const eslintConfigSchema = z
   .object({
     enabled: z.boolean().optional().default(true),
     rules: z.record(z.string(), eslintRuleValueSchema).optional(),
@@ -27,7 +27,7 @@ export const eslintConfigSchema = z
 // =============================================================================
 
 /** Ruff lint configuration */
-export const ruffLintSchema = z
+const ruffLintSchema = z
   .object({
     select: z.array(z.string()).optional(),
     ignore: z.array(z.string()).optional(),
@@ -35,7 +35,7 @@ export const ruffLintSchema = z
   .optional();
 
 /** Ruff configuration */
-export const ruffConfigSchema = z
+const ruffConfigSchema = z
   .object({
     enabled: z.boolean().optional().default(true),
     "line-length": z.number().int().positive().optional(),
@@ -48,7 +48,7 @@ export const ruffConfigSchema = z
 // =============================================================================
 
 /** TypeScript compiler configuration */
-export const tscConfigSchema = z
+const tscConfigSchema = z
   .object({
     enabled: z.boolean().optional().default(false),
     // Strict type-checking options
@@ -79,7 +79,7 @@ export const tscConfigSchema = z
 // =============================================================================
 
 /** Code limits configuration */
-export const codeLimitsSchema = z
+const codeLimitsSchema = z
   .object({
     max_file_lines: z.number().int().positive().optional(),
     max_function_lines: z.number().int().positive().optional(),
@@ -93,7 +93,7 @@ export const codeLimitsSchema = z
 // =============================================================================
 
 /** Code linting configuration */
-export const codeLintingSchema = z
+const codeLintingSchema = z
   .object({
     eslint: eslintConfigSchema,
     ruff: ruffConfigSchema,
@@ -101,14 +101,14 @@ export const codeLintingSchema = z
   .optional();
 
 /** Code type checking configuration */
-export const codeTypesSchema = z
+const codeTypesSchema = z
   .object({
     tsc: tscConfigSchema,
   })
   .optional();
 
 /** Code files configuration */
-export const codeFilesSchema = z
+const codeFilesSchema = z
   .object({
     repo: z.array(z.string()).optional(),
     tooling: z.array(z.string()).optional(),
@@ -117,7 +117,7 @@ export const codeFilesSchema = z
   .optional();
 
 /** Code domain configuration */
-export const codeSchema = z
+const codeSchema = z
   .object({
     linting: codeLintingSchema,
     types: codeTypesSchema,
@@ -131,7 +131,7 @@ export const codeSchema = z
 // =============================================================================
 
 /** Process PR configuration */
-export const processPrSchema = z
+const processPrSchema = z
   .object({
     max_files: z.number().optional(),
     max_lines: z.number().optional(),
@@ -140,14 +140,14 @@ export const processPrSchema = z
   .optional();
 
 /** Process branches configuration */
-export const processBranchesSchema = z
+const processBranchesSchema = z
   .object({
     pattern: z.string().optional(),
   })
   .optional();
 
 /** Process tickets configuration */
-export const processTicketsSchema = z
+const processTicketsSchema = z
   .object({
     pattern: z.string().optional(),
     check_in: z.array(z.string()).optional(),
@@ -155,7 +155,7 @@ export const processTicketsSchema = z
   .optional();
 
 /** Process domain configuration */
-export const processSchema = z
+const processSchema = z
   .object({
     pr: processPrSchema,
     branches: processBranchesSchema,
@@ -168,10 +168,10 @@ export const processSchema = z
 // =============================================================================
 
 /** Stack tools configuration */
-export const stackToolsSchema = z.record(z.string()).optional();
+const stackToolsSchema = z.record(z.string()).optional();
 
 /** Stack domain configuration */
-export const stackSchema = z
+const stackSchema = z
   .object({
     tools: stackToolsSchema,
   })

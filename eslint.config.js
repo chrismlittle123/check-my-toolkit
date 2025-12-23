@@ -20,6 +20,8 @@ export default tseslint.config(
       '*.js',
       '*.mjs',
       '*.cjs',
+      // E2E test fixtures - these are intentionally broken/varied for testing
+      'tests/e2e/projects/**',
     ],
   },
 
