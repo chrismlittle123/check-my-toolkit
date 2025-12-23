@@ -59,35 +59,32 @@ function getCheckIcon(passed: boolean, skipped: boolean): string {
   return "✗";
 }
 
-function formatDomainText(name: string, domain: DomainResult): string {
-  const lines: string[] = [];
+function formatCheckLine(check: DomainResult["checks"][number]): string[] {
+  const checkIcon = getCheckIcon(check.passed, check.skipped);
+  const duration = check.duration ? ` (${check.duration}ms)` : "";
 
-  const statusIcon = getStatusIcon(domain.status);
-  lines.push(`${statusIcon} ${name.toUpperCase()}`);
-
-  for (const check of domain.checks) {
-    const checkIcon = getCheckIcon(check.passed, check.skipped);
-    const duration = check.duration ? ` (${check.duration}ms)` : "";
-
-    if (check.skipped) {
-      lines.push(`  ${checkIcon} ${check.name}: skipped - ${check.skipReason}${duration}`);
-    } else if (check.passed) {
-      lines.push(`  ${checkIcon} ${check.name}: passed${duration}`);
-    } else {
-      lines.push(`  ${checkIcon} ${check.name}: ${check.violations.length} violation(s)${duration}`);
-
-      // Show first 10 violations
-      const violationsToShow = check.violations.slice(0, 10);
-      for (const v of violationsToShow) {
-        lines.push(formatViolationText(v));
-      }
-
-      if (check.violations.length > 10) {
-        lines.push(`      ... and ${check.violations.length - 10} more`);
-      }
-    }
+  if (check.skipped) {
+    return [`  ${checkIcon} ${check.name}: skipped - ${check.skipReason}${duration}`];
+  }
+  if (check.passed) {
+    return [`  ${checkIcon} ${check.name}: passed${duration}`];
   }
 
+  const lines = [`  ${checkIcon} ${check.name}: ${check.violations.length} violation(s)${duration}`];
+  const violationsToShow = check.violations.slice(0, 10);
+  lines.push(...violationsToShow.map(formatViolationText));
+  if (check.violations.length > 10) {
+    lines.push(`      ... and ${check.violations.length - 10} more`);
+  }
+  return lines;
+}
+
+function formatDomainText(name: string, domain: DomainResult): string {
+  const statusIcon = getStatusIcon(domain.status);
+  const lines = [`${statusIcon} ${name.toUpperCase()}`];
+  for (const check of domain.checks) {
+    lines.push(...formatCheckLine(check));
+  }
   return lines.join("\n");
 }
 

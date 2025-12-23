@@ -135,14 +135,14 @@ export default tseslint.config(
       '@typescript-eslint/only-throw-error': 'error',
 
       // Limit cyclomatic complexity - lower is better for maintainability
-      complexity: ['warn', 10],
+      complexity: ['error', 10],
 
       // Max depth of nested blocks - deep nesting is hard to read
-      'max-depth': ['warn', 4],
+      'max-depth': ['error', 4],
 
       // Max lines per function - keep functions small and focused
       'max-lines-per-function': [
-        'warn',
+        'error',
         {
           max: 50,
           skipBlankLines: true,
@@ -151,10 +151,10 @@ export default tseslint.config(
       ],
 
       // Max statements per function - encourages extraction of helper functions
-      'max-statements': ['warn', 15],
+      'max-statements': ['error', 15],
 
       // Max parameters per function - too many params suggests need for options object
-      'max-params': ['warn', 4],
+      'max-params': ['error', 4],
 
       // No duplicate imports
       'no-duplicate-imports': 'error',

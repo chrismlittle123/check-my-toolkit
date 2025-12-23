@@ -34,58 +34,97 @@ export function findConfigFile(startDir: string = process.cwd()): string | null 
 
   // Check root directory too
   const rootConfig = path.join(root, "check.toml");
-  if (fs.existsSync(rootConfig)) {
-    return rootConfig;
-  }
+  return fs.existsSync(rootConfig) ? rootConfig : null;
+}
 
-  return null;
+/**
+ * Resolve and validate config file path
+ */
+function resolveConfigPath(configPath?: string): string {
+  const resolved = configPath ?? findConfigFile();
+  if (!resolved) {
+    throw new ConfigError("No check.toml found. Run 'cm init' to create one or specify --config path.");
+  }
+  if (!fs.existsSync(resolved)) {
+    throw new ConfigError(`Config file not found: ${resolved}`);
+  }
+  return resolved;
+}
+
+/**
+ * Parse TOML file content
+ */
+function parseTomlFile(filePath: string): unknown {
+  try {
+    const content = fs.readFileSync(filePath, "utf-8");
+    return TOML.parse(content);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    throw new ConfigError(`Failed to parse check.toml: ${message}`);
+  }
+}
+
+/**
+ * Validate config against schema
+ */
+function validateConfig(rawConfig: unknown): Config {
+  const result = configSchema.safeParse(rawConfig);
+  if (!result.success) {
+    const errors = result.error.errors.map((e) => `  - ${e.path.join(".")}: ${e.message}`).join("\n");
+    throw new ConfigError(`Invalid check.toml configuration:\n${errors}`);
+  }
+  return result.data;
 }
 
 /**
  * Load and parse check.toml configuration
  */
 export function loadConfig(configPath?: string): LoadConfigResult {
-  // Find config file if not specified
-  const resolvedPath = configPath ?? findConfigFile();
+  const resolvedPath = resolveConfigPath(configPath);
+  const rawConfig = parseTomlFile(resolvedPath);
+  const validatedConfig = validateConfig(rawConfig);
+  const config = mergeWithDefaults(validatedConfig);
+  return { config, configPath: resolvedPath };
+}
 
-  if (!resolvedPath) {
-    throw new ConfigError(
-      "No check.toml found. Run 'cm init' to create one or specify --config path."
-    );
-  }
+/** Merge two optional objects, with right side taking precedence */
+function merge<T extends object>(a: T | undefined, b: T | undefined): T {
+  return { ...a, ...b } as T;
+}
 
-  if (!fs.existsSync(resolvedPath)) {
-    throw new ConfigError(`Config file not found: ${resolvedPath}`);
-  }
+/** Get array value with fallback */
+function arr(a: string[] | undefined, b: string[] | undefined): string[] {
+  return a ?? b ?? [];
+}
 
-  // Read and parse TOML
-  let rawConfig: unknown;
-  try {
-    const content = fs.readFileSync(resolvedPath, "utf-8");
-    rawConfig = TOML.parse(content);
-  } catch (error) {
-    if (error instanceof Error) {
-      throw new ConfigError(`Failed to parse check.toml: ${error.message}`);
-    }
-    throw new ConfigError("Failed to parse check.toml");
-  }
+type CodeConfig = NonNullable<Config["code"]>;
 
-  // Validate with Zod
-  const result = configSchema.safeParse(rawConfig);
+function mergeLinting(c: Config, dc: Config): CodeConfig["linting"] {
+  const cl = c.code?.linting;
+  const dl = dc.code?.linting;
+  return { eslint: merge(dl?.eslint, cl?.eslint), ruff: merge(dl?.ruff, cl?.ruff) };
+}
 
-  if (!result.success) {
-    const errors = result.error.errors
-      .map((e) => `  - ${e.path.join(".")}: ${e.message}`)
-      .join("\n");
-    throw new ConfigError(`Invalid check.toml configuration:\n${errors}`);
-  }
+function mergeFiles(c: Config, dc: Config): CodeConfig["files"] {
+  const cf = c.code?.files;
+  const df = dc.code?.files;
+  return { repo: arr(cf?.repo, df?.repo), tooling: arr(cf?.tooling, df?.tooling), docs: arr(cf?.docs, df?.docs) };
+}
 
-  // Merge with defaults
-  const config = mergeWithDefaults(result.data);
-
+function mergeCode(c: Config, dc: Config): CodeConfig {
   return {
-    config,
-    configPath: resolvedPath,
+    linting: mergeLinting(c, dc),
+    types: { tsc: merge(dc.code?.types?.tsc, c.code?.types?.tsc) },
+    complexity: merge(dc.code?.complexity, c.code?.complexity),
+    files: mergeFiles(c, dc),
+  };
+}
+
+function mergeProcess(c: Config, dc: Config): NonNullable<Config["process"]> {
+  return {
+    pr: merge(dc.process?.pr, c.process?.pr),
+    branches: merge(dc.process?.branches, c.process?.branches),
+    tickets: merge(dc.process?.tickets, c.process?.tickets),
   };
 }
 
@@ -94,41 +133,9 @@ export function loadConfig(configPath?: string): LoadConfigResult {
  */
 function mergeWithDefaults(config: Config): Config {
   return {
-    code: {
-      linting: {
-        eslint: {
-          enabled: config.code?.linting?.eslint?.enabled ?? defaultConfig.code?.linting?.eslint?.enabled ?? false,
-          rules: config.code?.linting?.eslint?.rules,
-        },
-        ruff: {
-          enabled: config.code?.linting?.ruff?.enabled ?? defaultConfig.code?.linting?.ruff?.enabled ?? false,
-          "line-length": config.code?.linting?.ruff?.["line-length"],
-          lint: config.code?.linting?.ruff?.lint,
-        },
-      },
-      types: {
-        tsc: {
-          enabled: config.code?.types?.tsc?.enabled ?? defaultConfig.code?.types?.tsc?.enabled ?? false,
-          strict: config.code?.types?.tsc?.strict,
-          noImplicitAny: config.code?.types?.tsc?.noImplicitAny,
-          strictNullChecks: config.code?.types?.tsc?.strictNullChecks,
-        },
-      },
-      complexity: config.code?.complexity ?? defaultConfig.code?.complexity ?? {},
-      files: {
-        repo: config.code?.files?.repo ?? defaultConfig.code?.files?.repo ?? [],
-        tooling: config.code?.files?.tooling ?? defaultConfig.code?.files?.tooling ?? [],
-        docs: config.code?.files?.docs ?? defaultConfig.code?.files?.docs ?? [],
-      },
-    },
-    process: {
-      pr: config.process?.pr ?? defaultConfig.process?.pr ?? {},
-      branches: config.process?.branches ?? defaultConfig.process?.branches ?? {},
-      tickets: config.process?.tickets ?? defaultConfig.process?.tickets ?? {},
-    },
-    stack: {
-      tools: config.stack?.tools ?? defaultConfig.stack?.tools ?? {},
-    },
+    code: mergeCode(config, defaultConfig),
+    process: mergeProcess(config, defaultConfig),
+    stack: { tools: merge(defaultConfig.stack?.tools, config.stack?.tools) },
   };
 }
 

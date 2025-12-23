@@ -15,21 +15,23 @@ const tsc = new TscRunner();
 export { ESLintRunner, RuffRunner, TscRunner } from "./tools/index.js";
 export { BaseToolRunner } from "./tools/index.js";
 
+/** Check if a tool is enabled in config */
+function isEnabled(toolConfig: { enabled?: boolean } | undefined): boolean {
+  return toolConfig?.enabled === true;
+}
+
 /**
  * Get enabled tools based on configuration
  */
 function getEnabledTools(config: Config): IToolRunner[] {
+  const code = config.code ?? {};
+  const linting = code.linting ?? {};
+  const types = code.types ?? {};
   const tools: IToolRunner[] = [];
 
-  if (config.code?.linting?.eslint?.enabled) {
-    tools.push(eslint);
-  }
-  if (config.code?.linting?.ruff?.enabled) {
-    tools.push(ruff);
-  }
-  if (config.code?.types?.tsc?.enabled) {
-    tools.push(tsc);
-  }
+  if (isEnabled(linting.eslint)) tools.push(eslint);
+  if (isEnabled(linting.ruff)) tools.push(ruff);
+  if (isEnabled(types.tsc)) tools.push(tsc);
 
   return tools;
 }

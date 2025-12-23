@@ -23,11 +23,24 @@ export class TscRunner extends BaseToolRunner {
   readonly toolId = "tsc";
   readonly configFiles = ["tsconfig.json"];
 
+  private handleTscFailure(result: Awaited<ReturnType<typeof execa>>, projectRoot: string): Violation[] {
+    const stdout = String(result.stdout ?? "");
+    const violations = this.parseOutput(stdout, projectRoot);
+    if (violations.length === 0) {
+      const errorOutput = stdout || String(result.stderr ?? "");
+      if (errorOutput) {
+        return [this.createErrorViolation(`TypeScript error: ${errorOutput.slice(0, 500)}`)];
+      }
+    }
+    return violations;
+  }
+
   async run(projectRoot: string): Promise<CheckResult> {
     const startTime = Date.now();
+    const elapsed = (): number => Date.now() - startTime;
 
     if (!this.hasConfig(projectRoot)) {
-      return this.skipNoConfig(Date.now() - startTime);
+      return this.skipNoConfig(elapsed());
     }
 
     try {
@@ -37,35 +50,18 @@ export class TscRunner extends BaseToolRunner {
         timeout: 5 * 60 * 1000,
       });
 
-      // tsc exits with 0 if no errors
       if (result.exitCode === 0) {
-        return this.pass(Date.now() - startTime);
+        return this.pass(elapsed());
       }
 
-      const violations = this.parseOutput(result.stdout, projectRoot);
-
-      // If we couldn't parse any diagnostics but tsc failed, report raw output
-      if (violations.length === 0) {
-        const errorOutput = result.stdout || result.stderr;
-        if (errorOutput) {
-          return this.fail(
-            [this.createErrorViolation(`TypeScript error: ${errorOutput.slice(0, 500)}`)],
-            Date.now() - startTime
-          );
-        }
-      }
-
-      return this.fromViolations(violations, Date.now() - startTime);
+      const violations = this.handleTscFailure(result, projectRoot);
+      return this.fromViolations(violations, elapsed());
     } catch (error) {
       if (this.isNotInstalledError(error)) {
-        return this.skipNotInstalled(Date.now() - startTime);
+        return this.skipNotInstalled(elapsed());
       }
-
       const message = error instanceof Error ? error.message : "Unknown error";
-      return this.fail(
-        [this.createErrorViolation(`TypeScript error: ${message}`)],
-        Date.now() - startTime
-      );
+      return this.fail([this.createErrorViolation(`TypeScript error: ${message}`)], elapsed());
     }
   }
 
