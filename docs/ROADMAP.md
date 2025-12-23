@@ -3,9 +3,12 @@
 Unified CLI for code quality, process enforcement, and stack validation.
 
 ```bash
-cm code check     # Static analysis & conventions
-cm process check  # Workflow & policy enforcement
-cm stack check    # Environment & infrastructure
+cm check          # Run all checks (code, process, stack)
+cm audit          # Verify configs exist and match check.toml
+cm code check     # Run linters, type checkers
+cm code audit     # Verify code configs exist
+cm process check  # Validate PR, branches, tickets
+cm stack check    # Validate tools, services, env
 ```
 
 ---
@@ -118,6 +121,33 @@ check_in = ["title", "branch", "body"]
 ```toml
 [stack.tools]
 node = "20"
+```
+
+### Audit Command
+
+`cm audit` verifies configs exist and match `check.toml` without running tools.
+
+| Check | Description |
+|-------|-------------|
+| Config exists | eslint.config.js, ruff.toml, tsconfig.json exist |
+| Config matches | Generated config matches check.toml rules |
+| Required files | README.md, LICENSE, etc. exist |
+
+```bash
+$ cm audit
+
+[code.linting]
+  ✓ eslint.config.js exists
+  ✗ ruff.toml missing
+
+[code.types]
+  ✓ tsconfig.json exists
+
+[code.files]
+  ✓ README.md exists
+  ✗ LICENSE missing
+
+audit: 2 issues found
 ```
 
 ---
