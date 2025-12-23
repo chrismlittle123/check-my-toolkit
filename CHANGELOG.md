@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.1.1
+
+### Patch Changes
+
+- cadb4ff: Add CI/CD workflows and improve documentation
+
+  - Add GitHub Actions CI workflow for testing across Node 18, 20, 22
+  - Add release workflow with changesets for automated npm publishing
+  - Add PR checks workflow for branch naming and changelog reminders
+  - Add pull request template
+  - Add CHANGELOG.md following Keep a Changelog format
+  - Improve README.md with installation, usage, and configuration docs
+  - Add missing npm scripts: typecheck, test:e2e, version
+  - Add @changesets/cli dependency
+
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
