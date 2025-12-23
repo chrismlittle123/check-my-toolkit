@@ -312,7 +312,7 @@ function runCli(command: string, config: string): { stdout: string; exitCode: nu
 
 describe("E2E Tests", () => {
   for (const tc of testCases) {
-    it(tc.name, () => {
+    it.concurrent(tc.name, async () => {
       const { stdout, exitCode } = runCli(tc.command, tc.config);
 
       // Check exit code
