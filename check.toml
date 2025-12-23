@@ -1,8 +1,10 @@
 # check-my-toolkit configuration
 
-[code.linting]
-eslint = true
-ruff = false
+[code.linting.eslint]
+enabled = true
 
-[code.types]
-tsc = true
+[code.linting.ruff]
+enabled = false
+
+[code.types.tsc]
+enabled = true
