@@ -19,20 +19,14 @@ check.toml
 ├── [extends]                   # Remote config inheritance (stricter-only)
 │
 ├── [code]                      # Static analysis, security & code quality
-│   ├── [code.linting]          # ESLint, Ruff, Biome
+│   ├── [code.linting]          # ESLint, Ruff
 │   ├── [code.formatting]       # Prettier, Black
-│   ├── [code.types]            # tsc, Pyright, ty
-│   ├── [code.unused]           # Knip, Vulture, ts-prune
+│   ├── [code.types]            # tsc, ty
+│   ├── [code.unused]           # Knip, Vulture
 │   ├── [code.complexity]       # File/function size, nesting, cyclomatic
 │   ├── [code.tests]            # Coverage thresholds, test patterns
 │   ├── [code.security]         # Secrets, SAST, dependency audits
-│   │   ├── secrets             # Gitleaks, TruffleHog
-│   │   ├── sast                # Semgrep, CodeQL, Bandit
-│   │   └── deps                # npm audit, Snyk, pip-audit
 │   └── [code.files]            # Required files & configs
-│       ├── repo                # README, LICENSE, SECURITY.md, CONTRIBUTING
-│       ├── tooling             # mise.toml, eslint.config.js, pyproject.toml
-│       └── docs                # ADRs, RFCs, runbooks, CLAUDE.md
 │
 ├── [process]                   # Workflow & policy enforcement
 │   ├── [process.pr]            # Size limits, title format, approvals
@@ -45,7 +39,8 @@ check.toml
 └── [stack]                     # Developer environment & infrastructure
     ├── [stack.tools]           # CLI tools: name, version, installer (mise/brew/system)
     ├── [stack.services]        # Docker containers, databases, ports
-    └── [stack.env]             # Required environment variables
+    ├── [stack.env]             # Required environment variables
+    └── [stack.ai]              # AI tool settings (Claude, Cursor, etc.)
 ```
 ---
 
