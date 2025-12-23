@@ -14,37 +14,39 @@ cm stack check    # Environment & infrastructure
 
 The three domains and their subdomains map directly to `check.toml` sections:
 
-```
 check.toml
-├── [extends]                 # Remote config inheritance
-│
-├── [code]                    # Static analysis & conventions
-│   ├── [code.linting]        # ESLint, Ruff
-│   ├── [code.types]          # tsc, ty
-│   ├── [code.unused]         # Knip, Vulture
-│   ├── [code.limits]         # File/function size, nesting
-│   ├── [code.security]       # Gitleaks, Semgrep, audits
-│   ├── [code.files]          # Required config files (CLAUDE.md, knip.json)
-│   └── [code.configs]        # Tool configs exist (eslint.config.js)
-│
-├── [process]                 # Workflow & policy enforcement
-│   ├── [process.pr]          # Size limits, approvals
-│   ├── [process.branch]      # Naming patterns
-│   ├── [process.ticket]      # Linear references
-│   ├── [process.github]      # Branch protection, CODEOWNERS
-│   ├── [process.files]       # Required repo files (README, LICENSE)
-│   ├── [process.ci]          # GitHub Actions configured
-│   └── [process.linear]      # Ticket state, estimates
-│
-└── [stack]                   # Environment & infrastructure
-    ├── [stack.tools]         # CLI tools installed (node, npm, docker, git, aws, etc.)
-    ├── [stack.files]         # Dev files (.nvmrc, .tool-versions)
-    ├── [stack.services]      # Containers, ports, databases
-    ├── [stack.env]           # Environment variables
-    ├── [stack.docs]          # ADRs, RFCs, runbooks
-    └── [stack.ai]            # AI tool settings (Claude)
 ```
-
+├── [extends]                   # Remote config inheritance (stricter-only)
+│
+├── [code]                      # Static analysis, security & code quality
+│   ├── [code.linting]          # ESLint, Ruff, Biome
+│   ├── [code.formatting]       # Prettier, Black
+│   ├── [code.types]            # tsc, Pyright, ty
+│   ├── [code.unused]           # Knip, Vulture, ts-prune
+│   ├── [code.complexity]       # File/function size, nesting, cyclomatic
+│   ├── [code.tests]            # Coverage thresholds, test patterns
+│   ├── [code.security]         # Secrets, SAST, dependency audits
+│   │   ├── secrets             # Gitleaks, TruffleHog
+│   │   ├── sast                # Semgrep, CodeQL, Bandit
+│   │   └── deps                # npm audit, Snyk, pip-audit
+│   └── [code.files]            # Required files & configs
+│       ├── repo                # README, LICENSE, SECURITY.md, CONTRIBUTING
+│       ├── tooling             # mise.toml, eslint.config.js, pyproject.toml
+│       └── docs                # ADRs, RFCs, runbooks, CLAUDE.md
+│
+├── [process]                   # Workflow & policy enforcement
+│   ├── [process.pr]            # Size limits, title format, approvals
+│   ├── [process.commits]       # Conventional commits, sign-off
+│   ├── [process.branches]      # Naming patterns
+│   ├── [process.tickets]       # Linear/Jira references required
+│   ├── [process.ci]            # Required workflows exist
+│   └── [process.repo]          # Branch protection, CODEOWNERS, labels
+│
+└── [stack]                     # Developer environment & infrastructure
+    ├── [stack.tools]           # CLI tools: name, version, installer (mise/brew/system)
+    ├── [stack.services]        # Docker containers, databases, ports
+    └── [stack.env]             # Required environment variables
+```
 ---
 
 ## Domain Overview
