@@ -36,10 +36,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `cm check` - Top-level command that runs all domain checks (alias for `cm code check`)
-- `cm audit` - Top-level command that verifies all configs exist (alias for `cm code audit`)
-- `cm init` - Create check.toml with default configuration
-- Colored terminal output using chalk for better readability
+- Knip integration for unused code detection (`[code.unused.knip]`)
+  - Detect unused files, dependencies, exports, and types
+  - Support for unlisted dependencies and unresolved imports
 
 ## [0.1.0] - 2025-12-23
 

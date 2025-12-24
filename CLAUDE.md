@@ -64,13 +64,49 @@ enabled = true
 - **Exit codes**: 0=success, 1=violations found, 2=config error, 3=runtime error
 - **Output formats**: Text (default) and JSON (`--format json`)
 
-## Branch Naming Convention
+## Development Workflow
 
-Branches must follow: `(feature|fix|hotfix|docs)/vX.Y.Z/description`
+**IMPORTANT: Always use Pull Requests for changes. Never push directly to main.**
 
-Examples:
-- `feature/v0.2.0/add-process-domain`
-- `fix/v0.1.1/eslint-parsing-error`
+### Creating a Feature/Fix
+
+1. **Create a branch** following the naming convention:
+   ```
+   (feature|fix|hotfix|docs)/vX.Y.Z/description
+   ```
+   Examples:
+   - `feature/v0.2.0/add-knip-integration`
+   - `fix/v0.1.3/eslint-parsing-error`
+   - `docs/v0.1.3/update-readme`
+
+2. **Make your changes** on the branch
+
+3. **Create a changeset** (required for any code changes):
+   ```bash
+   # Creates .changeset/<random-name>.md
+   npx changeset
+   # Or manually create the file
+   ```
+
+4. **Create a Pull Request** to merge into main
+
+5. **After PR is merged**, the Release workflow automatically:
+   - Bumps version based on changesets
+   - Publishes to npm
+   - Creates GitHub release with tag
+
+### Branch Naming Convention
+
+Format: `(feature|fix|hotfix|docs)/vX.Y.Z/description`
+
+| Prefix | Use For |
+|--------|---------|
+| `feature/` | New functionality |
+| `fix/` | Bug fixes |
+| `hotfix/` | Critical production fixes |
+| `docs/` | Documentation only |
+
+The version should be the target version this change will be included in.
 
 ## Release Process
 

@@ -11,7 +11,7 @@ import { ConfigError, getProjectRoot, loadConfig } from "./config/index.js";
 import { formatOutput, type OutputFormat } from "./output/index.js";
 import { ExitCode, type FullResult } from "./types/index.js";
 
-const VERSION = "0.1.2";
+const VERSION = "0.2.0";
 
 const program = new Command();
 
