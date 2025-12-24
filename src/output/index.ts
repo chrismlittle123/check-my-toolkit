@@ -1,3 +1,5 @@
+import chalk from "chalk";
+
 import {
   type DomainResult,
   type DomainStatus,
@@ -7,11 +9,11 @@ import {
 
 export type OutputFormat = "text" | "json";
 
-/** Icon mapping for domain/check status */
+/** Icon mapping for domain/check status with colors */
 const STATUS_ICONS: Record<DomainStatus, string> = {
-  pass: "✓",
-  fail: "✗",
-  skip: "○",
+  pass: chalk.green("✓"),
+  fail: chalk.red("✗"),
+  skip: chalk.gray("○"),
 };
 
 /**
@@ -39,11 +41,11 @@ export function formatText(result: FullResult): string {
   }
 
   // Summary
-  lines.push("─".repeat(50));
+  lines.push(chalk.dim("─".repeat(50)));
   if (result.summary.totalViolations === 0) {
-    lines.push("✓ All checks passed");
+    lines.push(chalk.green("✓ All checks passed"));
   } else {
-    lines.push(`✗ ${result.summary.totalViolations} violation(s) found`);
+    lines.push(chalk.red(`✗ ${result.summary.totalViolations} violation(s) found`));
   }
 
   return lines.join("\n");
@@ -54,34 +56,34 @@ function getStatusIcon(status: DomainStatus): string {
 }
 
 function getCheckIcon(passed: boolean, skipped: boolean): string {
-  if (passed) return "✓";
-  if (skipped) return "○";
-  return "✗";
+  if (passed) return chalk.green("✓");
+  if (skipped) return chalk.gray("○");
+  return chalk.red("✗");
 }
 
 function formatCheckLine(check: DomainResult["checks"][number]): string[] {
   const checkIcon = getCheckIcon(check.passed, check.skipped);
-  const duration = check.duration ? ` (${check.duration}ms)` : "";
+  const duration = check.duration ? chalk.dim(` (${check.duration}ms)`) : "";
 
   if (check.skipped) {
-    return [`  ${checkIcon} ${check.name}: skipped - ${check.skipReason}${duration}`];
+    return [`  ${checkIcon} ${chalk.bold(check.name)}: ${chalk.gray("skipped")} - ${chalk.gray(check.skipReason)}${duration}`];
   }
   if (check.passed) {
-    return [`  ${checkIcon} ${check.name}: passed${duration}`];
+    return [`  ${checkIcon} ${chalk.bold(check.name)}: ${chalk.green("passed")}${duration}`];
   }
 
-  const lines = [`  ${checkIcon} ${check.name}: ${check.violations.length} violation(s)${duration}`];
+  const lines = [`  ${checkIcon} ${chalk.bold(check.name)}: ${chalk.red(`${check.violations.length} violation(s)`)}${duration}`];
   const violationsToShow = check.violations.slice(0, 10);
   lines.push(...violationsToShow.map(formatViolationText));
   if (check.violations.length > 10) {
-    lines.push(`      ... and ${check.violations.length - 10} more`);
+    lines.push(chalk.dim(`      ... and ${check.violations.length - 10} more`));
   }
   return lines;
 }
 
 function formatDomainText(name: string, domain: DomainResult): string {
   const statusIcon = getStatusIcon(domain.status);
-  const lines = [`${statusIcon} ${name.toUpperCase()}`];
+  const lines = [`${statusIcon} ${chalk.bold(name.toUpperCase())}`];
   for (const check of domain.checks) {
     lines.push(...formatCheckLine(check));
   }
@@ -92,9 +94,9 @@ function formatDomainText(name: string, domain: DomainResult): string {
  * Format a single violation as text
  */
 function formatViolationText(v: Violation): string {
-  const location = v.file ? `${v.file}:${v.line ?? 0}:${v.column ?? 0}` : "";
-  const code = v.code ? `[${v.code}]` : "";
-  const severity = v.severity === "error" ? "error" : "warn";
+  const location = v.file ? chalk.cyan(`${v.file}:${v.line ?? 0}:${v.column ?? 0}`) : "";
+  const code = v.code ? chalk.dim(`[${v.code}]`) : "";
+  const severity = v.severity === "error" ? chalk.red("error") : chalk.yellow("warn");
 
   if (location) {
     return `      ${location} ${severity} ${code} ${v.message}`;

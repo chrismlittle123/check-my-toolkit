@@ -74,11 +74,51 @@ Examples:
 
 ## Release Process
 
-Uses changesets for versioning. To add a change:
+Uses changesets for versioning and automated npm publishing.
 
-```bash
-npx changeset           # Create a changeset
-git add .changeset/     # Commit the changeset
-```
+### Creating a New Version/Patch
 
-Merging to main triggers automatic version bumps and npm publishing.
+1. **Create a changeset** describing your changes:
+   ```bash
+   # Option 1: Interactive mode
+   npx changeset
+
+   # Option 2: Manually create .changeset/<unique-name>.md with:
+   # ---
+   # "check-my-toolkit": patch  # or minor, or major
+   # ---
+   # Description of changes
+   ```
+
+2. **Update CHANGELOG.md** with your changes under `[Unreleased]`:
+   ```markdown
+   ## [Unreleased]
+
+   ### Added
+   - Your new feature
+
+   ### Fixed
+   - Bug you fixed
+   ```
+
+3. **Update version in src/cli.ts** (the VERSION constant)
+
+4. **Commit and push** your changes:
+   ```bash
+   git add .
+   git commit -m "feat: your change description"
+   git push
+   ```
+
+5. **Create a PR** and merge to main
+
+6. **Automated release**: When merged to main, the release workflow:
+   - Runs `npx changeset version` to bump package.json version
+   - Creates a "Version Packages" PR
+   - When that PR is merged, publishes to npm with OIDC provenance
+
+### Version Types
+
+- **patch** (0.0.X): Bug fixes, documentation, minor improvements
+- **minor** (0.X.0): New features, backwards-compatible changes
+- **major** (X.0.0): Breaking changes

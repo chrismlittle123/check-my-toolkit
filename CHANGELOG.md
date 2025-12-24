@@ -22,6 +22,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `cm check` - Top-level command that runs all domain checks (alias for `cm code check`)
+- `cm audit` - Top-level command that verifies all configs exist (alias for `cm code audit`)
+- `cm init` - Create check.toml with default configuration
+- Colored terminal output using chalk for better readability
+
 ## [0.1.0] - 2025-12-23
 
 ### Added
