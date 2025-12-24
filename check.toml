@@ -8,3 +8,6 @@ enabled = false
 
 [code.types.tsc]
 enabled = true
+
+[code.unused.knip]
+enabled = true

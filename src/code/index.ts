@@ -4,16 +4,16 @@ import {
   DomainResult,
   type IToolRunner,
 } from "../types/index.js";
-import { ESLintRunner, RuffRunner, TscRunner } from "./tools/index.js";
+import { ESLintRunner, KnipRunner, RuffRunner, TscRunner } from "./tools/index.js";
 
 // Tool runner instances
 const eslint = new ESLintRunner();
+const knip = new KnipRunner();
 const ruff = new RuffRunner();
 const tsc = new TscRunner();
 
 // Export tool runners for direct access
-export { ESLintRunner, RuffRunner, TscRunner } from "./tools/index.js";
-export { BaseToolRunner } from "./tools/index.js";
+export { BaseToolRunner, ESLintRunner, KnipRunner, RuffRunner, TscRunner } from "./tools/index.js";
 
 /** Check if a tool is enabled in config */
 function isEnabled(toolConfig: { enabled?: boolean } | undefined): boolean {
@@ -27,11 +27,13 @@ function getEnabledTools(config: Config): IToolRunner[] {
   const code = config.code ?? {};
   const linting = code.linting ?? {};
   const types = code.types ?? {};
+  const unused = code.unused ?? {};
   const tools: IToolRunner[] = [];
 
   if (isEnabled(linting.eslint)) tools.push(eslint);
   if (isEnabled(linting.ruff)) tools.push(ruff);
   if (isEnabled(types.tsc)) tools.push(tsc);
+  if (isEnabled(unused.knip)) tools.push(knip);
 
   return tools;
 }

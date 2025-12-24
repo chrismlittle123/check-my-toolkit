@@ -75,6 +75,17 @@ const tscConfigSchema = z
   .optional();
 
 // =============================================================================
+// Knip Configuration (Unused Code Detection)
+// =============================================================================
+
+/** Knip configuration */
+const knipConfigSchema = z
+  .object({
+    enabled: z.boolean().optional().default(false),
+  })
+  .optional();
+
+// =============================================================================
 // Code Complexity / Limits Configuration
 // =============================================================================
 
@@ -107,6 +118,13 @@ const codeTypesSchema = z
   })
   .optional();
 
+/** Code unused detection configuration */
+const codeUnusedSchema = z
+  .object({
+    knip: knipConfigSchema,
+  })
+  .optional();
+
 /** Code files configuration */
 const codeFilesSchema = z
   .object({
@@ -121,6 +139,7 @@ const codeSchema = z
   .object({
     linting: codeLintingSchema,
     types: codeTypesSchema,
+    unused: codeUnusedSchema,
     complexity: codeLimitsSchema,
     files: codeFilesSchema,
   })
@@ -200,6 +219,9 @@ export const defaultConfig: Config = {
     },
     types: {
       tsc: { enabled: false },
+    },
+    unused: {
+      knip: { enabled: false },
     },
     complexity: {},
     files: {

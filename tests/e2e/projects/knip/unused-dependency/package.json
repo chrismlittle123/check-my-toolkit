@@ -1,0 +1,7 @@
+{
+  "name": "knip-unused-dependency-test",
+  "type": "module",
+  "dependencies": {
+    "lodash": "^4.17.21"
+  }
+}

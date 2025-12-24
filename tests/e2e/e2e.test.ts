@@ -394,6 +394,39 @@ const testCases: TestCase[] = [
     expectedExitCode: 2,
     expectedPatterns: ["Config error:", "not found"],
   },
+
+  // ============================================================
+  // Knip: Unused code detection
+  // ============================================================
+  {
+    name: "knip/unused-file detects orphaned files",
+    config: "tests/e2e/projects/knip/unused-file/check.toml",
+    command: "check",
+    expectedExitCode: 1,
+    expectedPatterns: ["Knip:", "Unused file", "orphan.ts"],
+  },
+  {
+    name: "knip/unused-dependency detects unused dependencies",
+    config: "tests/e2e/projects/knip/unused-dependency/check.toml",
+    command: "check",
+    expectedExitCode: 1,
+    expectedPatterns: ["Knip:", "Unused dependency", "lodash"],
+  },
+  {
+    name: "knip/clean passes when no unused code",
+    config: "tests/e2e/projects/knip/clean/check.toml",
+    command: "check",
+    expectedExitCode: 0,
+    expectedPatterns: ["Knip: passed", "All checks passed"],
+  },
+  {
+    name: "knip/disabled skips Knip when disabled",
+    config: "tests/e2e/projects/knip/disabled/check.toml",
+    command: "check",
+    expectedExitCode: 0,
+    expectedPatterns: ["CODE"],
+    notExpectedPatterns: ["Knip"],
+  },
 ];
 
 function runCli(command: string, config: string, format = "text"): { stdout: string; exitCode: number } {

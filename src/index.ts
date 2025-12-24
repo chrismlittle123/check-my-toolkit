@@ -39,6 +39,7 @@ export {
   auditCodeConfig,
   BaseToolRunner,
   ESLintRunner,
+  KnipRunner,
   RuffRunner,
   runCodeChecks,
   TscRunner,

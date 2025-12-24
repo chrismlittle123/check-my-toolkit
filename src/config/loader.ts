@@ -111,10 +111,19 @@ function mergeFiles(c: Config, dc: Config): CodeConfig["files"] {
   return { repo: arr(cf?.repo, df?.repo), tooling: arr(cf?.tooling, df?.tooling), docs: arr(cf?.docs, df?.docs) };
 }
 
+function mergeTypes(c: Config, dc: Config): CodeConfig["types"] {
+  return { tsc: merge(dc.code?.types?.tsc, c.code?.types?.tsc) };
+}
+
+function mergeUnused(c: Config, dc: Config): CodeConfig["unused"] {
+  return { knip: merge(dc.code?.unused?.knip, c.code?.unused?.knip) };
+}
+
 function mergeCode(c: Config, dc: Config): CodeConfig {
   return {
     linting: mergeLinting(c, dc),
-    types: { tsc: merge(dc.code?.types?.tsc, c.code?.types?.tsc) },
+    types: mergeTypes(c, dc),
+    unused: mergeUnused(c, dc),
     complexity: merge(dc.code?.complexity, c.code?.complexity),
     files: mergeFiles(c, dc),
   };
