@@ -12,11 +12,13 @@ The CODE domain validates source code quality through linting, type checking, fo
 ├── [code.formatting]   # Prettier, Black
 ├── [code.types]        # tsc, ty
 ├── [code.unused]       # Knip, Vulture
-├── [code.complexity]   # File/function size, nesting, cyclomatic
 ├── [code.tests]        # Test files exist, naming patterns
 ├── [code.security]     # Secrets, SAST, dependency audits
 └── [code.files]        # Required files & configs
 ```
+
+> **Note on complexity:** Use ESLint rules (`max-lines`, `max-depth`, `complexity`) for JS/TS
+> and Ruff rules (`C901`, `PLR0912`, `PLR0915`) for Python. Configure in your linter configs.
 
 ---
 
@@ -237,23 +239,6 @@ ignore_names = ["visit_*", "test_*", "_*"]
 ignore_decorators = ["@app.route", "@pytest.fixture", "@property"]
 paths = ["src/", "tests/"]
 exclude = ["**/migrations/**", "**/vendor/**"]
-```
-
-### Complexity: `[code.complexity]`
-
-| Check | Description | Tool Wrapped |
-|-------|-------------|--------------|
-| Max file lines | Maximum lines per file | Native AST |
-| Max function lines | Maximum lines per function | Native AST |
-| Max parameters | Maximum function parameters | Native AST |
-| Max nesting depth | Maximum nesting depth | Native AST |
-
-```toml
-[code.complexity]
-max_file_lines = 500
-max_function_lines = 50
-max_parameters = 5
-max_nesting_depth = 4
 ```
 
 ---
