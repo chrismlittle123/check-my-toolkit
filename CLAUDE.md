@@ -158,3 +158,15 @@ Uses changesets for versioning and automated npm publishing.
 - **patch** (0.0.X): Bug fixes, documentation, minor improvements
 - **minor** (0.X.0): New features, backwards-compatible changes
 - **major** (X.0.0): Breaking changes
+
+### Common Mistake: Forgetting Changesets
+
+**If npm publish doesn't trigger after merging to main, you probably forgot to create a changeset.**
+
+How changesets work:
+1. You create a `.changeset/*.md` file describing your change
+2. The Release workflow runs `npx changeset publish`
+3. If there are pending changesets → version bump + npm publish
+4. If there are NO changesets → nothing happens (no publish)
+
+**Always create a changeset for code changes before or with your PR.**
