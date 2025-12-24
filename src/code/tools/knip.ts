@@ -1,3 +1,5 @@
+import * as fs from "node:fs";
+
 import { execa } from "execa";
 
 import { type CheckResult, type Violation } from "../../types/index.js";
@@ -168,8 +170,7 @@ export class KnipRunner extends BaseToolRunner {
     const startTime = Date.now();
 
     // Check if package.json exists (required for Knip)
-    const hasPackageJson = this.configFiles.some(() => false) ||
-      (await import("node:fs")).existsSync(`${projectRoot}/package.json`);
+    const hasPackageJson = fs.existsSync(`${projectRoot}/package.json`);
 
     if (!hasPackageJson) {
       return this.fail(
