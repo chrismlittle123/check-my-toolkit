@@ -427,6 +427,41 @@ const testCases: TestCase[] = [
     expectedPatterns: ["CODE"],
     notExpectedPatterns: ["Knip"],
   },
+  {
+    name: "knip/unused-export detects unused exports",
+    config: "tests/e2e/projects/knip/unused-export/check.toml",
+    command: "check",
+    expectedExitCode: 1,
+    expectedPatterns: ["Knip:", "Unused export", "unusedExport"],
+  },
+  {
+    name: "knip/unused-type detects unused types",
+    config: "tests/e2e/projects/knip/unused-type/check.toml",
+    command: "check",
+    expectedExitCode: 1,
+    expectedPatterns: ["Knip:", "Unused type"],
+  },
+  {
+    name: "knip/unlisted-dependency detects unlisted dependencies",
+    config: "tests/e2e/projects/knip/unlisted-dependency/check.toml",
+    command: "check",
+    expectedExitCode: 1,
+    expectedPatterns: ["Knip:", "Unlisted dependency", "lodash"],
+  },
+  {
+    name: "knip/duplicate-export detects unused re-exports",
+    config: "tests/e2e/projects/knip/duplicate-export/check.toml",
+    command: "check",
+    expectedExitCode: 1,
+    expectedPatterns: ["Knip:", "Unused export", "helperAlias"],
+  },
+  {
+    name: "knip/audit passes when package.json exists",
+    config: "tests/e2e/projects/knip/clean/check.toml",
+    command: "audit",
+    expectedExitCode: 0,
+    expectedPatterns: ["Knip: passed"],
+  },
 ];
 
 function runCli(command: string, config: string, format = "text"): { stdout: string; exitCode: number } {
