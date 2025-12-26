@@ -1,6 +1,6 @@
 {
   "name": "check-my-toolkit",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Unified project health checks - code, process, and stack",
   "type": "module",
   "bin": {
