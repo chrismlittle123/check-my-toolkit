@@ -86,6 +86,17 @@ const knipConfigSchema = z
   .optional();
 
 // =============================================================================
+// Vulture Configuration (Python Dead Code Detection)
+// =============================================================================
+
+/** Vulture configuration */
+const vultureConfigSchema = z
+  .object({
+    enabled: z.boolean().optional().default(false),
+  })
+  .optional();
+
+// =============================================================================
 // Code Complexity / Limits Configuration
 // =============================================================================
 
@@ -122,6 +133,7 @@ const codeTypesSchema = z
 const codeUnusedSchema = z
   .object({
     knip: knipConfigSchema,
+    vulture: vultureConfigSchema,
   })
   .optional();
 
@@ -222,6 +234,7 @@ export const defaultConfig: Config = {
     },
     unused: {
       knip: { enabled: false },
+      vulture: { enabled: false },
     },
     complexity: {},
     files: {

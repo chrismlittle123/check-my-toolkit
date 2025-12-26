@@ -1,0 +1,3 @@
+[project]
+name = "vulture-unused-function-test"
+version = "0.1.0"
