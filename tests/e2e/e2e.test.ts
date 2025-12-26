@@ -462,6 +462,53 @@ const testCases: TestCase[] = [
     expectedExitCode: 0,
     expectedPatterns: ["Knip: passed"],
   },
+
+  // ============================================================
+  // Vulture: Dead Python code detection
+  // ============================================================
+  {
+    name: "vulture/clean passes when no dead code",
+    config: "tests/e2e/projects/vulture/clean/check.toml",
+    command: "check",
+    expectedExitCode: 0,
+    expectedPatterns: ["Vulture: passed", "All checks passed"],
+  },
+  {
+    name: "vulture/disabled skips Vulture when disabled",
+    config: "tests/e2e/projects/vulture/disabled/check.toml",
+    command: "check",
+    expectedExitCode: 0,
+    expectedPatterns: ["CODE"],
+    notExpectedPatterns: ["Vulture"],
+  },
+  {
+    name: "vulture/unused-function detects unused functions",
+    config: "tests/e2e/projects/vulture/unused-function/check.toml",
+    command: "check",
+    expectedExitCode: 1,
+    expectedPatterns: ["Vulture:", "unused", "unused_helper"],
+  },
+  {
+    name: "vulture/unused-import detects unused imports",
+    config: "tests/e2e/projects/vulture/unused-import/check.toml",
+    command: "check",
+    expectedExitCode: 1,
+    expectedPatterns: ["Vulture:", "unused", "os"],
+  },
+  {
+    name: "vulture/unused-variable detects unused variables",
+    config: "tests/e2e/projects/vulture/unused-variable/check.toml",
+    command: "check",
+    expectedExitCode: 1,
+    expectedPatterns: ["Vulture:", "unused", "unused_var"],
+  },
+  {
+    name: "vulture/audit passes when pyproject.toml exists",
+    config: "tests/e2e/projects/vulture/clean/check.toml",
+    command: "audit",
+    expectedExitCode: 0,
+    expectedPatterns: ["Vulture: passed"],
+  },
 ];
 
 function runCli(command: string, config: string, format = "text"): { stdout: string; exitCode: number } {

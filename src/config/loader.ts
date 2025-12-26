@@ -116,7 +116,10 @@ function mergeTypes(c: Config, dc: Config): CodeConfig["types"] {
 }
 
 function mergeUnused(c: Config, dc: Config): CodeConfig["unused"] {
-  return { knip: merge(dc.code?.unused?.knip, c.code?.unused?.knip) };
+  return {
+    knip: merge(dc.code?.unused?.knip, c.code?.unused?.knip),
+    vulture: merge(dc.code?.unused?.vulture, c.code?.unused?.vulture),
+  };
 }
 
 function mergeCode(c: Config, dc: Config): CodeConfig {
