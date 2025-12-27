@@ -43,6 +43,7 @@ export {
   RuffRunner,
   runCodeChecks,
   TscRunner,
+  VultureRunner,
 } from "./code/index.js";
 
 // Output
