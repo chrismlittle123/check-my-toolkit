@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.0
+
+### Minor Changes
+
+- 4ea0f7f: Add Ruff format checking support. Enable with `format = true` in `[code.linting.ruff]` to check Python code formatting using `ruff format --check`.
+
 ## 0.2.1
 
 ### Patch Changes
