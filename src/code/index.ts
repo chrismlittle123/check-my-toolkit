@@ -4,18 +4,19 @@ import {
   DomainResult,
   type IToolRunner,
 } from "../types/index.js";
-import { ESLintRunner, KnipRunner, RuffFormatRunner, RuffRunner, TscRunner, VultureRunner } from "./tools/index.js";
+import { ESLintRunner, KnipRunner, PrettierRunner, RuffFormatRunner, RuffRunner, TscRunner, VultureRunner } from "./tools/index.js";
 
 // Tool runner instances
 const eslint = new ESLintRunner();
 const knip = new KnipRunner();
+const prettier = new PrettierRunner();
 const ruff = new RuffRunner();
 const ruffFormat = new RuffFormatRunner();
 const tsc = new TscRunner();
 const vulture = new VultureRunner();
 
 // Export tool runners for direct access
-export { BaseToolRunner, ESLintRunner, KnipRunner, RuffFormatRunner, RuffRunner, TscRunner, VultureRunner } from "./tools/index.js";
+export { BaseToolRunner, ESLintRunner, KnipRunner, PrettierRunner, RuffFormatRunner, RuffRunner, TscRunner, VultureRunner } from "./tools/index.js";
 
 /** Tool configuration entry mapping config getter to runner */
 interface ToolEntry {
@@ -33,6 +34,7 @@ const toolRegistry: ToolEntry[] = [
   { isEnabled: (c) => isEnabled(c.code?.linting?.eslint), runner: eslint },
   { isEnabled: (c) => isEnabled(c.code?.linting?.ruff), runner: ruff },
   { isEnabled: (c) => isEnabled(c.code?.linting?.ruff) && c.code?.linting?.ruff?.format === true, runner: ruffFormat },
+  { isEnabled: (c) => isEnabled(c.code?.formatting?.prettier), runner: prettier },
   { isEnabled: (c) => isEnabled(c.code?.types?.tsc), runner: tsc },
   { isEnabled: (c) => isEnabled(c.code?.unused?.knip), runner: knip },
   { isEnabled: (c) => isEnabled(c.code?.unused?.vulture), runner: vulture },

@@ -1,6 +1,7 @@
 export { BaseToolRunner } from "./base.js";
 export { ESLintRunner } from "./eslint.js";
 export { KnipRunner } from "./knip.js";
+export { PrettierRunner } from "./prettier.js";
 export { RuffRunner } from "./ruff.js";
 export { RuffFormatRunner } from "./ruff-format.js";
 export { TscRunner } from "./tsc.js";

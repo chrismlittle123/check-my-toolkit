@@ -98,6 +98,17 @@ const vultureConfigSchema = z
   .optional();
 
 // =============================================================================
+// Prettier Configuration
+// =============================================================================
+
+/** Prettier configuration */
+const prettierConfigSchema = z
+  .object({
+    enabled: z.boolean().optional().default(false),
+  })
+  .optional();
+
+// =============================================================================
 // Code Complexity / Limits Configuration
 // =============================================================================
 
@@ -120,6 +131,13 @@ const codeLintingSchema = z
   .object({
     eslint: eslintConfigSchema,
     ruff: ruffConfigSchema,
+  })
+  .optional();
+
+/** Code formatting configuration */
+const codeFormattingSchema = z
+  .object({
+    prettier: prettierConfigSchema,
   })
   .optional();
 
@@ -151,6 +169,7 @@ const codeFilesSchema = z
 const codeSchema = z
   .object({
     linting: codeLintingSchema,
+    formatting: codeFormattingSchema,
     types: codeTypesSchema,
     unused: codeUnusedSchema,
     complexity: codeLimitsSchema,
@@ -229,6 +248,9 @@ export const defaultConfig: Config = {
     linting: {
       eslint: { enabled: false },
       ruff: { enabled: false, format: false },
+    },
+    formatting: {
+      prettier: { enabled: false },
     },
     types: {
       tsc: { enabled: false },

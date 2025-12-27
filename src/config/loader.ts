@@ -122,9 +122,16 @@ function mergeUnused(c: Config, dc: Config): CodeConfig["unused"] {
   };
 }
 
+function mergeFormatting(c: Config, dc: Config): CodeConfig["formatting"] {
+  return {
+    prettier: merge(dc.code?.formatting?.prettier, c.code?.formatting?.prettier),
+  };
+}
+
 function mergeCode(c: Config, dc: Config): CodeConfig {
   return {
     linting: mergeLinting(c, dc),
+    formatting: mergeFormatting(c, dc),
     types: mergeTypes(c, dc),
     unused: mergeUnused(c, dc),
     complexity: merge(dc.code?.complexity, c.code?.complexity),
