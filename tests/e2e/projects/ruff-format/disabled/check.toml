@@ -1,0 +1,3 @@
+[code.linting.ruff]
+enabled = true
+format = false

@@ -4,40 +4,45 @@ import {
   DomainResult,
   type IToolRunner,
 } from "../types/index.js";
-import { ESLintRunner, KnipRunner, RuffRunner, TscRunner, VultureRunner } from "./tools/index.js";
+import { ESLintRunner, KnipRunner, RuffFormatRunner, RuffRunner, TscRunner, VultureRunner } from "./tools/index.js";
 
 // Tool runner instances
 const eslint = new ESLintRunner();
 const knip = new KnipRunner();
 const ruff = new RuffRunner();
+const ruffFormat = new RuffFormatRunner();
 const tsc = new TscRunner();
 const vulture = new VultureRunner();
 
 // Export tool runners for direct access
-export { BaseToolRunner, ESLintRunner, KnipRunner, RuffRunner, TscRunner, VultureRunner } from "./tools/index.js";
+export { BaseToolRunner, ESLintRunner, KnipRunner, RuffFormatRunner, RuffRunner, TscRunner, VultureRunner } from "./tools/index.js";
+
+/** Tool configuration entry mapping config getter to runner */
+interface ToolEntry {
+  isEnabled: (config: Config) => boolean;
+  runner: IToolRunner;
+}
 
 /** Check if a tool is enabled in config */
 function isEnabled(toolConfig: { enabled?: boolean } | undefined): boolean {
   return toolConfig?.enabled === true;
 }
 
+/** All available tools with their config predicates */
+const toolRegistry: ToolEntry[] = [
+  { isEnabled: (c) => isEnabled(c.code?.linting?.eslint), runner: eslint },
+  { isEnabled: (c) => isEnabled(c.code?.linting?.ruff), runner: ruff },
+  { isEnabled: (c) => isEnabled(c.code?.linting?.ruff) && c.code?.linting?.ruff?.format === true, runner: ruffFormat },
+  { isEnabled: (c) => isEnabled(c.code?.types?.tsc), runner: tsc },
+  { isEnabled: (c) => isEnabled(c.code?.unused?.knip), runner: knip },
+  { isEnabled: (c) => isEnabled(c.code?.unused?.vulture), runner: vulture },
+];
+
 /**
  * Get enabled tools based on configuration
  */
 function getEnabledTools(config: Config): IToolRunner[] {
-  const code = config.code ?? {};
-  const linting = code.linting ?? {};
-  const types = code.types ?? {};
-  const unused = code.unused ?? {};
-  const tools: IToolRunner[] = [];
-
-  if (isEnabled(linting.eslint)) tools.push(eslint);
-  if (isEnabled(linting.ruff)) tools.push(ruff);
-  if (isEnabled(types.tsc)) tools.push(tsc);
-  if (isEnabled(unused.knip)) tools.push(knip);
-  if (isEnabled(unused.vulture)) tools.push(vulture);
-
-  return tools;
+  return toolRegistry.filter((entry) => entry.isEnabled(config)).map((entry) => entry.runner);
 }
 
 /**
