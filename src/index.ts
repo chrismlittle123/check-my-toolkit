@@ -40,6 +40,7 @@ export {
   BaseToolRunner,
   ESLintRunner,
   KnipRunner,
+  RuffFormatRunner,
   RuffRunner,
   runCodeChecks,
   TscRunner,

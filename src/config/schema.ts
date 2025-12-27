@@ -38,6 +38,7 @@ const ruffLintSchema = z
 const ruffConfigSchema = z
   .object({
     enabled: z.boolean().optional().default(true),
+    format: z.boolean().optional().default(false), // Also check formatting with ruff format
     "line-length": z.number().int().positive().optional(),
     lint: ruffLintSchema,
   })
@@ -227,7 +228,7 @@ export const defaultConfig: Config = {
   code: {
     linting: {
       eslint: { enabled: false },
-      ruff: { enabled: false },
+      ruff: { enabled: false, format: false },
     },
     types: {
       tsc: { enabled: false },

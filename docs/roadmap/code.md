@@ -8,14 +8,17 @@ The CODE domain validates source code quality through linting, type checking, fo
 
 ```toml
 [code]
-├── [code.linting]      # ESLint, Ruff
-├── [code.formatting]   # Prettier, Black
+├── [code.linting]      # ESLint, Ruff (lint)
+├── [code.formatting]   # Prettier, Ruff (format)
 ├── [code.types]        # tsc, ty
 ├── [code.unused]       # Knip, Vulture
 ├── [code.tests]        # Test files exist, naming patterns
 ├── [code.security]     # Secrets, SAST, dependency audits
 └── [code.files]        # Required files & configs
 ```
+
+> **Note on Ruff:** Ruff handles both linting (`ruff check`) and formatting (`ruff format`),
+> replacing the need for separate Black installation. Configure in `ruff.toml`.
 
 > **Note on complexity:** Use ESLint rules (`max-lines`, `max-depth`, `complexity`) for JS/TS
 > and Ruff rules (`C901`, `PLR0912`, `PLR0915`) for Python. Configure in your linter configs.
@@ -157,12 +160,18 @@ code: 4 violations found
 | Check | Description | Tool Wrapped |
 |-------|-------------|--------------|
 | Prettier | JavaScript/TypeScript formatting | Prettier |
-| Black | Python formatting | Black |
+| Ruff Format | Python formatting | Ruff (`ruff format`) |
+
+> **Note:** Ruff's formatter is a drop-in replacement for Black, producing nearly identical
+> output but ~100x faster. No need for separate Black installation.
 
 ```toml
 [code.formatting]
 prettier = true
-black = true
+
+[code.linting.ruff]
+enabled = true
+format = true  # Also check formatting with ruff format
 ```
 
 ### Tests: `[code.tests]`

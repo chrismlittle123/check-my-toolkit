@@ -509,6 +509,32 @@ const testCases: TestCase[] = [
     expectedExitCode: 0,
     expectedPatterns: ["Vulture: passed"],
   },
+
+  // ============================================================
+  // Ruff Format: Python code formatting
+  // ============================================================
+  {
+    name: "ruff-format/clean passes when code is formatted",
+    config: "tests/e2e/projects/ruff-format/clean/check.toml",
+    command: "check",
+    expectedExitCode: 0,
+    expectedPatterns: ["Ruff Format: passed", "All checks passed"],
+  },
+  {
+    name: "ruff-format/unformatted detects unformatted code",
+    config: "tests/e2e/projects/ruff-format/unformatted/check.toml",
+    command: "check",
+    expectedExitCode: 1,
+    expectedPatterns: ["Ruff Format:", "not formatted correctly"],
+  },
+  {
+    name: "ruff-format/disabled skips when format is false",
+    config: "tests/e2e/projects/ruff-format/disabled/check.toml",
+    command: "check",
+    expectedExitCode: 0,
+    expectedPatterns: ["Ruff: passed"],
+    notExpectedPatterns: ["Ruff Format"],
+  },
 ];
 
 function runCli(command: string, config: string, format = "text"): { stdout: string; exitCode: number } {
