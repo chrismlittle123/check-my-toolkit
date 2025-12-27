@@ -28,8 +28,8 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install Ruff
-        run: pip install ruff
+      - name: Install Python tools (Ruff, Vulture)
+        run: pip install ruff vulture
 
       - name: Install dependencies
         run: npm ci
