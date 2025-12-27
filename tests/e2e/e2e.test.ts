@@ -535,6 +535,32 @@ const testCases: TestCase[] = [
     expectedPatterns: ["Ruff: passed"],
     notExpectedPatterns: ["Ruff Format"],
   },
+
+  // ============================================================
+  // Prettier: JavaScript/TypeScript code formatting
+  // ============================================================
+  {
+    name: "prettier/clean passes when code is formatted",
+    config: "tests/e2e/projects/prettier/clean/check.toml",
+    command: "check",
+    expectedExitCode: 0,
+    expectedPatterns: ["Prettier: passed", "All checks passed"],
+  },
+  {
+    name: "prettier/unformatted detects unformatted code",
+    config: "tests/e2e/projects/prettier/unformatted/check.toml",
+    command: "check",
+    expectedExitCode: 1,
+    expectedPatterns: ["Prettier:", "not formatted correctly"],
+  },
+  {
+    name: "prettier/disabled skips when prettier is disabled",
+    config: "tests/e2e/projects/prettier/disabled/check.toml",
+    command: "check",
+    expectedExitCode: 0,
+    expectedPatterns: ["CODE"],
+    notExpectedPatterns: ["Prettier"],
+  },
 ];
 
 function runCli(command: string, config: string, format = "text"): { stdout: string; exitCode: number } {
