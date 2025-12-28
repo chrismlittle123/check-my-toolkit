@@ -4,9 +4,9 @@ import {
   DomainResult,
   type IToolRunner,
 } from "../types/index.js";
-import { ESLintRunner, KnipRunner, PrettierRunner, RuffFormatRunner, RuffRunner, TscRunner, VultureRunner } from "./tools/index.js";
+import { ESLintRunner, KnipRunner, PrettierRunner, RuffFormatRunner, RuffRunner, TestsRunner, TscRunner, VultureRunner } from "./tools/index.js";
 
-// Tool runner instances
+// Tool runner instances (singletons for tools that don't need per-run config)
 const eslint = new ESLintRunner();
 const knip = new KnipRunner();
 const prettier = new PrettierRunner();
@@ -16,17 +16,28 @@ const tsc = new TscRunner();
 const vulture = new VultureRunner();
 
 // Export tool runners for direct access
-export { BaseToolRunner, ESLintRunner, KnipRunner, PrettierRunner, RuffFormatRunner, RuffRunner, TscRunner, VultureRunner } from "./tools/index.js";
+export { BaseToolRunner, ESLintRunner, KnipRunner, PrettierRunner, RuffFormatRunner, RuffRunner, TestsRunner, TscRunner, VultureRunner } from "./tools/index.js";
 
-/** Tool configuration entry mapping config getter to runner */
+/** Tool configuration entry mapping config getter to runner or runner factory */
 interface ToolEntry {
   isEnabled: (config: Config) => boolean;
-  runner: IToolRunner;
+  runner: IToolRunner | ((config: Config) => IToolRunner);
 }
 
 /** Check if a tool is enabled in config */
 function isEnabled(toolConfig: { enabled?: boolean } | undefined): boolean {
   return toolConfig?.enabled === true;
+}
+
+/** Create a configured TestsRunner */
+function createTestsRunner(config: Config): TestsRunner {
+  const runner = new TestsRunner();
+  runner.setConfig({
+    enabled: config.code?.tests?.enabled,
+    pattern: config.code?.tests?.pattern,
+    min_test_files: config.code?.tests?.min_test_files,
+  });
+  return runner;
 }
 
 /** All available tools with their config predicates */
@@ -38,13 +49,16 @@ const toolRegistry: ToolEntry[] = [
   { isEnabled: (c) => isEnabled(c.code?.types?.tsc), runner: tsc },
   { isEnabled: (c) => isEnabled(c.code?.unused?.knip), runner: knip },
   { isEnabled: (c) => isEnabled(c.code?.unused?.vulture), runner: vulture },
+  { isEnabled: (c) => isEnabled(c.code?.tests), runner: createTestsRunner },
 ];
 
 /**
  * Get enabled tools based on configuration
  */
 function getEnabledTools(config: Config): IToolRunner[] {
-  return toolRegistry.filter((entry) => entry.isEnabled(config)).map((entry) => entry.runner);
+  return toolRegistry
+    .filter((entry) => entry.isEnabled(config))
+    .map((entry) => (typeof entry.runner === "function" ? entry.runner(config) : entry.runner));
 }
 
 /**

@@ -44,6 +44,7 @@ export {
   RuffFormatRunner,
   RuffRunner,
   runCodeChecks,
+  TestsRunner,
   TscRunner,
   VultureRunner,
 } from "./code/index.js";
