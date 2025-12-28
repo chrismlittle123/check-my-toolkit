@@ -128,12 +128,17 @@ function mergeFormatting(c: Config, dc: Config): CodeConfig["formatting"] {
   };
 }
 
+function mergeTests(c: Config, dc: Config): CodeConfig["tests"] {
+  return merge(dc.code?.tests, c.code?.tests);
+}
+
 function mergeCode(c: Config, dc: Config): CodeConfig {
   return {
     linting: mergeLinting(c, dc),
     formatting: mergeFormatting(c, dc),
     types: mergeTypes(c, dc),
     unused: mergeUnused(c, dc),
+    tests: mergeTests(c, dc),
     complexity: merge(dc.code?.complexity, c.code?.complexity),
     files: mergeFiles(c, dc),
   };

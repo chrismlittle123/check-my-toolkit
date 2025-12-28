@@ -561,6 +561,39 @@ const testCases: TestCase[] = [
     expectedPatterns: ["CODE"],
     notExpectedPatterns: ["Prettier"],
   },
+
+  // ============================================================
+  // Tests Validation: Test file existence
+  // ============================================================
+  {
+    name: "tests-validation/with-tests passes when test files exist",
+    config: "tests/e2e/projects/tests-validation/with-tests/check.toml",
+    command: "check",
+    expectedExitCode: 0,
+    expectedPatterns: ["Tests: passed", "All checks passed"],
+  },
+  {
+    name: "tests-validation/no-tests fails when no test files exist",
+    config: "tests/e2e/projects/tests-validation/no-tests/check.toml",
+    command: "check",
+    expectedExitCode: 1,
+    expectedPatterns: ["Tests:", "No test files found"],
+  },
+  {
+    name: "tests-validation/custom-pattern uses custom pattern",
+    config: "tests/e2e/projects/tests-validation/custom-pattern/check.toml",
+    command: "check",
+    expectedExitCode: 0,
+    expectedPatterns: ["Tests: passed"],
+  },
+  {
+    name: "tests-validation/disabled skips when tests validation is disabled",
+    config: "tests/e2e/projects/tests-validation/disabled/check.toml",
+    command: "check",
+    expectedExitCode: 0,
+    expectedPatterns: ["CODE"],
+    notExpectedPatterns: ["Tests"],
+  },
 ];
 
 function runCli(command: string, config: string, format = "text"): { stdout: string; exitCode: number } {

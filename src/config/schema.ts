@@ -109,6 +109,19 @@ const prettierConfigSchema = z
   .optional();
 
 // =============================================================================
+// Tests Validation Configuration
+// =============================================================================
+
+/** Tests validation configuration */
+const testsConfigSchema = z
+  .object({
+    enabled: z.boolean().optional().default(false),
+    pattern: z.string().optional(), // Glob pattern for test files
+    min_test_files: z.number().int().positive().optional(), // Minimum test files required
+  })
+  .optional();
+
+// =============================================================================
 // Code Complexity / Limits Configuration
 // =============================================================================
 
@@ -172,6 +185,7 @@ const codeSchema = z
     formatting: codeFormattingSchema,
     types: codeTypesSchema,
     unused: codeUnusedSchema,
+    tests: testsConfigSchema,
     complexity: codeLimitsSchema,
     files: codeFilesSchema,
   })
@@ -258,6 +272,9 @@ export const defaultConfig: Config = {
     unused: {
       knip: { enabled: false },
       vulture: { enabled: false },
+    },
+    tests: {
+      enabled: false,
     },
     complexity: {},
     files: {
