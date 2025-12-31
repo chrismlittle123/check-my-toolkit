@@ -19,10 +19,22 @@ Tool Implementations: ~1,550 lines of TypeScript
 |---------|-------------|
 | `cm code check` | Run all enabled code checks |
 | `cm code audit` | Verify tool configs exist without running checks |
-| `cm validate` | Validate check.toml configuration |
-| `cm check` | Alias for `cm code check` |
-| `cm audit` | Alias for `cm code audit` |
+| `cm validate` | Validate check.toml configuration (uses Zod schema) |
 | `cm init` | Create default check.toml |
+
+### How `cm validate` Works
+
+Validates your `check.toml` in two steps:
+1. **TOML parsing** - Checks syntax via `@iarna/toml`
+2. **Schema validation** - Validates structure via Zod schema (`configSchema.safeParse()`)
+
+```bash
+$ cm validate
+✓ Valid: /path/to/check.toml
+
+$ cm validate -f json
+{"valid": true, "configPath": "/path/to/check.toml"}
+```
 
 ### Output Formats
 
