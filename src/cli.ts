@@ -90,22 +90,6 @@ async function runAudit(options: { config?: string; format: string }): Promise<v
 // Top-level commands
 // =============================================================================
 
-// cm check - runs all domain checks (currently only CODE)
-program
-  .command("check")
-  .description("Run all checks (linting, type checking)")
-  .option("-c, --config <path>", "Path to check.toml config file")
-  .option("-f, --format <format>", "Output format: text or json", "text")
-  .action(runCheck);
-
-// cm audit - runs all domain audits (currently only CODE)
-program
-  .command("audit")
-  .description("Verify all configs exist (no tool execution)")
-  .option("-c, --config <path>", "Path to check.toml config file")
-  .option("-f, --format <format>", "Output format: text or json", "text")
-  .action(runAudit);
-
 // cm init - create check.toml with defaults
 program
   .command("init")
