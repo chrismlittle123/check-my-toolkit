@@ -76,6 +76,17 @@ const tscConfigSchema = z
   .optional();
 
 // =============================================================================
+// ty Configuration (Python Type Checking)
+// =============================================================================
+
+/** ty Python type checker configuration */
+const tyConfigSchema = z
+  .object({
+    enabled: z.boolean().optional().default(false),
+  })
+  .optional();
+
+// =============================================================================
 // Knip Configuration (Unused Code Detection)
 // =============================================================================
 
@@ -158,6 +169,7 @@ const codeFormattingSchema = z
 const codeTypesSchema = z
   .object({
     tsc: tscConfigSchema,
+    ty: tyConfigSchema,
   })
   .optional();
 
@@ -268,6 +280,7 @@ export const defaultConfig: Config = {
     },
     types: {
       tsc: { enabled: false },
+      ty: { enabled: false },
     },
     unused: {
       knip: { enabled: false },

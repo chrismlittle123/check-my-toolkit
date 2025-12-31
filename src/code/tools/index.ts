@@ -6,4 +6,5 @@ export { RuffRunner } from "./ruff.js";
 export { RuffFormatRunner } from "./ruff-format.js";
 export { TestsRunner } from "./tests.js";
 export { TscRunner } from "./tsc.js";
+export { TyRunner } from "./ty.js";
 export { VultureRunner } from "./vulture.js";

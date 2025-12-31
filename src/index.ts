@@ -46,6 +46,7 @@ export {
   runCodeChecks,
   TestsRunner,
   TscRunner,
+  TyRunner,
   VultureRunner,
 } from "./code/index.js";
 

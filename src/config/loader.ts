@@ -112,7 +112,10 @@ function mergeFiles(c: Config, dc: Config): CodeConfig["files"] {
 }
 
 function mergeTypes(c: Config, dc: Config): CodeConfig["types"] {
-  return { tsc: merge(dc.code?.types?.tsc, c.code?.types?.tsc) };
+  return {
+    tsc: merge(dc.code?.types?.tsc, c.code?.types?.tsc),
+    ty: merge(dc.code?.types?.ty, c.code?.types?.ty),
+  };
 }
 
 function mergeUnused(c: Config, dc: Config): CodeConfig["unused"] {
