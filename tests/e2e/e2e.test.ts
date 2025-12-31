@@ -594,6 +594,32 @@ const testCases: TestCase[] = [
     expectedPatterns: ["CODE"],
     notExpectedPatterns: ["Tests"],
   },
+
+  // ============================================================
+  // ty: Python type checking
+  // ============================================================
+  {
+    name: "ty/clean passes when no type errors",
+    config: "tests/e2e/projects/ty/clean/check.toml",
+    command: "check",
+    expectedExitCode: 0,
+    expectedPatterns: ["ty: passed"],
+  },
+  {
+    name: "ty/type-error detects type errors",
+    config: "tests/e2e/projects/ty/type-error/check.toml",
+    command: "check",
+    expectedExitCode: 1,
+    expectedPatterns: ["ty:", "invalid-assignment"],
+  },
+  {
+    name: "ty/disabled skips when ty is disabled",
+    config: "tests/e2e/projects/ty/disabled/check.toml",
+    command: "check",
+    expectedExitCode: 0,
+    expectedPatterns: ["CODE"],
+    notExpectedPatterns: ["ty:"],
+  },
 ];
 
 function runCli(command: string, config: string, format = "text"): { stdout: string; exitCode: number } {
