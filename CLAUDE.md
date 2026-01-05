@@ -6,6 +6,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with th
 
 check-my-toolkit is a unified CLI tool (`cm`) for project health checks. It currently focuses on the CODE domain (linting and type checking) with planned expansion to PROCESS (workflow enforcement) and STACK (environment validation) domains.
 
+## Prerequisites
+
+Install system dependencies (macOS):
+
+```bash
+brew bundle
+```
+
+This installs Python 3.13, Ruff, and Vulture which are required for running tests.
+
 ## Common Commands
 
 ```bash

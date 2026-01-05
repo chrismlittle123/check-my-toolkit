@@ -65,6 +65,11 @@ export class RuffRunner extends BaseToolRunner {
     }
   }
 
+  private isBinaryNotFound(result: Awaited<ReturnType<typeof execa>>): boolean {
+    const execaResult = result as Awaited<ReturnType<typeof execa>> & { code?: string; message?: string };
+    return execaResult.code === "ENOENT" || (execaResult.failed && String(execaResult.message ?? "").includes("ENOENT"));
+  }
+
   async run(projectRoot: string): Promise<CheckResult> {
     const startTime = Date.now();
 
@@ -79,6 +84,11 @@ export class RuffRunner extends BaseToolRunner {
         reject: false,
         timeout: 5 * 60 * 1000,
       });
+
+      // Check if ruff binary was not found
+      if (this.isBinaryNotFound(result)) {
+        return this.skipNotInstalled(Date.now() - startTime);
+      }
 
       const violations = this.parseOutput(result.stdout, projectRoot);
 

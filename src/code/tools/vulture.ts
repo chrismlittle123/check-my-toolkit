@@ -43,6 +43,12 @@ export class VultureRunner extends BaseToolRunner {
         timeout: 5 * 60 * 1000,
       });
 
+      // Check if vulture binary was not found
+      const execaResult = result as typeof result & { code?: string; message?: string };
+      if (execaResult.code === "ENOENT" || (execaResult.failed && String(execaResult.message ?? "").includes("ENOENT"))) {
+        return this.skipNotInstalled(Date.now() - startTime);
+      }
+
       // Vulture outputs to stdout, one issue per line
       const violations = this.parseOutput(result.stdout, projectRoot);
 
