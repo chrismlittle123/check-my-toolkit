@@ -27,36 +27,30 @@ export class VultureRunner extends BaseToolRunner {
     }
   }
 
+  private isBinaryNotFound(result: Awaited<ReturnType<typeof execa>>): boolean {
+    const execaResult = result as typeof result & { code?: string; message?: string };
+    return execaResult.code === "ENOENT" || (execaResult.failed && String(execaResult.message ?? "").includes("ENOENT"));
+  }
+
   async run(projectRoot: string): Promise<CheckResult> {
     const startTime = Date.now();
 
-    // Skip if no Python files
     if (!(await this.hasPythonFiles(projectRoot))) {
       return this.skip("No Python files found", Date.now() - startTime);
     }
 
     try {
-      // Run vulture on the project root
       const result = await execa("vulture", ["."], {
         cwd: projectRoot,
         reject: false,
         timeout: 5 * 60 * 1000,
       });
 
-      // Check if vulture binary was not found
-      const execaResult = result as typeof result & { code?: string; message?: string };
-      if (execaResult.code === "ENOENT" || (execaResult.failed && String(execaResult.message ?? "").includes("ENOENT"))) {
+      if (this.isBinaryNotFound(result)) {
         return this.skipNotInstalled(Date.now() - startTime);
       }
 
-      // Vulture outputs to stdout, one issue per line
-      const violations = this.parseOutput(result.stdout, projectRoot);
-
-      // Vulture exit codes (as of v2.9+):
-      // 0: No dead code found
-      // 1: Invalid input (file missing, syntax error, wrong encoding)
-      // 2: Invalid command line arguments
-      // 3: Dead code was found
+      // Vulture exit codes: 0=clean, 1=invalid input, 2=invalid args, 3=dead code
       if (result.exitCode === 1 || result.exitCode === 2) {
         return this.fail(
           [this.createErrorViolation(`Vulture error: ${result.stderr || result.stdout}`)],
@@ -64,18 +58,18 @@ export class VultureRunner extends BaseToolRunner {
         );
       }
 
-      return this.fromViolations(violations, Date.now() - startTime);
+      return this.fromViolations(this.parseOutput(result.stdout, projectRoot), Date.now() - startTime);
     } catch (error) {
-      if (this.isNotInstalledError(error)) {
-        return this.skipNotInstalled(Date.now() - startTime);
-      }
-
-      const message = error instanceof Error ? error.message : "Unknown error";
-      return this.fail(
-        [this.createErrorViolation(`Vulture error: ${message}`)],
-        Date.now() - startTime
-      );
+      return this.handleRunError(error, startTime);
     }
+  }
+
+  private handleRunError(error: unknown, startTime: number): CheckResult {
+    if (this.isNotInstalledError(error)) {
+      return this.skipNotInstalled(Date.now() - startTime);
+    }
+    const message = error instanceof Error ? error.message : "Unknown error";
+    return this.fail([this.createErrorViolation(`Vulture error: ${message}`)], Date.now() - startTime);
   }
 
   private skip(reason: string, duration: number): CheckResult {
