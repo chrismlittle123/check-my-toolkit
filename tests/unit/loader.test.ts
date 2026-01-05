@@ -148,38 +148,37 @@ enabled = true
     expect(result.config.code?.types?.tsc?.enabled).toBe(false);
   });
 
-  it("merges files arrays from user config", () => {
+  it("merges security config from user config", () => {
     const configPath = path.join(tempDir, "check.toml");
     fs.writeFileSync(
       configPath,
       `
-[code.files]
-repo = ["src/**/*.ts"]
+[code.security.npmaudit]
+enabled = true
 `
     );
 
     const result = loadConfig(configPath);
-    expect(result.config.code?.files?.repo).toEqual(["src/**/*.ts"]);
-    expect(result.config.code?.files?.tooling).toEqual([]);
-    expect(result.config.code?.files?.docs).toEqual([]);
+    expect(result.config.code?.security?.npmaudit?.enabled).toBe(true);
+    expect(result.config.code?.security?.pipaudit?.enabled).toBe(false);
   });
 
-  it("handles files config with all arrays specified", () => {
+  it("handles security config with both tools enabled", () => {
     const configPath = path.join(tempDir, "check.toml");
     fs.writeFileSync(
       configPath,
       `
-[code.files]
-repo = ["src/**/*.ts"]
-tooling = ["eslint.config.js"]
-docs = ["README.md"]
+[code.security.npmaudit]
+enabled = true
+
+[code.security.pipaudit]
+enabled = true
 `
     );
 
     const result = loadConfig(configPath);
-    expect(result.config.code?.files?.repo).toEqual(["src/**/*.ts"]);
-    expect(result.config.code?.files?.tooling).toEqual(["eslint.config.js"]);
-    expect(result.config.code?.files?.docs).toEqual(["README.md"]);
+    expect(result.config.code?.security?.npmaudit?.enabled).toBe(true);
+    expect(result.config.code?.security?.pipaudit?.enabled).toBe(true);
   });
 
   it("merges complexity settings", () => {

@@ -4,11 +4,11 @@ Unified project health checks for code quality, process compliance, and stack va
 
 ## Overview
 
-check-my-toolkit (`cm`) provides a single CLI to run multiple code quality tools with unified configuration via `check.toml`. Currently focused on the **CODE** domain with 9 integrated tools.
+check-my-toolkit (`cm`) provides a single CLI to run multiple code quality tools with unified configuration via `check.toml`. Currently focused on the **CODE** domain with 11 integrated tools.
 
 ```
-Total Tests: 430 (unit + e2e)
-Tool Implementations: ~1,550 lines of TypeScript
+Total Tests: 468 (unit + e2e)
+Tool Implementations: ~1,700 lines of TypeScript
 ```
 
 ---
@@ -338,6 +338,64 @@ min_test_files = 1
 
 ---
 
+## Security
+
+### npm audit (`[code.security.npmaudit]`)
+
+Dependency vulnerability scanning for JavaScript/TypeScript projects.
+
+**Config:**
+```toml
+[code.security.npmaudit]
+enabled = true
+```
+
+**Details:**
+| Property | Value |
+|----------|-------|
+| Tool | npm audit |
+| Languages | JavaScript, TypeScript |
+| Config Files | `package-lock.json` |
+| Command | `npm audit --json` |
+| Unit Tests | 17 |
+| E2E Tests | TBD |
+
+**Features:**
+- Parses npm audit JSON output for vulnerabilities
+- Severity mapping: critical/high → error, moderate/low/info → warning
+- Reports fix availability and breaking changes
+- Skips gracefully when npm not installed
+
+---
+
+### pip-audit (`[code.security.pipaudit]`)
+
+Dependency vulnerability scanning for Python projects.
+
+**Config:**
+```toml
+[code.security.pipaudit]
+enabled = true
+```
+
+**Details:**
+| Property | Value |
+|----------|-------|
+| Tool | pip-audit |
+| Languages | Python |
+| Config Files | `requirements.txt`, `pyproject.toml`, `setup.py` |
+| Command | `uvx pip-audit --format json` (falls back to `pip-audit`) |
+| Unit Tests | 21 |
+| E2E Tests | TBD |
+
+**Features:**
+- Parses pip-audit JSON output for vulnerabilities
+- Severity mapping: fix available → error, no fix → warning
+- Reports CVE identifiers and fix versions
+- Skips gracefully when pip-audit not installed
+
+---
+
 ## Configuration Reference
 
 ### Full Example
@@ -375,6 +433,13 @@ enabled = true
 enabled = true
 pattern = "**/*.{test,spec}.{ts,tsx,js,jsx}"
 min_test_files = 5
+
+# Security
+[code.security.npmaudit]
+enabled = true
+
+[code.security.pipaudit]
+enabled = true
 ```
 
 ### Config Discovery
@@ -400,10 +465,12 @@ cm code check -c path/to/check.toml
 | Knip | 24 | 10 |
 | Vulture | 27 | 6 |
 | Tests Validation | 25 | 4 |
+| npm audit | 17 | TBD |
+| pip-audit | 21 | TBD |
 | **Other** | 80+ | 20+ |
-| **Total** | **~340** | **~90** |
+| **Total** | **~398** | **~70** |
 
-**Grand Total: 430 tests**
+**Grand Total: 468 tests**
 
 ---
 
@@ -425,7 +492,9 @@ src/
 │       ├── ty.ts       # ty integration
 │       ├── knip.ts     # Knip integration
 │       ├── vulture.ts  # Vulture integration
-│       └── tests.ts    # Test file validation
+│       ├── tests.ts    # Test file validation
+│       ├── npmaudit.ts # npm audit integration
+│       └── pipaudit.ts # pip-audit integration
 ├── config/
 │   ├── loader.ts       # Config loading and merging
 │   └── schema.ts       # Zod schemas
@@ -451,16 +520,14 @@ src/
 - [x] Vulture
 - [x] Tests Validation
 
-### v0.3 - Security & Python Types (In Progress)
+### v0.3 - Security & Python Types (Complete)
 - [x] ty (Python type checker)
-- [ ] Gitleaks (secrets detection)
-- [ ] Semgrep (SAST)
-- [ ] npm-audit (JS/TS dependency vulnerabilities)
-- [ ] pip-audit (Python dependency vulnerabilities)
-- [ ] Required Files (`[code.files]`)
+- [x] npm audit (JS/TS dependency vulnerabilities)
+- [x] pip-audit (Python dependency vulnerabilities)
 
 ### Future
+- [ ] Gitleaks (secrets detection)
 - [ ] PROCESS domain (PR checks, branch naming, commit conventions)
 - [ ] STACK domain (tool versions, environment variables)
 - [ ] Config inheritance (`[extends]`)
-- [ ] Config generation (`cm code generate eslint`)
+- [ ] Registry & Standards

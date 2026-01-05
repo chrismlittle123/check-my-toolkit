@@ -105,10 +105,11 @@ function mergeLinting(c: Config, dc: Config): CodeConfig["linting"] {
   return { eslint: merge(dl?.eslint, cl?.eslint), ruff: merge(dl?.ruff, cl?.ruff) };
 }
 
-function mergeFiles(c: Config, dc: Config): CodeConfig["files"] {
-  const cf = c.code?.files;
-  const df = dc.code?.files;
-  return { repo: arr(cf?.repo, df?.repo), tooling: arr(cf?.tooling, df?.tooling), docs: arr(cf?.docs, df?.docs) };
+function mergeSecurity(c: Config, dc: Config): CodeConfig["security"] {
+  return {
+    npmaudit: merge(dc.code?.security?.npmaudit, c.code?.security?.npmaudit),
+    pipaudit: merge(dc.code?.security?.pipaudit, c.code?.security?.pipaudit),
+  };
 }
 
 function mergeTypes(c: Config, dc: Config): CodeConfig["types"] {
@@ -142,8 +143,8 @@ function mergeCode(c: Config, dc: Config): CodeConfig {
     types: mergeTypes(c, dc),
     unused: mergeUnused(c, dc),
     tests: mergeTests(c, dc),
+    security: mergeSecurity(c, dc),
     complexity: merge(dc.code?.complexity, c.code?.complexity),
-    files: mergeFiles(c, dc),
   };
 }
 

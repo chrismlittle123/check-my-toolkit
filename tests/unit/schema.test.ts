@@ -334,10 +334,9 @@ describe("defaultConfig", () => {
     expect(defaultConfig.code?.complexity).toEqual({});
   });
 
-  it("has empty files arrays", () => {
-    expect(defaultConfig.code?.files?.repo).toEqual([]);
-    expect(defaultConfig.code?.files?.tooling).toEqual([]);
-    expect(defaultConfig.code?.files?.docs).toEqual([]);
+  it("has security tools disabled by default", () => {
+    expect(defaultConfig.code?.security?.npmaudit?.enabled).toBe(false);
+    expect(defaultConfig.code?.security?.pipaudit?.enabled).toBe(false);
   });
 
   it("has empty process sections", () => {

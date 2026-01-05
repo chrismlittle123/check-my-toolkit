@@ -133,6 +133,32 @@ const testsConfigSchema = z
   .optional();
 
 // =============================================================================
+// Security Configuration
+// =============================================================================
+
+/** npm audit configuration */
+const npmauditConfigSchema = z
+  .object({
+    enabled: z.boolean().optional().default(false),
+  })
+  .optional();
+
+/** pip-audit configuration */
+const pipauditConfigSchema = z
+  .object({
+    enabled: z.boolean().optional().default(false),
+  })
+  .optional();
+
+/** Code security configuration */
+const codeSecuritySchema = z
+  .object({
+    npmaudit: npmauditConfigSchema,
+    pipaudit: pipauditConfigSchema,
+  })
+  .optional();
+
+// =============================================================================
 // Code Complexity / Limits Configuration
 // =============================================================================
 
@@ -181,15 +207,6 @@ const codeUnusedSchema = z
   })
   .optional();
 
-/** Code files configuration */
-const codeFilesSchema = z
-  .object({
-    repo: z.array(z.string()).optional(),
-    tooling: z.array(z.string()).optional(),
-    docs: z.array(z.string()).optional(),
-  })
-  .optional();
-
 /** Code domain configuration */
 const codeSchema = z
   .object({
@@ -198,8 +215,8 @@ const codeSchema = z
     types: codeTypesSchema,
     unused: codeUnusedSchema,
     tests: testsConfigSchema,
+    security: codeSecuritySchema,
     complexity: codeLimitsSchema,
-    files: codeFilesSchema,
   })
   .optional();
 
@@ -289,12 +306,11 @@ export const defaultConfig: Config = {
     tests: {
       enabled: false,
     },
-    complexity: {},
-    files: {
-      repo: [],
-      tooling: [],
-      docs: [],
+    security: {
+      npmaudit: { enabled: false },
+      pipaudit: { enabled: false },
     },
+    complexity: {},
   },
   process: {
     pr: {},
