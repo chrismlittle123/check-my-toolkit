@@ -92,11 +92,6 @@ function merge<T extends object>(a: T | undefined, b: T | undefined): T {
   return { ...a, ...b } as T;
 }
 
-/** Get array value with fallback */
-function arr(a: string[] | undefined, b: string[] | undefined): string[] {
-  return a ?? b ?? [];
-}
-
 type CodeConfig = NonNullable<Config["code"]>;
 
 function mergeLinting(c: Config, dc: Config): CodeConfig["linting"] {

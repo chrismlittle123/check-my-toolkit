@@ -41,10 +41,10 @@ export class NpmAuditRunner extends BaseToolRunner {
 
   async run(projectRoot: string): Promise<CheckResult> {
     const startTime = Date.now();
+    const elapsed = (): number => Date.now() - startTime;
 
-    // Check if package-lock.json exists
     if (!this.hasConfig(projectRoot)) {
-      return this.skipNoConfig(Date.now() - startTime);
+      return this.skipNoConfig(elapsed());
     }
 
     try {
@@ -54,33 +54,39 @@ export class NpmAuditRunner extends BaseToolRunner {
         timeout: 5 * 60 * 1000,
       });
 
-      // npm audit exits with non-zero if vulnerabilities found, but still outputs JSON
-      const output = result.stdout || result.stderr;
-      const violations = this.parseOutput(output);
-
-      if (violations === null) {
-        // Failed to parse output
-        if (result.exitCode !== 0) {
-          return this.fail(
-            [this.createErrorViolation(`npm audit error: ${result.stderr || "Unknown error"}`)],
-            Date.now() - startTime
-          );
-        }
-        return this.pass(Date.now() - startTime);
-      }
-
-      return this.fromViolations(violations, Date.now() - startTime);
+      return this.processAuditResult(result, elapsed);
     } catch (error) {
-      if (this.isNotInstalledError(error)) {
-        return this.skipNotInstalled(Date.now() - startTime);
-      }
-
-      const message = error instanceof Error ? error.message : "Unknown error";
-      return this.fail(
-        [this.createErrorViolation(`npm audit error: ${message}`)],
-        Date.now() - startTime
-      );
+      return this.handleRunError(error, elapsed);
     }
+  }
+
+  private processAuditResult(
+    result: Awaited<ReturnType<typeof execa>>,
+    elapsed: () => number
+  ): CheckResult {
+    const output = String(result.stdout ?? result.stderr ?? "");
+    const violations = this.parseOutput(output);
+
+    if (violations === null) {
+      if (result.exitCode !== 0) {
+        return this.fail(
+          [this.createErrorViolation(`npm audit error: ${result.stderr ?? "Unknown error"}`)],
+          elapsed()
+        );
+      }
+      return this.pass(elapsed());
+    }
+
+    return this.fromViolations(violations, elapsed());
+  }
+
+  private handleRunError(error: unknown, elapsed: () => number): CheckResult {
+    if (this.isNotInstalledError(error)) {
+      return this.skipNotInstalled(elapsed());
+    }
+
+    const message = error instanceof Error ? error.message : "Unknown error";
+    return this.fail([this.createErrorViolation(`npm audit error: ${message}`)], elapsed());
   }
 
   private parseOutput(output: string): Violation[] | null {

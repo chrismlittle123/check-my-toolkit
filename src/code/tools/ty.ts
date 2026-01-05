@@ -30,38 +30,13 @@ export class TyRunner extends BaseToolRunner {
     const elapsed = (): number => Date.now() - startTime;
 
     try {
-      // Run ty check with concise output format for easy parsing
       const result = await execa("uvx", ["ty", "check", "--output-format", "concise", "."], {
         cwd: projectRoot,
         reject: false,
         timeout: 5 * 60 * 1000,
       });
 
-      // Exit code 0: no errors
-      if (result.exitCode === 0) {
-        return this.pass(elapsed());
-      }
-
-      // Exit code 1: type errors found
-      if (result.exitCode === 1) {
-        const violations = this.parseOutput(result.stdout ?? "", projectRoot);
-        if (violations.length === 0) {
-          // No parseable violations but exit code 1 means there was an error
-          const errorOutput = result.stdout || result.stderr || "Type check failed";
-          return this.fail([this.createErrorViolation(`ty error: ${errorOutput.slice(0, 500)}`)], elapsed());
-        }
-        return this.fail(violations, elapsed());
-      }
-
-      // Exit code 2: configuration or IO error
-      if (result.exitCode === 2) {
-        const errorMessage = result.stderr || result.stdout || "Configuration error";
-        return this.fail([this.createErrorViolation(`ty configuration error: ${errorMessage.slice(0, 500)}`)], elapsed());
-      }
-
-      // Other exit codes (e.g., 101 internal error)
-      const violations = this.handleUnexpectedFailure(result, projectRoot);
-      return this.fromViolations(violations, elapsed());
+      return this.handleExitCode(result, projectRoot, elapsed);
     } catch (error) {
       if (this.isNotInstalledError(error)) {
         return this.skipNotInstalled(elapsed());
@@ -69,6 +44,41 @@ export class TyRunner extends BaseToolRunner {
       const message = error instanceof Error ? error.message : "Unknown error";
       return this.fail([this.createErrorViolation(`ty error: ${message}`)], elapsed());
     }
+  }
+
+  private handleExitCode(
+    result: Awaited<ReturnType<typeof execa>>,
+    projectRoot: string,
+    elapsed: () => number
+  ): CheckResult {
+    if (result.exitCode === 0) {
+      return this.pass(elapsed());
+    }
+
+    if (result.exitCode === 1) {
+      return this.handleTypeErrors(result, projectRoot, elapsed);
+    }
+
+    if (result.exitCode === 2) {
+      const errorMessage = result.stderr ?? result.stdout ?? "Configuration error";
+      return this.fail([this.createErrorViolation(`ty configuration error: ${errorMessage.slice(0, 500)}`)], elapsed());
+    }
+
+    const violations = this.handleUnexpectedFailure(result, projectRoot);
+    return this.fromViolations(violations, elapsed());
+  }
+
+  private handleTypeErrors(
+    result: Awaited<ReturnType<typeof execa>>,
+    projectRoot: string,
+    elapsed: () => number
+  ): CheckResult {
+    const violations = this.parseOutput(String(result.stdout ?? ""), projectRoot);
+    if (violations.length === 0) {
+      const errorOutput = String(result.stdout ?? result.stderr ?? "Type check failed");
+      return this.fail([this.createErrorViolation(`ty error: ${errorOutput.slice(0, 500)}`)], elapsed());
+    }
+    return this.fail(violations, elapsed());
   }
 
   private handleUnexpectedFailure(result: Awaited<ReturnType<typeof execa>>, projectRoot: string): Violation[] {

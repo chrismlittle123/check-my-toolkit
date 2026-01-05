@@ -10,7 +10,7 @@ const DEFAULT_PATTERN = "**/*.{test,spec}.{ts,tsx,js,jsx,py}";
 const DEFAULT_MIN_TEST_FILES = 1;
 
 /** Configuration for tests validation */
-export interface TestsConfig {
+interface TestsConfig {
   enabled?: boolean;
   pattern?: string;
   min_test_files?: number;

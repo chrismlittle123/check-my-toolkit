@@ -34,45 +34,39 @@ export class PipAuditRunner extends BaseToolRunner {
 
   async run(projectRoot: string): Promise<CheckResult> {
     const startTime = Date.now();
+    const elapsed = (): number => Date.now() - startTime;
 
-    // Check if any Python dependency file exists
     if (!this.hasConfig(projectRoot)) {
-      return this.skipNoConfig(Date.now() - startTime);
+      return this.skipNoConfig(elapsed());
     }
 
     try {
-      // Try uvx first (faster, no install needed), fall back to pip-audit
       const result = await this.runPipAudit(projectRoot);
-
-      const output = result.stdout || result.stderr;
-      const violations = this.parseOutput(output);
-
-      if (violations === null) {
-        // Failed to parse output
-        if (result.exitCode !== 0 && result.exitCode !== 1) {
-          return this.fail(
-            [this.createErrorViolation(`pip-audit error: ${result.stderr || "Unknown error"}`)],
-            Date.now() - startTime
-          );
-        }
-        return this.pass(Date.now() - startTime);
-      }
-
-      return this.fromViolations(violations, Date.now() - startTime);
+      return this.processResult(result, elapsed);
     } catch (error) {
       if (this.isNotInstalledError(error)) {
-        return this.skipNotInstalled(Date.now() - startTime);
+        return this.skipNotInstalled(elapsed());
       }
-
       const message = error instanceof Error ? error.message : "Unknown error";
-      return this.fail(
-        [this.createErrorViolation(`pip-audit error: ${message}`)],
-        Date.now() - startTime
-      );
+      return this.fail([this.createErrorViolation(`pip-audit error: ${message}`)], elapsed());
     }
   }
 
-  private async runPipAudit(projectRoot: string) {
+  private processResult(result: Awaited<ReturnType<typeof execa>>, elapsed: () => number): CheckResult {
+    const output = String(result.stdout ?? result.stderr ?? "");
+    const violations = this.parseOutput(output);
+
+    if (violations === null) {
+      if (result.exitCode !== 0 && result.exitCode !== 1) {
+        return this.fail([this.createErrorViolation(`pip-audit error: ${result.stderr ?? "Unknown error"}`)], elapsed());
+      }
+      return this.pass(elapsed());
+    }
+
+    return this.fromViolations(violations, elapsed());
+  }
+
+  private async runPipAudit(projectRoot: string): Promise<Awaited<ReturnType<typeof execa>>> {
     // Try uvx first
     try {
       return await execa("uvx", ["pip-audit", "--format", "json"], {
