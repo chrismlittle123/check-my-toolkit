@@ -353,6 +353,207 @@ describe("RuffRunner", () => {
       expect(result.skipped).toBe(true);
       expect(result.skipReason).toBe("No Python files found");
     });
+
+    it("skips when ruff binary not found with ENOENT code (reject:false)", async () => {
+      fs.writeFileSync(path.join(tempDir, "test.py"), "import os");
+
+      mockedExeca.mockResolvedValueOnce({
+        stdout: "test.py",
+        stderr: "",
+        exitCode: 0,
+      } as never);
+
+      // Simulate execa result when binary not found with reject:false
+      mockedExeca.mockResolvedValueOnce({
+        stdout: "",
+        stderr: "",
+        exitCode: 0,
+        failed: true,
+        code: "ENOENT",
+        message: "spawn ruff ENOENT",
+      } as never);
+
+      const result = await runner.run(tempDir);
+
+      expect(result.skipped).toBe(true);
+      expect(result.skipReason).toContain("Ruff not installed");
+    });
+
+    it("parses ruff 0.14 JSON format with all fields", async () => {
+      fs.writeFileSync(path.join(tempDir, "test.py"), "import os");
+
+      // Full ruff 0.14 output format
+      const ruffOutput = JSON.stringify([
+        {
+          cell: null,
+          code: "F401",
+          end_location: { column: 10, row: 1 },
+          filename: path.join(tempDir, "test.py"),
+          fix: {
+            applicability: "safe",
+            edits: [{ content: "", end_location: { column: 1, row: 2 }, location: { column: 1, row: 1 } }],
+            message: "Remove unused import: `os`",
+          },
+          location: { column: 8, row: 1 },
+          message: "`os` imported but unused",
+          noqa_row: 1,
+          url: "https://docs.astral.sh/ruff/rules/unused-import",
+        },
+      ]);
+
+      mockedExeca.mockResolvedValueOnce({
+        stdout: "test.py",
+        stderr: "",
+        exitCode: 0,
+      } as never);
+      mockedExeca.mockResolvedValueOnce({
+        stdout: ruffOutput,
+        stderr: "",
+        exitCode: 1,
+      } as never);
+
+      const result = await runner.run(tempDir);
+
+      expect(result.passed).toBe(false);
+      expect(result.violations).toHaveLength(1);
+      expect(result.violations[0]).toMatchObject({
+        rule: "code.linting.ruff",
+        tool: "ruff",
+        file: "test.py",
+        line: 1,
+        column: 8,
+        message: "`os` imported but unused",
+        code: "F401",
+        severity: "error",
+      });
+    });
+
+    it("parses violations in nested directories", async () => {
+      fs.mkdirSync(path.join(tempDir, "src", "utils"), { recursive: true });
+      fs.writeFileSync(path.join(tempDir, "src", "utils", "helpers.py"), "import os");
+
+      const ruffOutput = JSON.stringify([
+        {
+          code: "F401",
+          message: "`os` imported but unused",
+          filename: path.join(tempDir, "src", "utils", "helpers.py"),
+          location: { row: 1, column: 8 },
+        },
+      ]);
+
+      mockedExeca.mockResolvedValueOnce({
+        stdout: "src/utils/helpers.py",
+        stderr: "",
+        exitCode: 0,
+      } as never);
+      mockedExeca.mockResolvedValueOnce({
+        stdout: ruffOutput,
+        stderr: "",
+        exitCode: 1,
+      } as never);
+
+      const result = await runner.run(tempDir);
+
+      expect(result.passed).toBe(false);
+      expect(result.violations).toHaveLength(1);
+      expect(result.violations[0].file).toBe(path.join("src", "utils", "helpers.py"));
+    });
+
+    it("parses multiple violations with different codes", async () => {
+      fs.writeFileSync(path.join(tempDir, "main.py"), "");
+      fs.writeFileSync(path.join(tempDir, "utils.py"), "");
+
+      const ruffOutput = JSON.stringify([
+        {
+          code: "F401",
+          message: "`os` imported but unused",
+          filename: path.join(tempDir, "main.py"),
+          location: { row: 1, column: 8 },
+        },
+        {
+          code: "E501",
+          message: "Line too long (120 > 88)",
+          filename: path.join(tempDir, "main.py"),
+          location: { row: 10, column: 89 },
+        },
+        {
+          code: "F841",
+          message: "Local variable `x` is assigned to but never used",
+          filename: path.join(tempDir, "utils.py"),
+          location: { row: 5, column: 1 },
+        },
+      ]);
+
+      mockedExeca.mockResolvedValueOnce({
+        stdout: "main.py\nutils.py",
+        stderr: "",
+        exitCode: 0,
+      } as never);
+      mockedExeca.mockResolvedValueOnce({
+        stdout: ruffOutput,
+        stderr: "",
+        exitCode: 1,
+      } as never);
+
+      const result = await runner.run(tempDir);
+
+      expect(result.passed).toBe(false);
+      expect(result.violations).toHaveLength(3);
+      expect(result.violations.map((v) => v.code)).toEqual(["F401", "E501", "F841"]);
+      expect(result.violations.map((v) => v.file)).toEqual(["main.py", "main.py", "utils.py"]);
+    });
+
+    it("passes with empty JSON array", async () => {
+      fs.writeFileSync(path.join(tempDir, "clean.py"), "x = 1");
+
+      mockedExeca.mockResolvedValueOnce({
+        stdout: "clean.py",
+        stderr: "",
+        exitCode: 0,
+      } as never);
+      mockedExeca.mockResolvedValueOnce({
+        stdout: "[]",
+        stderr: "",
+        exitCode: 0,
+      } as never);
+
+      const result = await runner.run(tempDir);
+
+      expect(result.passed).toBe(true);
+      expect(result.violations).toEqual([]);
+      expect(result.skipped).toBe(false);
+    });
+
+    it("correctly sets passed=false when violations exist", async () => {
+      fs.writeFileSync(path.join(tempDir, "test.py"), "import os");
+
+      const ruffOutput = JSON.stringify([
+        {
+          code: "F401",
+          message: "`os` imported but unused",
+          filename: path.join(tempDir, "test.py"),
+          location: { row: 1, column: 8 },
+        },
+      ]);
+
+      mockedExeca.mockResolvedValueOnce({
+        stdout: "test.py",
+        stderr: "",
+        exitCode: 0,
+      } as never);
+      mockedExeca.mockResolvedValueOnce({
+        stdout: ruffOutput,
+        stderr: "",
+        exitCode: 1,
+      } as never);
+
+      const result = await runner.run(tempDir);
+
+      // Critical check: violations should cause passed=false
+      expect(result.passed).toBe(false);
+      expect(result.violations.length).toBeGreaterThan(0);
+      expect(result.skipped).toBe(false);
+    });
   });
 
   describe("audit", () => {

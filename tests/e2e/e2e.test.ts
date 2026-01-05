@@ -66,6 +66,13 @@ const testCases: TestCase[] = [
     expectedExitCode: 1,
     expectedPatterns: ["✗ Ruff:", "F401", "imported but unused"],
   },
+  {
+    name: "python/multi-violations detects violations across files",
+    config: "tests/e2e/projects/python/multi-violations/check.toml",
+    command: "check",
+    expectedExitCode: 1,
+    expectedPatterns: ["✗ Ruff:", "F401", "main.py", "src/utils.py"],
+  },
 
   // ============================================================
   // Linting: Should pass
