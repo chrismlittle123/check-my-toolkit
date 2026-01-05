@@ -18,6 +18,27 @@ export class ConfigError extends Error {
 }
 
 /**
+ * Check if a path is a broken symlink
+ */
+function isBrokenSymlink(filePath: string): boolean {
+  try {
+    const stats = fs.lstatSync(filePath);
+    if (stats.isSymbolicLink()) {
+      // It's a symlink - check if target exists
+      try {
+        fs.statSync(filePath);
+        return false; // Target exists, not broken
+      } catch {
+        return true; // Target doesn't exist, broken symlink
+      }
+    }
+    return false; // Not a symlink
+  } catch {
+    return false; // Path doesn't exist at all
+  }
+}
+
+/**
  * Find check.toml by walking up the directory tree
  */
 export function findConfigFile(startDir: string = process.cwd()): string | null {
@@ -26,6 +47,9 @@ export function findConfigFile(startDir: string = process.cwd()): string | null 
 
   while (currentDir !== root) {
     const configPath = path.join(currentDir, "check.toml");
+    if (isBrokenSymlink(configPath)) {
+      throw new ConfigError(`check.toml exists but is a broken symlink: ${configPath}`);
+    }
     if (fs.existsSync(configPath)) {
       return configPath;
     }
@@ -34,6 +58,9 @@ export function findConfigFile(startDir: string = process.cwd()): string | null 
 
   // Check root directory too
   const rootConfig = path.join(root, "check.toml");
+  if (isBrokenSymlink(rootConfig)) {
+    throw new ConfigError(`check.toml exists but is a broken symlink: ${rootConfig}`);
+  }
   return fs.existsSync(rootConfig) ? rootConfig : null;
 }
 

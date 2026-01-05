@@ -35,6 +35,7 @@ export class PipAuditRunner extends BaseToolRunner {
   async run(projectRoot: string): Promise<CheckResult> {
     const startTime = Date.now();
     const elapsed = (): number => Date.now() - startTime;
+    this.projectRoot = projectRoot;
 
     if (!this.hasConfig(projectRoot)) {
       return this.skipNoConfig(elapsed());
@@ -125,10 +126,19 @@ export class PipAuditRunner extends BaseToolRunner {
     return ` (fix: ${vuln.fix_versions[0]})`;
   }
 
-  private findDependencyFile(_pkgName: string): string {
-    // Return the most likely dependency file
-    // In a real implementation, we could parse the files to find the exact location
-    return "requirements.txt";
+  private projectRoot = "";
+
+  private findDependencyFile(_pkgName: string): string | undefined {
+    // Check which dependency files actually exist and return the first one found
+    // We can't determine which exact file contains the package without parsing,
+    // so return the first existing file or undefined if none found
+    const possibleFiles = ["requirements.txt", "pyproject.toml", "setup.py"];
+    for (const file of possibleFiles) {
+      if (this.projectRoot && fs.existsSync(`${this.projectRoot}/${file}`)) {
+        return file;
+      }
+    }
+    return undefined;
   }
 
   private createErrorViolation(message: string): Violation {

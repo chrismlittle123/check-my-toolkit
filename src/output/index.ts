@@ -93,8 +93,18 @@ function formatDomainText(name: string, domain: DomainResult): string {
 /**
  * Format a single violation as text
  */
+function formatLocation(file: string, line?: number, column?: number): string {
+  if (line !== undefined && column !== undefined) {
+    return `${file}:${line}:${column}`;
+  }
+  if (line !== undefined) {
+    return `${file}:${line}`;
+  }
+  return file;
+}
+
 function formatViolationText(v: Violation): string {
-  const location = v.file ? chalk.cyan(`${v.file}:${v.line ?? 0}:${v.column ?? 0}`) : "";
+  const location = v.file ? chalk.cyan(formatLocation(v.file, v.line, v.column)) : "";
   const code = v.code ? chalk.dim(`[${v.code}]`) : "";
   const severity = v.severity === "error" ? chalk.red("error") : chalk.yellow("warn");
 

@@ -370,7 +370,7 @@ describe("formatText", () => {
     expect(text).toContain("○ TestTool: skipped - Tool not available");
   });
 
-  it("handles violation with null line/column as 0", () => {
+  it("handles violation with undefined line/column by showing just filename", () => {
     const result = createFullResult({
       domains: {
         code: createDomainResult({
@@ -395,7 +395,9 @@ describe("formatText", () => {
     });
     const text = formatText(result);
 
-    expect(text).toContain("src/index.ts:0:0");
+    // Should show just filename without :0:0 when line/column are undefined
+    expect(text).toContain("src/index.ts");
+    expect(text).not.toContain("src/index.ts:0:0");
   });
 });
 
