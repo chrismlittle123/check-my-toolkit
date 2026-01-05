@@ -136,6 +136,13 @@ const testsConfigSchema = z
 // Security Configuration
 // =============================================================================
 
+/** Secrets (Gitleaks) configuration */
+const secretsConfigSchema = z
+  .object({
+    enabled: z.boolean().optional().default(false),
+  })
+  .optional();
+
 /** npm audit configuration */
 const npmauditConfigSchema = z
   .object({
@@ -153,6 +160,7 @@ const pipauditConfigSchema = z
 /** Code security configuration */
 const codeSecuritySchema = z
   .object({
+    secrets: secretsConfigSchema,
     npmaudit: npmauditConfigSchema,
     pipaudit: pipauditConfigSchema,
   })
@@ -307,6 +315,7 @@ export const defaultConfig: Config = {
       enabled: false,
     },
     security: {
+      secrets: { enabled: false },
       npmaudit: { enabled: false },
       pipaudit: { enabled: false },
     },
