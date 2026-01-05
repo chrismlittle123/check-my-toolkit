@@ -1,8 +1,5 @@
 #!/usr/bin/env node
 
-import { existsSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
-
 import chalk from "chalk";
 import { Command } from "commander";
 
@@ -89,37 +86,6 @@ async function runAudit(options: { config?: string; format: string }): Promise<v
 // =============================================================================
 // Top-level commands
 // =============================================================================
-
-// cm init - create check.toml with defaults
-program
-  .command("init")
-  .description("Create check.toml with default configuration")
-  .option("--force", "Overwrite existing check.toml")
-  .action((options: { force?: boolean }) => {
-    const configPath = join(process.cwd(), "check.toml");
-
-    if (existsSync(configPath) && !options.force) {
-      console.error(chalk.red("check.toml already exists. Use --force to overwrite."));
-      process.exit(ExitCode.CONFIG_ERROR);
-    }
-
-    const defaultConfig = `# check-my-toolkit configuration
-# https://github.com/chrismlittle123/check-my-toolkit
-
-[code.linting.eslint]
-enabled = true
-
-[code.linting.ruff]
-enabled = false
-
-[code.types.tsc]
-enabled = true
-`;
-
-    writeFileSync(configPath, defaultConfig);
-    process.stdout.write(chalk.green(`✓ Created ${configPath}\n`));
-    process.exit(ExitCode.SUCCESS);
-  });
 
 // cm validate - validate check.toml
 program

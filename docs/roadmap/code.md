@@ -336,7 +336,7 @@ pip_audit = true
 |-------|-------------|-------------|
 | Repo files | README.md, LICENSE, SECURITY.md | Local filesystem |
 | Tooling configs | eslint.config.js, ruff.toml, tsconfig.json | Local filesystem |
-| Docs | CLAUDE.md, ADRs | Local filesystem |
+| Docs | CLAUDE.md | Local filesystem |
 
 ```toml
 [code.files]
@@ -372,36 +372,10 @@ rulesets = "github:org/standards/rulesets@v1.0.0"
 | `cm code generate ruff` | Generate ruff.toml from check.toml |
 | `cm code generate tsc` | Generate tsconfig.json from check.toml |
 | `cm code audit` | Verify linter configs match check.toml |
-| `cm code context` | Output rules for AI agents |
 
----
-
-## v0.5 — Validation & Registry
 
 | Command | Description |
 |---------|-------------|
-| `cm code validate` | Validate check.toml against JSON schema |
-| `cm code registry list` | List prompts/rulesets with filtering |
-| `cm code registry check` | Verify if entry exists |
-| `cm code registry sync` | Detect sync issues |
-| `cm code registry bump` | Create new versions |
-
----
-
-## v0.6 — Documentation Files
-
-| Check | Description | Data Source |
-|-------|-------------|-------------|
-| ADRs | Required ADRs exist, follow template | Local filesystem |
-| RFCs | Required for major changes | Local filesystem |
-| Service READMEs | Required sections present | Local filesystem |
-| Runbooks | Required for production services | Local filesystem |
-
-```toml
-[code.files]
-docs = ["CLAUDE.md"]
-adr_directory = "docs/adr"
-adr_template = "docs/adr/template.md"
-require_service_readme = true
-readme_required_sections = ["Overview", "Setup", "API", "Deployment"]
-```
+| `cm validate config` | Validate check.toml against JSON schema |
+  `cm validate registry` | Validate that registry follows format of a check-my-toolkit registry.
+____

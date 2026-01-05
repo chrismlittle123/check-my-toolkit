@@ -43,7 +43,7 @@ export function findConfigFile(startDir: string = process.cwd()): string | null 
 function resolveConfigPath(configPath?: string): string {
   const resolved = configPath ?? findConfigFile();
   if (!resolved) {
-    throw new ConfigError("No check.toml found. Run 'cm init' to create one or specify --config path.");
+    throw new ConfigError("No check.toml found. Create one or specify --config path.");
   }
   if (!fs.existsSync(resolved)) {
     throw new ConfigError(`Config file not found: ${resolved}`);

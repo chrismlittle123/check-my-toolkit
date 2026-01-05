@@ -20,7 +20,6 @@ Tool Implementations: ~1,550 lines of TypeScript
 | `cm code check` | Run all enabled code checks |
 | `cm code audit` | Verify tool configs exist without running checks |
 | `cm validate` | Validate check.toml configuration (uses Zod schema) |
-| `cm init` | Create default check.toml |
 
 ### How `cm validate` Works
 
