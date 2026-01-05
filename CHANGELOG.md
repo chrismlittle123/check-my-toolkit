@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.7.0
+
+### Minor Changes
+
+- b0a3aac: Add Gitleaks integration for hardcoded secrets detection, completing v0.3 security features.
+
+  - New `[code.security.secrets]` configuration option
+  - Detects hardcoded secrets using Gitleaks
+  - Skips gracefully when Gitleaks is not installed
+  - Reports findings with file/line information
+
 ## 0.6.0
 
 ### Minor Changes
