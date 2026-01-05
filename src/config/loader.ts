@@ -101,9 +101,12 @@ function mergeLinting(c: Config, dc: Config): CodeConfig["linting"] {
 }
 
 function mergeSecurity(c: Config, dc: Config): CodeConfig["security"] {
+  const cs = c.code?.security;
+  const ds = dc.code?.security;
   return {
-    npmaudit: merge(dc.code?.security?.npmaudit, c.code?.security?.npmaudit),
-    pipaudit: merge(dc.code?.security?.pipaudit, c.code?.security?.pipaudit),
+    secrets: merge(ds?.secrets, cs?.secrets),
+    npmaudit: merge(ds?.npmaudit, cs?.npmaudit),
+    pipaudit: merge(ds?.pipaudit, cs?.pipaudit),
   };
 }
 

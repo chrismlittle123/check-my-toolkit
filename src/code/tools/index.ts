@@ -1,5 +1,6 @@
 export { BaseToolRunner } from "./base.js";
 export { ESLintRunner } from "./eslint.js";
+export { GitleaksRunner } from "./gitleaks.js";
 export { KnipRunner } from "./knip.js";
 export { NpmAuditRunner } from "./npmaudit.js";
 export { PipAuditRunner } from "./pipaudit.js";
