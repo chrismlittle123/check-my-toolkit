@@ -136,6 +136,18 @@ This toolkit is designed to grow into three domains:
 
 ## Development
 
+### Prerequisites
+
+macOS (using Homebrew):
+
+```bash
+brew bundle
+```
+
+This installs Python 3.13, Ruff, and Vulture which are required for running tests.
+
+### Setup
+
 ```bash
 # Install dependencies
 npm install
