@@ -28,6 +28,9 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
       - name: Install Python tools (Ruff, Vulture)
         run: pip install ruff vulture
 

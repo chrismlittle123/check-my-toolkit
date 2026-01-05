@@ -46,11 +46,21 @@ export class TyRunner extends BaseToolRunner {
     }
   }
 
+  private isBinaryNotFound(result: Awaited<ReturnType<typeof execa>>): boolean {
+    const execaResult = result as Awaited<ReturnType<typeof execa>> & { code?: string; message?: string };
+    return execaResult.code === "ENOENT" || (execaResult.failed && String(execaResult.message ?? "").includes("ENOENT"));
+  }
+
   private handleExitCode(
     result: Awaited<ReturnType<typeof execa>>,
     projectRoot: string,
     elapsed: () => number
   ): CheckResult {
+    // Check if uvx/ty binary was not found
+    if (this.isBinaryNotFound(result)) {
+      return this.skipNotInstalled(elapsed());
+    }
+
     if (result.exitCode === 0) {
       return this.pass(elapsed());
     }
@@ -60,7 +70,9 @@ export class TyRunner extends BaseToolRunner {
     }
 
     if (result.exitCode === 2) {
-      const errorMessage = result.stderr ?? result.stdout ?? "Configuration error";
+      // Use || instead of ?? because empty string should fall through to next option
+      // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
+      const errorMessage = result.stderr || result.stdout || "Configuration error";
       return this.fail([this.createErrorViolation(`ty configuration error: ${errorMessage.slice(0, 500)}`)], elapsed());
     }
 
