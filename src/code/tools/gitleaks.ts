@@ -160,7 +160,8 @@ export class GitleaksRunner extends BaseToolRunner {
         return this.skipNotInstalled(Date.now() - startTime);
       }
 
-      return this.pass(Date.now() - startTime);
+      const message = error instanceof Error ? error.message : "Unknown error";
+      return this.fail([this.createErrorViolation(`gitleaks audit error: ${message}`)], Date.now() - startTime);
     }
   }
 }

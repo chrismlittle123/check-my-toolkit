@@ -23,16 +23,64 @@ export class TscRunner extends BaseToolRunner {
   readonly toolId = "tsc";
   readonly configFiles = ["tsconfig.json"];
 
-  private handleTscFailure(result: Awaited<ReturnType<typeof execa>>, projectRoot: string): Violation[] {
+  /**
+   * Strip ANSI escape codes from a string
+   */
+  private stripAnsi(str: string): string {
+    // eslint-disable-next-line no-control-regex
+    return str.replace(/\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])/g, "");
+  }
+
+  /**
+   * Check if the output indicates tsc is not installed
+   */
+  private isTscNotFoundOutput(output: string): boolean {
+    const stripped = this.stripAnsi(output);
+    return stripped.includes("This is not the tsc command you are looking for") ||
+           stripped.includes("command not found") ||
+           stripped.includes("ENOENT");
+  }
+
+  private handleTscFailure(result: Awaited<ReturnType<typeof execa>>, projectRoot: string): Violation[] | "not-installed" {
     const stdout = String(result.stdout ?? "");
+    const stderr = String(result.stderr ?? "");
+    const combinedOutput = stdout || stderr;
+
+    // Check if tsc is not installed (npx shows an error message)
+    if (this.isTscNotFoundOutput(combinedOutput)) {
+      return "not-installed";
+    }
+
     const violations = this.parseOutput(stdout, projectRoot);
     if (violations.length === 0) {
-      const errorOutput = stdout || String(result.stderr ?? "");
-      if (errorOutput) {
-        return [this.createErrorViolation(`TypeScript error: ${errorOutput.slice(0, 500)}`)];
+      if (combinedOutput) {
+        return [this.createErrorViolation(`TypeScript error: ${this.stripAnsi(combinedOutput).slice(0, 500)}`)];
       }
     }
     return violations;
+  }
+
+  private async runTsc(projectRoot: string): Promise<Awaited<ReturnType<typeof execa>>> {
+    return execa("npx", ["tsc", "--noEmit"], {
+      cwd: projectRoot,
+      reject: false,
+      timeout: 5 * 60 * 1000,
+    });
+  }
+
+  private processRunResult(
+    result: Awaited<ReturnType<typeof execa>>,
+    projectRoot: string,
+    elapsed: () => number
+  ): CheckResult {
+    if (result.exitCode === 0) {
+      return this.pass(elapsed());
+    }
+    const violations = this.handleTscFailure(result, projectRoot);
+    if (violations === "not-installed") {
+      return this.skipNotInstalled(elapsed());
+    }
+    return this.fromViolations(violations, elapsed());
   }
 
   async run(projectRoot: string): Promise<CheckResult> {
@@ -44,18 +92,8 @@ export class TscRunner extends BaseToolRunner {
     }
 
     try {
-      const result = await execa("npx", ["tsc", "--noEmit"], {
-        cwd: projectRoot,
-        reject: false,
-        timeout: 5 * 60 * 1000,
-      });
-
-      if (result.exitCode === 0) {
-        return this.pass(elapsed());
-      }
-
-      const violations = this.handleTscFailure(result, projectRoot);
-      return this.fromViolations(violations, elapsed());
+      const result = await this.runTsc(projectRoot);
+      return this.processRunResult(result, projectRoot, elapsed);
     } catch (error) {
       if (this.isNotInstalledError(error)) {
         return this.skipNotInstalled(elapsed());
