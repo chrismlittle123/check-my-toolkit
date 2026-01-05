@@ -20,6 +20,7 @@ const eslintConfigSchema = z
     enabled: z.boolean().optional().default(true),
     rules: z.record(z.string(), eslintRuleValueSchema).optional(),
   })
+  .strict()
   .optional();
 
 // =============================================================================
@@ -32,6 +33,7 @@ const ruffLintSchema = z
     select: z.array(z.string()).optional(),
     ignore: z.array(z.string()).optional(),
   })
+  .strict()
   .optional();
 
 /** Ruff configuration */
@@ -42,6 +44,7 @@ const ruffConfigSchema = z
     "line-length": z.number().int().positive().optional(),
     lint: ruffLintSchema,
   })
+  .strict()
   .optional();
 
 // =============================================================================
@@ -73,6 +76,7 @@ const tscConfigSchema = z
     allowUnusedLabels: z.boolean().optional(),
     allowUnreachableCode: z.boolean().optional(),
   })
+  .strict()
   .optional();
 
 // =============================================================================
@@ -84,6 +88,7 @@ const tyConfigSchema = z
   .object({
     enabled: z.boolean().optional().default(false),
   })
+  .strict()
   .optional();
 
 // =============================================================================
@@ -95,6 +100,7 @@ const knipConfigSchema = z
   .object({
     enabled: z.boolean().optional().default(false),
   })
+  .strict()
   .optional();
 
 // =============================================================================
@@ -106,6 +112,7 @@ const vultureConfigSchema = z
   .object({
     enabled: z.boolean().optional().default(false),
   })
+  .strict()
   .optional();
 
 // =============================================================================
@@ -117,6 +124,7 @@ const prettierConfigSchema = z
   .object({
     enabled: z.boolean().optional().default(false),
   })
+  .strict()
   .optional();
 
 // =============================================================================
@@ -130,6 +138,7 @@ const testsConfigSchema = z
     pattern: z.string().optional(), // Glob pattern for test files
     min_test_files: z.number().int().positive().optional(), // Minimum test files required
   })
+  .strict()
   .optional();
 
 // =============================================================================
@@ -141,6 +150,7 @@ const secretsConfigSchema = z
   .object({
     enabled: z.boolean().optional().default(false),
   })
+  .strict()
   .optional();
 
 /** npm audit configuration */
@@ -148,6 +158,7 @@ const npmauditConfigSchema = z
   .object({
     enabled: z.boolean().optional().default(false),
   })
+  .strict()
   .optional();
 
 /** pip-audit configuration */
@@ -155,6 +166,7 @@ const pipauditConfigSchema = z
   .object({
     enabled: z.boolean().optional().default(false),
   })
+  .strict()
   .optional();
 
 /** Code security configuration */
@@ -164,6 +176,7 @@ const codeSecuritySchema = z
     npmaudit: npmauditConfigSchema,
     pipaudit: pipauditConfigSchema,
   })
+  .strict()
   .optional();
 
 // =============================================================================
@@ -178,6 +191,21 @@ const codeLimitsSchema = z
     max_parameters: z.number().int().positive().optional(),
     max_nesting_depth: z.number().int().positive().optional(),
   })
+  .strict()
+  .optional();
+
+// =============================================================================
+// Code Files Configuration
+// =============================================================================
+
+/** Code files configuration */
+const codeFilesSchema = z
+  .object({
+    repo: z.array(z.string()).optional(),
+    tooling: z.array(z.string()).optional(),
+    docs: z.array(z.string()).optional(),
+  })
+  .strict()
   .optional();
 
 // =============================================================================
@@ -190,6 +218,7 @@ const codeLintingSchema = z
     eslint: eslintConfigSchema,
     ruff: ruffConfigSchema,
   })
+  .strict()
   .optional();
 
 /** Code formatting configuration */
@@ -197,6 +226,7 @@ const codeFormattingSchema = z
   .object({
     prettier: prettierConfigSchema,
   })
+  .strict()
   .optional();
 
 /** Code type checking configuration */
@@ -205,6 +235,7 @@ const codeTypesSchema = z
     tsc: tscConfigSchema,
     ty: tyConfigSchema,
   })
+  .strict()
   .optional();
 
 /** Code unused detection configuration */
@@ -213,6 +244,7 @@ const codeUnusedSchema = z
     knip: knipConfigSchema,
     vulture: vultureConfigSchema,
   })
+  .strict()
   .optional();
 
 /** Code domain configuration */
@@ -225,7 +257,9 @@ const codeSchema = z
     tests: testsConfigSchema,
     security: codeSecuritySchema,
     complexity: codeLimitsSchema,
+    files: codeFilesSchema,
   })
+  .strict()
   .optional();
 
 // =============================================================================
@@ -239,6 +273,7 @@ const processPrSchema = z
     max_lines: z.number().optional(),
     min_approvals: z.number().optional(),
   })
+  .strict()
   .optional();
 
 /** Process branches configuration */
@@ -246,6 +281,7 @@ const processBranchesSchema = z
   .object({
     pattern: z.string().optional(),
   })
+  .strict()
   .optional();
 
 /** Process tickets configuration */
@@ -254,6 +290,7 @@ const processTicketsSchema = z
     pattern: z.string().optional(),
     check_in: z.array(z.string()).optional(),
   })
+  .strict()
   .optional();
 
 /** Process domain configuration */
@@ -263,6 +300,7 @@ const processSchema = z
     branches: processBranchesSchema,
     tickets: processTicketsSchema,
   })
+  .strict()
   .optional();
 
 // =============================================================================
@@ -277,6 +315,7 @@ const stackSchema = z
   .object({
     tools: stackToolsSchema,
   })
+  .strict()
   .optional();
 
 // =============================================================================
@@ -284,11 +323,13 @@ const stackSchema = z
 // =============================================================================
 
 /** Full check.toml schema */
-export const configSchema = z.object({
-  code: codeSchema,
-  process: processSchema,
-  stack: stackSchema,
-});
+export const configSchema = z
+  .object({
+    code: codeSchema,
+    process: processSchema,
+    stack: stackSchema,
+  })
+  .strict();
 
 /** Inferred TypeScript type from schema */
 export type Config = z.infer<typeof configSchema>;

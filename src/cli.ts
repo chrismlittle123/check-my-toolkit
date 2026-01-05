@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import chalk from "chalk";
-import { Command } from "commander";
+import { Command, Option } from "commander";
 
 import { auditCodeConfig, runCodeChecks } from "./code/index.js";
 import { ConfigError, getProjectRoot, loadConfig } from "./config/index.js";
@@ -92,7 +92,7 @@ program
   .command("validate")
   .description("Validate check.toml configuration file")
   .option("-c, --config <path>", "Path to check.toml config file")
-  .option("-f, --format <format>", "Output format: text or json", "text")
+  .addOption(new Option("-f, --format <format>", "Output format").choices(["text", "json"]).default("text"))
   .action((options: { config?: string; format: string }) => {
     try {
       const { configPath } = loadConfig(options.config);
@@ -128,7 +128,7 @@ codeCommand
   .command("check")
   .description("Run linting and type checking tools")
   .option("-c, --config <path>", "Path to check.toml config file")
-  .option("-f, --format <format>", "Output format: text or json", "text")
+  .addOption(new Option("-f, --format <format>", "Output format").choices(["text", "json"]).default("text"))
   .action(runCheck);
 
 // cm code audit
@@ -136,7 +136,7 @@ codeCommand
   .command("audit")
   .description("Verify linting and type checking configs exist")
   .option("-c, --config <path>", "Path to check.toml config file")
-  .option("-f, --format <format>", "Output format: text or json", "text")
+  .addOption(new Option("-f, --format <format>", "Output format").choices(["text", "json"]).default("text"))
   .action(runAudit);
 
 program.addCommand(codeCommand);

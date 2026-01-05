@@ -21,6 +21,7 @@ vi.mock("commander", () => {
     cmd.description = vi.fn().mockReturnValue(cmd);
     cmd.version = vi.fn().mockReturnValue(cmd);
     cmd.option = vi.fn().mockReturnValue(cmd);
+    cmd.addOption = vi.fn().mockReturnValue(cmd);
     cmd.addCommand = vi.fn().mockReturnValue(cmd);
     cmd.parse = vi.fn();
     cmd.command = vi.fn().mockImplementation((name: string) => {
@@ -44,8 +45,16 @@ vi.mock("commander", () => {
     return cmd;
   };
 
+  const createMockOption = () => {
+    const opt: Record<string, unknown> = {};
+    opt.choices = vi.fn().mockReturnValue(opt);
+    opt.default = vi.fn().mockReturnValue(opt);
+    return opt;
+  };
+
   return {
     Command: vi.fn().mockImplementation(() => createMockCommand()),
+    Option: vi.fn().mockImplementation(() => createMockOption()),
   };
 });
 
