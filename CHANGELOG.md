@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.7.2
+
+### Patch Changes
+
+- 3645e6a: Add comprehensive ruff test coverage to prevent regression of violation detection
+
 ## 0.7.1
 
 ### Patch Changes
