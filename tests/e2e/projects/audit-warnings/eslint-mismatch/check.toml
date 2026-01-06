@@ -1,6 +1,2 @@
 [code.linting.eslint]
 enabled = true
-
-# This rule is NOT in eslint.config.js, so there should be a mismatch warning
-[code.linting.eslint.rules]
-"no-console" = "error"

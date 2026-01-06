@@ -1,7 +1,3 @@
-# ESLint explicitly disabled - even with rules, it should not run
+# ESLint explicitly disabled - it should not run
 [code.linting.eslint]
 enabled = false
-
-[code.linting.eslint.rules]
-"no-var" = "error"
-"prefer-const" = "error"

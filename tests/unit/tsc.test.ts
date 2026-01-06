@@ -278,4 +278,131 @@ More info
       expect(result.violations[0].message).toContain("TypeScript config not found");
     });
   });
+
+  describe("setConfig", () => {
+    it("passes --strict when strict is true", async () => {
+      fs.writeFileSync(path.join(tempDir, "tsconfig.json"), "{}");
+
+      runner.setConfig({
+        enabled: true,
+        strict: true,
+      });
+
+      mockedExeca.mockResolvedValueOnce({
+        stdout: "",
+        stderr: "",
+        exitCode: 0,
+      } as never);
+
+      await runner.run(tempDir);
+
+      expect(mockedExeca).toHaveBeenCalledWith(
+        "npx",
+        ["tsc", "--noEmit", "--strict"],
+        expect.objectContaining({
+          cwd: tempDir,
+        })
+      );
+    });
+
+    it("passes --noImplicitAny when noImplicitAny is true", async () => {
+      fs.writeFileSync(path.join(tempDir, "tsconfig.json"), "{}");
+
+      runner.setConfig({
+        enabled: true,
+        noImplicitAny: true,
+      });
+
+      mockedExeca.mockResolvedValueOnce({
+        stdout: "",
+        stderr: "",
+        exitCode: 0,
+      } as never);
+
+      await runner.run(tempDir);
+
+      expect(mockedExeca).toHaveBeenCalledWith(
+        "npx",
+        ["tsc", "--noEmit", "--noImplicitAny"],
+        expect.objectContaining({
+          cwd: tempDir,
+        })
+      );
+    });
+
+    it("passes multiple compiler options when configured", async () => {
+      fs.writeFileSync(path.join(tempDir, "tsconfig.json"), "{}");
+
+      runner.setConfig({
+        enabled: true,
+        strict: true,
+        noUnusedLocals: true,
+        noUnusedParameters: true,
+      });
+
+      mockedExeca.mockResolvedValueOnce({
+        stdout: "",
+        stderr: "",
+        exitCode: 0,
+      } as never);
+
+      await runner.run(tempDir);
+
+      expect(mockedExeca).toHaveBeenCalledWith(
+        "npx",
+        ["tsc", "--noEmit", "--strict", "--noUnusedLocals", "--noUnusedParameters"],
+        expect.objectContaining({
+          cwd: tempDir,
+        })
+      );
+    });
+
+    it("does not pass flag when option is false", async () => {
+      fs.writeFileSync(path.join(tempDir, "tsconfig.json"), "{}");
+
+      runner.setConfig({
+        enabled: true,
+        strict: false,
+        noImplicitAny: false,
+      });
+
+      mockedExeca.mockResolvedValueOnce({
+        stdout: "",
+        stderr: "",
+        exitCode: 0,
+      } as never);
+
+      await runner.run(tempDir);
+
+      // When set to false, the flags should NOT be passed
+      // (the tsconfig.json settings will be used instead)
+      expect(mockedExeca).toHaveBeenCalledWith(
+        "npx",
+        ["tsc", "--noEmit"],
+        expect.objectContaining({
+          cwd: tempDir,
+        })
+      );
+    });
+
+    it("uses default args when no config set", async () => {
+      fs.writeFileSync(path.join(tempDir, "tsconfig.json"), "{}");
+
+      mockedExeca.mockResolvedValueOnce({
+        stdout: "",
+        stderr: "",
+        exitCode: 0,
+      } as never);
+
+      await runner.run(tempDir);
+
+      expect(mockedExeca).toHaveBeenCalledWith(
+        "npx",
+        ["tsc", "--noEmit"],
+        expect.objectContaining({
+          cwd: tempDir,
+        })
+      );
+    });
+  });
 });

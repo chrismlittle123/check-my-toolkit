@@ -8,17 +8,12 @@ import { z } from "zod";
 // ESLint Configuration
 // =============================================================================
 
-/** ESLint rule values: "off", "warn", "error", or array like ["error", "always"] */
-const eslintRuleValueSchema = z.union([
-  z.enum(["off", "warn", "error"]),
-  z.tuple([z.string()]).rest(z.unknown()),
-]);
-
 /** ESLint configuration */
+// Note: ESLint rules are not configurable via check.toml because ESLint flat config
+// doesn't support CLI rule overrides. Configure rules in your eslint.config.js file.
 const eslintConfigSchema = z
   .object({
     enabled: z.boolean().optional().default(true),
-    rules: z.record(z.string(), eslintRuleValueSchema).optional(),
   })
   .strict()
   .optional();

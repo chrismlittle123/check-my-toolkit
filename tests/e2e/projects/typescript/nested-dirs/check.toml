@@ -1,6 +1,2 @@
 [code.linting.eslint]
 enabled = true
-
-[code.linting.eslint.rules]
-"no-var" = "error"
-"prefer-const" = "error"

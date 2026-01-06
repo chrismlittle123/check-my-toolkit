@@ -17,6 +17,17 @@ interface RuffMessage {
   };
 }
 
+/** Ruff configuration options from check.toml */
+interface RuffConfig {
+  enabled?: boolean;
+  format?: boolean;
+  "line-length"?: number;
+  lint?: {
+    select?: string[];
+    ignore?: string[];
+  };
+}
+
 /**
  * Ruff (Python linter) tool runner
  */
@@ -25,6 +36,36 @@ export class RuffRunner extends BaseToolRunner {
   readonly rule = "code.linting";
   readonly toolId = "ruff";
   readonly configFiles = ["ruff.toml", ".ruff.toml"];
+
+  private ruffConfig: RuffConfig = {};
+
+  /**
+   * Set the Ruff configuration from check.toml
+   */
+  setConfig(config: RuffConfig): void {
+    this.ruffConfig = config;
+  }
+
+  /**
+   * Build CLI arguments from config
+   */
+  private buildCliArgs(): string[] {
+    const args = ["check", ".", "--output-format", "json"];
+
+    if (this.ruffConfig["line-length"]) {
+      args.push("--line-length", String(this.ruffConfig["line-length"]));
+    }
+
+    if (this.ruffConfig.lint?.select?.length) {
+      args.push("--select", this.ruffConfig.lint.select.join(","));
+    }
+
+    if (this.ruffConfig.lint?.ignore?.length) {
+      args.push("--ignore", this.ruffConfig.lint.ignore.join(","));
+    }
+
+    return args;
+  }
 
   /**
    * Override hasConfig to also check for [tool.ruff] in pyproject.toml
@@ -79,7 +120,7 @@ export class RuffRunner extends BaseToolRunner {
     }
 
     try {
-      const result = await execa("ruff", ["check", ".", "--output-format", "json"], {
+      const result = await execa("ruff", this.buildCliArgs(), {
         cwd: projectRoot,
         reject: false,
         timeout: 5 * 60 * 1000,
