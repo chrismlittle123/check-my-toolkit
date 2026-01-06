@@ -43,8 +43,9 @@ describe("TyRunner", () => {
     });
 
     it("has correct config files", () => {
+      // Note: pyproject.toml is handled via hasConfig override, not configFiles
       expect(runner.configFiles).toContain("ty.toml");
-      expect(runner.configFiles).toContain("pyproject.toml");
+      expect(runner.configFiles).toHaveLength(1);
     });
   });
 
@@ -321,6 +322,15 @@ Found 3 diagnostics`;
     });
 
     it("fails when no config exists", async () => {
+      const result = await runner.audit(tempDir);
+
+      expect(result.passed).toBe(false);
+      expect(result.violations[0].message).toContain("ty config not found");
+    });
+
+    it("fails when pyproject.toml exists without [tool.ty] section", async () => {
+      // This tests Bug #15 - pyproject.toml without [tool.ty] should NOT be a false positive
+      fs.writeFileSync(path.join(tempDir, "pyproject.toml"), "[project]\nname = 'test'");
       const result = await runner.audit(tempDir);
 
       expect(result.passed).toBe(false);

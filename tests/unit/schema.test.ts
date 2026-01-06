@@ -103,42 +103,29 @@ describe("configSchema", () => {
       expect(result.success).toBe(false);
     });
 
-    it("accepts process config", () => {
+    it("rejects process config (not implemented)", () => {
+      // process domain is reserved for future use
       const config = {
         process: {
-          pr: {
-            max_files: 10,
-            max_lines: 500,
-            min_approvals: 2,
-          },
-          branches: {
-            pattern: "^(main|develop|feature/.+|bugfix/.+)$",
-          },
-          tickets: {
-            pattern: "^[A-Z]+-\\d+$",
-            check_in: ["commit", "pr"],
-          },
+          pr: { max_files: 10 },
         },
       };
       const result = configSchema.safeParse(config);
-      expect(result.success).toBe(true);
+      expect(result.success).toBe(false);
     });
 
-    it("accepts stack config", () => {
+    it("rejects stack config (not implemented)", () => {
+      // stack domain is reserved for future use
       const config = {
         stack: {
-          tools: {
-            node: ">=18.0.0",
-            npm: ">=9.0.0",
-            python: ">=3.10",
-          },
+          tools: { node: ">=18" },
         },
       };
       const result = configSchema.safeParse(config);
-      expect(result.success).toBe(true);
+      expect(result.success).toBe(false);
     });
 
-    it("accepts complete config with all sections", () => {
+    it("accepts complete code config", () => {
       const config = {
         code: {
           linting: {
@@ -148,14 +135,6 @@ describe("configSchema", () => {
           types: {
             tsc: { enabled: true },
           },
-        },
-        process: {
-          pr: { max_files: 10 },
-          branches: { pattern: "^main$" },
-          tickets: { pattern: "^JIRA-\\d+$" },
-        },
-        stack: {
-          tools: { node: ">=18" },
         },
       };
       const result = configSchema.safeParse(config);
@@ -254,14 +233,10 @@ describe("defaultConfig", () => {
     expect(defaultConfig.code?.security?.pipaudit?.enabled).toBe(false);
   });
 
-  it("has empty process sections", () => {
-    expect(defaultConfig.process?.pr).toEqual({});
-    expect(defaultConfig.process?.branches).toEqual({});
-    expect(defaultConfig.process?.tickets).toEqual({});
-  });
-
-  it("has empty stack tools", () => {
-    expect(defaultConfig.stack?.tools).toEqual({});
+  it("does not have process or stack sections (not implemented)", () => {
+    // process and stack domains are reserved for future use
+    expect((defaultConfig as Record<string, unknown>).process).toBeUndefined();
+    expect((defaultConfig as Record<string, unknown>).stack).toBeUndefined();
   });
 
   it("matches Config type", () => {

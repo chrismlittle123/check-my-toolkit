@@ -181,25 +181,21 @@ enabled = true
     expect(result.config.code?.security?.pipaudit?.enabled).toBe(true);
   });
 
-  it("merges process config", () => {
+  it("rejects process config (not implemented)", () => {
     const configPath = path.join(tempDir, "check.toml");
     fs.writeFileSync(
       configPath,
       `
 [process.pr]
 max_files = 10
-
-[process.branches]
-pattern = "^main$"
 `
     );
 
-    const result = loadConfig(configPath);
-    expect(result.config.process?.pr?.max_files).toBe(10);
-    expect(result.config.process?.branches?.pattern).toBe("^main$");
+    expect(() => loadConfig(configPath)).toThrow(ConfigError);
+    expect(() => loadConfig(configPath)).toThrow("Unrecognized key(s)");
   });
 
-  it("merges stack config", () => {
+  it("rejects stack config (not implemented)", () => {
     const configPath = path.join(tempDir, "check.toml");
     fs.writeFileSync(
       configPath,
@@ -209,8 +205,8 @@ node = ">=18"
 `
     );
 
-    const result = loadConfig(configPath);
-    expect(result.config.stack?.tools?.node).toBe(">=18");
+    expect(() => loadConfig(configPath)).toThrow(ConfigError);
+    expect(() => loadConfig(configPath)).toThrow("Unrecognized key(s)");
   });
 
   it("throws ConfigError for missing config file", () => {

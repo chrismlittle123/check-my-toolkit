@@ -122,12 +122,15 @@ export class TestsRunner extends BaseToolRunner {
     const pattern = this.getPattern();
 
     try {
-      // Validate pattern by attempting a glob (with limit to avoid scanning)
-      await glob(pattern, {
+      // Validate pattern by attempting a glob with early termination
+      // Use iterator to avoid scanning all files - we just need to check pattern is valid
+      const iterator = glob.iterate(pattern, {
         cwd: projectRoot,
         ignore: ["**/node_modules/**"],
         nodir: true,
       });
+      // Try to get first result to validate pattern syntax
+      await iterator.next();
 
       return {
         name: `${this.name} Config`,

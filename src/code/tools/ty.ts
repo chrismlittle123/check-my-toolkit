@@ -1,3 +1,4 @@
+import * as fs from "node:fs";
 import * as path from "node:path";
 
 import { execa } from "execa";
@@ -23,7 +24,68 @@ export class TyRunner extends BaseToolRunner {
   readonly name = "ty";
   readonly rule = "code.types";
   readonly toolId = "ty";
-  readonly configFiles = ["ty.toml", "pyproject.toml"];
+  readonly configFiles = ["ty.toml"];
+
+  /**
+   * Override hasConfig to also check for [tool.ty] in pyproject.toml
+   */
+  protected override hasConfig(projectRoot: string): boolean {
+    // Check for dedicated ty.toml config file
+    if (super.hasConfig(projectRoot)) {
+      return true;
+    }
+
+    // Check pyproject.toml for [tool.ty] section
+    return this.hasPyprojectConfig(projectRoot);
+  }
+
+  private hasPyprojectConfig(projectRoot: string): boolean {
+    const pyprojectPath = path.join(projectRoot, "pyproject.toml");
+    if (!fs.existsSync(pyprojectPath)) {
+      return false;
+    }
+
+    try {
+      const content = fs.readFileSync(pyprojectPath, "utf-8");
+      return content.includes("[tool.ty]");
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Override audit to check for ty.toml or [tool.ty] in pyproject.toml
+   */
+  override async audit(projectRoot: string): Promise<CheckResult> {
+    const startTime = Date.now();
+
+    if (this.hasConfig(projectRoot)) {
+      return {
+        name: `${this.name} Config`,
+        rule: this.rule,
+        passed: true,
+        violations: [],
+        skipped: false,
+        duration: Date.now() - startTime,
+      };
+    }
+
+    return {
+      name: `${this.name} Config`,
+      rule: this.rule,
+      passed: false,
+      violations: [
+        {
+          rule: `${this.rule}.${this.toolId}`,
+          tool: "audit",
+          message: "ty config not found. Expected ty.toml or [tool.ty] in pyproject.toml",
+          severity: "error",
+        },
+      ],
+      skipped: false,
+      duration: Date.now() - startTime,
+    };
+  }
 
   async run(projectRoot: string): Promise<CheckResult> {
     const startTime = Date.now();
