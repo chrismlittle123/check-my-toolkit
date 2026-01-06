@@ -16,7 +16,25 @@ describe("configSchema", () => {
       expect(result.success).toBe(true);
     });
 
-    it("accepts full code config with ESLint", () => {
+    it("accepts ESLint config with enabled flag only", () => {
+      // Note: ESLint rules are not configurable via check.toml
+      // because ESLint flat config doesn't support CLI rule overrides.
+      // Configure rules in your eslint.config.js file.
+      const config = {
+        code: {
+          linting: {
+            eslint: {
+              enabled: true,
+            },
+          },
+        },
+      };
+      const result = configSchema.safeParse(config);
+      expect(result.success).toBe(true);
+    });
+
+    it("rejects ESLint config with rules (not supported)", () => {
+      // ESLint rules are not supported in check.toml
       const config = {
         code: {
           linting: {
@@ -24,51 +42,13 @@ describe("configSchema", () => {
               enabled: true,
               rules: {
                 "no-unused-vars": "error",
-                "semi": ["error", "always"],
               },
             },
           },
         },
       };
       const result = configSchema.safeParse(config);
-      expect(result.success).toBe(true);
-    });
-
-    it("accepts ESLint rules with off/warn/error values", () => {
-      const config = {
-        code: {
-          linting: {
-            eslint: {
-              enabled: true,
-              rules: {
-                "rule-off": "off",
-                "rule-warn": "warn",
-                "rule-error": "error",
-              },
-            },
-          },
-        },
-      };
-      const result = configSchema.safeParse(config);
-      expect(result.success).toBe(true);
-    });
-
-    it("accepts ESLint rules with tuple values", () => {
-      const config = {
-        code: {
-          linting: {
-            eslint: {
-              enabled: true,
-              rules: {
-                "quotes": ["error", "double"],
-                "indent": ["warn", 2, { SwitchCase: 1 }],
-              },
-            },
-          },
-        },
-      };
-      const result = configSchema.safeParse(config);
-      expect(result.success).toBe(true);
+      expect(result.success).toBe(false);
     });
 
     it("accepts full code config with Ruff", () => {

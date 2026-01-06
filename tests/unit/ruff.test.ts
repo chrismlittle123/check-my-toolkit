@@ -626,4 +626,159 @@ describe("RuffRunner", () => {
       expect(result.violations[0].message).toContain("Ruff config not found");
     });
   });
+
+  describe("setConfig", () => {
+    it("passes --line-length when configured", async () => {
+      fs.writeFileSync(path.join(tempDir, "test.py"), "");
+
+      runner.setConfig({
+        enabled: true,
+        "line-length": 120,
+      });
+
+      mockedExeca.mockResolvedValueOnce({
+        stdout: "test.py",
+        stderr: "",
+        exitCode: 0,
+      } as never);
+      mockedExeca.mockResolvedValueOnce({
+        stdout: "[]",
+        stderr: "",
+        exitCode: 0,
+      } as never);
+
+      await runner.run(tempDir);
+
+      expect(mockedExeca).toHaveBeenCalledWith(
+        "ruff",
+        ["check", ".", "--output-format", "json", "--line-length", "120"],
+        expect.objectContaining({
+          cwd: tempDir,
+        })
+      );
+    });
+
+    it("passes --select when lint.select is configured", async () => {
+      fs.writeFileSync(path.join(tempDir, "test.py"), "");
+
+      runner.setConfig({
+        enabled: true,
+        lint: {
+          select: ["E", "F", "W"],
+        },
+      });
+
+      mockedExeca.mockResolvedValueOnce({
+        stdout: "test.py",
+        stderr: "",
+        exitCode: 0,
+      } as never);
+      mockedExeca.mockResolvedValueOnce({
+        stdout: "[]",
+        stderr: "",
+        exitCode: 0,
+      } as never);
+
+      await runner.run(tempDir);
+
+      expect(mockedExeca).toHaveBeenCalledWith(
+        "ruff",
+        ["check", ".", "--output-format", "json", "--select", "E,F,W"],
+        expect.objectContaining({
+          cwd: tempDir,
+        })
+      );
+    });
+
+    it("passes --ignore when lint.ignore is configured", async () => {
+      fs.writeFileSync(path.join(tempDir, "test.py"), "");
+
+      runner.setConfig({
+        enabled: true,
+        lint: {
+          ignore: ["E501", "F401"],
+        },
+      });
+
+      mockedExeca.mockResolvedValueOnce({
+        stdout: "test.py",
+        stderr: "",
+        exitCode: 0,
+      } as never);
+      mockedExeca.mockResolvedValueOnce({
+        stdout: "[]",
+        stderr: "",
+        exitCode: 0,
+      } as never);
+
+      await runner.run(tempDir);
+
+      expect(mockedExeca).toHaveBeenCalledWith(
+        "ruff",
+        ["check", ".", "--output-format", "json", "--ignore", "E501,F401"],
+        expect.objectContaining({
+          cwd: tempDir,
+        })
+      );
+    });
+
+    it("passes all config options together", async () => {
+      fs.writeFileSync(path.join(tempDir, "test.py"), "");
+
+      runner.setConfig({
+        enabled: true,
+        "line-length": 100,
+        lint: {
+          select: ["F"],
+          ignore: ["F401"],
+        },
+      });
+
+      mockedExeca.mockResolvedValueOnce({
+        stdout: "test.py",
+        stderr: "",
+        exitCode: 0,
+      } as never);
+      mockedExeca.mockResolvedValueOnce({
+        stdout: "[]",
+        stderr: "",
+        exitCode: 0,
+      } as never);
+
+      await runner.run(tempDir);
+
+      expect(mockedExeca).toHaveBeenCalledWith(
+        "ruff",
+        ["check", ".", "--output-format", "json", "--line-length", "100", "--select", "F", "--ignore", "F401"],
+        expect.objectContaining({
+          cwd: tempDir,
+        })
+      );
+    });
+
+    it("uses default args when no config set", async () => {
+      fs.writeFileSync(path.join(tempDir, "test.py"), "");
+
+      mockedExeca.mockResolvedValueOnce({
+        stdout: "test.py",
+        stderr: "",
+        exitCode: 0,
+      } as never);
+      mockedExeca.mockResolvedValueOnce({
+        stdout: "[]",
+        stderr: "",
+        exitCode: 0,
+      } as never);
+
+      await runner.run(tempDir);
+
+      expect(mockedExeca).toHaveBeenCalledWith(
+        "ruff",
+        ["check", ".", "--output-format", "json"],
+        expect.objectContaining({
+          cwd: tempDir,
+        })
+      );
+    });
+  });
 });
