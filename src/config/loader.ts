@@ -172,22 +172,12 @@ function mergeCode(c: Config, dc: Config): CodeConfig {
   };
 }
 
-function mergeProcess(c: Config, dc: Config): NonNullable<Config["process"]> {
-  return {
-    pr: merge(dc.process?.pr, c.process?.pr),
-    branches: merge(dc.process?.branches, c.process?.branches),
-    tickets: merge(dc.process?.tickets, c.process?.tickets),
-  };
-}
-
 /**
  * Deep merge config with defaults
  */
 function mergeWithDefaults(config: Config): Config {
   return {
     code: mergeCode(config, defaultConfig),
-    process: mergeProcess(config, defaultConfig),
-    stack: { tools: merge(defaultConfig.stack?.tools, config.stack?.tools) },
   };
 }
 

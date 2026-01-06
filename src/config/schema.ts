@@ -211,71 +211,16 @@ const codeSchema = z
   .optional();
 
 // =============================================================================
-// Process Domain Configuration
-// =============================================================================
-
-/** Process PR configuration */
-const processPrSchema = z
-  .object({
-    max_files: z.number().optional(),
-    max_lines: z.number().optional(),
-    min_approvals: z.number().optional(),
-  })
-  .strict()
-  .optional();
-
-/** Process branches configuration */
-const processBranchesSchema = z
-  .object({
-    pattern: z.string().optional(),
-  })
-  .strict()
-  .optional();
-
-/** Process tickets configuration */
-const processTicketsSchema = z
-  .object({
-    pattern: z.string().optional(),
-    check_in: z.array(z.string()).optional(),
-  })
-  .strict()
-  .optional();
-
-/** Process domain configuration */
-const processSchema = z
-  .object({
-    pr: processPrSchema,
-    branches: processBranchesSchema,
-    tickets: processTicketsSchema,
-  })
-  .strict()
-  .optional();
-
-// =============================================================================
-// Stack Domain Configuration
-// =============================================================================
-
-/** Stack tools configuration */
-const stackToolsSchema = z.record(z.string()).optional();
-
-/** Stack domain configuration */
-const stackSchema = z
-  .object({
-    tools: stackToolsSchema,
-  })
-  .strict()
-  .optional();
-
-// =============================================================================
 // Full Configuration
 // =============================================================================
+
+// Note: process and stack domains are not yet implemented.
+// They are reserved for future use and will be added when implemented.
 
 /** Full check.toml schema */
 export const configSchema = z
   .object({
     code: codeSchema,
-    process: processSchema,
-    stack: stackSchema,
   })
   .strict();
 
@@ -308,13 +253,5 @@ export const defaultConfig: Config = {
       npmaudit: { enabled: false },
       pipaudit: { enabled: false },
     },
-  },
-  process: {
-    pr: {},
-    branches: {},
-    tickets: {},
-  },
-  stack: {
-    tools: {},
   },
 };
