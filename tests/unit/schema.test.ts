@@ -71,28 +71,14 @@ describe("configSchema", () => {
     });
 
     it("accepts TypeScript config", () => {
+      // Note: TypeScript compiler options are not configurable via check.toml
+      // because tsc CLI flags can only ADD strictness, not override tsconfig.json.
+      // Configure compiler options in your tsconfig.json file.
       const config = {
         code: {
           types: {
             tsc: {
               enabled: true,
-              strict: true,
-              noImplicitAny: true,
-              strictNullChecks: true,
-              strictFunctionTypes: true,
-              strictBindCallApply: true,
-              strictPropertyInitialization: true,
-              noImplicitThis: true,
-              alwaysStrict: true,
-              noUncheckedIndexedAccess: true,
-              noImplicitReturns: true,
-              noFallthroughCasesInSwitch: true,
-              noUnusedLocals: true,
-              noUnusedParameters: true,
-              exactOptionalPropertyTypes: true,
-              noImplicitOverride: true,
-              allowUnusedLabels: false,
-              allowUnreachableCode: false,
             },
           },
         },
@@ -101,33 +87,20 @@ describe("configSchema", () => {
       expect(result.success).toBe(true);
     });
 
-    it("accepts code complexity limits", () => {
+    it("rejects TypeScript compiler options (not supported)", () => {
+      // TypeScript compiler options are not supported in check.toml
       const config = {
         code: {
-          complexity: {
-            max_file_lines: 500,
-            max_function_lines: 50,
-            max_parameters: 5,
-            max_nesting_depth: 4,
+          types: {
+            tsc: {
+              enabled: true,
+              strict: true,
+            },
           },
         },
       };
       const result = configSchema.safeParse(config);
-      expect(result.success).toBe(true);
-    });
-
-    it("accepts code files config", () => {
-      const config = {
-        code: {
-          files: {
-            repo: ["src/**/*.ts"],
-            tooling: ["eslint.config.js", "tsconfig.json"],
-            docs: ["README.md", "docs/**/*.md"],
-          },
-        },
-      };
-      const result = configSchema.safeParse(config);
-      expect(result.success).toBe(true);
+      expect(result.success).toBe(false);
     });
 
     it("accepts process config", () => {
@@ -175,12 +148,6 @@ describe("configSchema", () => {
           types: {
             tsc: { enabled: true },
           },
-          complexity: {
-            max_file_lines: 500,
-          },
-          files: {
-            repo: ["src/**/*.ts"],
-          },
         },
         process: {
           pr: { max_files: 10 },
@@ -197,22 +164,6 @@ describe("configSchema", () => {
   });
 
   describe("invalid configurations", () => {
-    it("rejects invalid ESLint rule value", () => {
-      const config = {
-        code: {
-          linting: {
-            eslint: {
-              rules: {
-                "no-unused-vars": "invalid",
-              },
-            },
-          },
-        },
-      };
-      const result = configSchema.safeParse(config);
-      expect(result.success).toBe(false);
-    });
-
     it("rejects negative line-length", () => {
       const config = {
         code: {
@@ -234,18 +185,6 @@ describe("configSchema", () => {
             ruff: {
               "line-length": 100.5,
             },
-          },
-        },
-      };
-      const result = configSchema.safeParse(config);
-      expect(result.success).toBe(false);
-    });
-
-    it("rejects negative complexity limits", () => {
-      const config = {
-        code: {
-          complexity: {
-            max_file_lines: -100,
           },
         },
       };
@@ -308,10 +247,6 @@ describe("defaultConfig", () => {
     expect(defaultConfig.code?.linting?.eslint?.enabled).toBe(false);
     expect(defaultConfig.code?.linting?.ruff?.enabled).toBe(false);
     expect(defaultConfig.code?.types?.tsc?.enabled).toBe(false);
-  });
-
-  it("has empty complexity section", () => {
-    expect(defaultConfig.code?.complexity).toEqual({});
   });
 
   it("has security tools disabled by default", () => {

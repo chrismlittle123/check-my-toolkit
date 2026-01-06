@@ -47,29 +47,12 @@ const ruffConfigSchema = z
 // =============================================================================
 
 /** TypeScript compiler configuration */
+// Note: TypeScript compiler options (strict, noImplicitAny, etc.) are not configurable
+// via check.toml because tsc CLI flags can only ADD strictness, not override tsconfig.json.
+// Configure compiler options in your tsconfig.json file.
 const tscConfigSchema = z
   .object({
     enabled: z.boolean().optional().default(false),
-    // Strict type-checking options
-    strict: z.boolean().optional(),
-    noImplicitAny: z.boolean().optional(),
-    strictNullChecks: z.boolean().optional(),
-    strictFunctionTypes: z.boolean().optional(),
-    strictBindCallApply: z.boolean().optional(),
-    strictPropertyInitialization: z.boolean().optional(),
-    noImplicitThis: z.boolean().optional(),
-    alwaysStrict: z.boolean().optional(),
-    // Additional strictness
-    noUncheckedIndexedAccess: z.boolean().optional(),
-    noImplicitReturns: z.boolean().optional(),
-    noFallthroughCasesInSwitch: z.boolean().optional(),
-    noUnusedLocals: z.boolean().optional(),
-    noUnusedParameters: z.boolean().optional(),
-    exactOptionalPropertyTypes: z.boolean().optional(),
-    noImplicitOverride: z.boolean().optional(),
-    // Permissive options
-    allowUnusedLabels: z.boolean().optional(),
-    allowUnreachableCode: z.boolean().optional(),
   })
   .strict()
   .optional();
@@ -174,34 +157,6 @@ const codeSecuritySchema = z
   .strict()
   .optional();
 
-// =============================================================================
-// Code Complexity / Limits Configuration
-// =============================================================================
-
-/** Code limits configuration */
-const codeLimitsSchema = z
-  .object({
-    max_file_lines: z.number().int().positive().optional(),
-    max_function_lines: z.number().int().positive().optional(),
-    max_parameters: z.number().int().positive().optional(),
-    max_nesting_depth: z.number().int().positive().optional(),
-  })
-  .strict()
-  .optional();
-
-// =============================================================================
-// Code Files Configuration
-// =============================================================================
-
-/** Code files configuration */
-const codeFilesSchema = z
-  .object({
-    repo: z.array(z.string()).optional(),
-    tooling: z.array(z.string()).optional(),
-    docs: z.array(z.string()).optional(),
-  })
-  .strict()
-  .optional();
 
 // =============================================================================
 // Code Domain Configuration
@@ -251,8 +206,6 @@ const codeSchema = z
     unused: codeUnusedSchema,
     tests: testsConfigSchema,
     security: codeSecuritySchema,
-    complexity: codeLimitsSchema,
-    files: codeFilesSchema,
   })
   .strict()
   .optional();
@@ -355,7 +308,6 @@ export const defaultConfig: Config = {
       npmaudit: { enabled: false },
       pipaudit: { enabled: false },
     },
-    complexity: {},
   },
   process: {
     pr: {},

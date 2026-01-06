@@ -1,5 +1,9 @@
 #!/usr/bin/env node
 
+import * as fs from "node:fs";
+import * as path from "node:path";
+import { fileURLToPath } from "node:url";
+
 import chalk from "chalk";
 import { Command, Option } from "commander";
 
@@ -8,13 +12,17 @@ import { ConfigError, getProjectRoot, loadConfig } from "./config/index.js";
 import { formatOutput, type OutputFormat } from "./output/index.js";
 import { ExitCode, type FullResult } from "./types/index.js";
 
-const VERSION = "0.7.2";
+// Read version from package.json to avoid hardcoding
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const packageJsonPath = path.resolve(__dirname, "..", "package.json");
+const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf-8")) as { version: string };
+const VERSION = packageJson.version;
 
 const program = new Command();
 
 program
   .name("cm")
-  .description("Unified project health checks - code, process, and stack")
+  .description("Unified project health checks for code quality")
   .version(VERSION);
 
 // =============================================================================
