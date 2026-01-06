@@ -14,28 +14,6 @@ interface TscDiagnostic {
   message: string;
 }
 
-/** TypeScript configuration options from check.toml */
-interface TscConfig {
-  enabled?: boolean;
-  strict?: boolean;
-  noImplicitAny?: boolean;
-  strictNullChecks?: boolean;
-  strictFunctionTypes?: boolean;
-  strictBindCallApply?: boolean;
-  strictPropertyInitialization?: boolean;
-  noImplicitThis?: boolean;
-  alwaysStrict?: boolean;
-  noUncheckedIndexedAccess?: boolean;
-  noImplicitReturns?: boolean;
-  noFallthroughCasesInSwitch?: boolean;
-  noUnusedLocals?: boolean;
-  noUnusedParameters?: boolean;
-  exactOptionalPropertyTypes?: boolean;
-  noImplicitOverride?: boolean;
-  allowUnusedLabels?: boolean;
-  allowUnreachableCode?: boolean;
-}
-
 /**
  * TypeScript type checker tool runner
  */
@@ -44,56 +22,6 @@ export class TscRunner extends BaseToolRunner {
   readonly rule = "code.types";
   readonly toolId = "tsc";
   readonly configFiles = ["tsconfig.json"];
-
-  private tscConfig: TscConfig = {};
-
-  /**
-   * Set the TypeScript configuration from check.toml
-   */
-  setConfig(config: TscConfig): void {
-    this.tscConfig = config;
-  }
-
-  /**
-   * Build CLI arguments from config
-   */
-  private buildCliArgs(): string[] {
-    const args = ["tsc", "--noEmit"];
-
-    // Boolean flags that enable stricter checking
-    const enableFlags: (keyof TscConfig)[] = [
-      "strict",
-      "noImplicitAny",
-      "strictNullChecks",
-      "strictFunctionTypes",
-      "strictBindCallApply",
-      "strictPropertyInitialization",
-      "noImplicitThis",
-      "alwaysStrict",
-      "noUncheckedIndexedAccess",
-      "noImplicitReturns",
-      "noFallthroughCasesInSwitch",
-      "noUnusedLocals",
-      "noUnusedParameters",
-      "exactOptionalPropertyTypes",
-      "noImplicitOverride",
-      "allowUnusedLabels",
-      "allowUnreachableCode",
-    ];
-
-    for (const flag of enableFlags) {
-      const value = this.tscConfig[flag];
-      if (value === true) {
-        args.push(`--${flag}`);
-      } else if (value === false) {
-        // For boolean flags, false means don't add the flag
-        // The tsconfig.json setting will be used instead
-        // Note: tsc doesn't have --noStrict etc, so we can only enable, not disable
-      }
-    }
-
-    return args;
-  }
 
   /**
    * Strip ANSI escape codes from a string
@@ -133,7 +61,7 @@ export class TscRunner extends BaseToolRunner {
   }
 
   private async runTsc(projectRoot: string): Promise<Awaited<ReturnType<typeof execa>>> {
-    return execa("npx", this.buildCliArgs(), {
+    return execa("npx", ["tsc", "--noEmit"], {
       cwd: projectRoot,
       reject: false,
       timeout: 5 * 60 * 1000,

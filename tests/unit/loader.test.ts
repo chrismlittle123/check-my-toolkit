@@ -181,20 +181,6 @@ enabled = true
     expect(result.config.code?.security?.pipaudit?.enabled).toBe(true);
   });
 
-  it("merges complexity settings", () => {
-    const configPath = path.join(tempDir, "check.toml");
-    fs.writeFileSync(
-      configPath,
-      `
-[code.complexity]
-max_file_lines = 500
-`
-    );
-
-    const result = loadConfig(configPath);
-    expect(result.config.code?.complexity?.max_file_lines).toBe(500);
-  });
-
   it("merges process config", () => {
     const configPath = path.join(tempDir, "check.toml");
     fs.writeFileSync(

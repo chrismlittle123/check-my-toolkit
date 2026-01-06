@@ -1,5 +1,1 @@
-[code.complexity]
-max_file_lines = 100
-max_function_lines = 50
-max_parameters = 5
-max_nesting_depth = 4
+# Placeholder - complexity feature not yet implemented

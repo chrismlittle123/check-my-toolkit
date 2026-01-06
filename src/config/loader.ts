@@ -169,7 +169,6 @@ function mergeCode(c: Config, dc: Config): CodeConfig {
     unused: mergeUnused(c, dc),
     tests: mergeTests(c, dc),
     security: mergeSecurity(c, dc),
-    complexity: merge(dc.code?.complexity, c.code?.complexity),
   };
 }
 

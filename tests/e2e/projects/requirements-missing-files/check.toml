@@ -1,3 +1,1 @@
-# Requirements test - some files exist, some don't
-[code.files]
-repo = ["CLAUDE.md", "MISSING.md"]
+# Placeholder - files validation feature not yet implemented

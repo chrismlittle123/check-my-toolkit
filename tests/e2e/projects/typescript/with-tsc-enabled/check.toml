@@ -3,4 +3,3 @@ enabled = true
 
 [code.types.tsc]
 enabled = true
-strict = true
