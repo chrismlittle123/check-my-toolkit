@@ -1,0 +1,4 @@
+[code.linting.eslint]
+enabled = true
+rules.no-unused-vars = "error"
+rules.eqeqeq = "error"

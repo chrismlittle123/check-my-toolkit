@@ -186,6 +186,45 @@ const testCases: TestCase[] = [
   },
 
   // ============================================================
+  // ESLint Rules Audit
+  // ============================================================
+  {
+    name: "eslint-rules/pass audit passes when rules match",
+    config: "tests/e2e/projects/eslint-rules/pass/check.toml",
+    command: "audit",
+    expectedExitCode: 0,
+    expectedPatterns: ["✓ ESLint Config: passed"],
+  },
+  {
+    name: "eslint-rules/missing-rule audit fails when rule not configured",
+    config: "tests/e2e/projects/eslint-rules/missing-rule/check.toml",
+    command: "audit",
+    expectedExitCode: 1,
+    expectedPatterns: ["✗ ESLint Config:", "eqeqeq", "required but not configured"],
+  },
+  {
+    name: "eslint-rules/wrong-severity audit fails when severity mismatch",
+    config: "tests/e2e/projects/eslint-rules/wrong-severity/check.toml",
+    command: "audit",
+    expectedExitCode: 1,
+    expectedPatterns: ["✗ ESLint Config:", "no-unused-vars", 'expected "error"', 'got "warn"'],
+  },
+  {
+    name: "eslint-rules/multiple-violations audit reports all violations",
+    config: "tests/e2e/projects/eslint-rules/multiple-violations/check.toml",
+    command: "audit",
+    expectedExitCode: 1,
+    expectedPatterns: [
+      "✗ ESLint Config:",
+      "semi",
+      'expected "error"',
+      "eqeqeq",
+      "no-console",
+      "required but not configured",
+    ],
+  },
+
+  // ============================================================
   // Validate command
   // ============================================================
   {
