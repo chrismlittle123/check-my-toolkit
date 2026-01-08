@@ -150,33 +150,15 @@ function validateRulesets(cwd: string): RegistryValidation {
   return { count, errors };
 }
 
-function validatePrompts(cwd: string): RegistryValidation {
-  const dir = path.join(cwd, "prompts");
-  if (!fs.existsSync(dir)) {
-    return { count: 0, errors: [{ file: "prompts/", error: "Directory does not exist" }] };
-  }
-  const errors: RegistryError[] = [];
-  let count = 0;
-  for (const file of fs.readdirSync(dir)) {
-    if (file.endsWith(".md")) {
-      count++;
-    } else {
-      errors.push({ file: `prompts/${file}`, error: "File must have .md extension" });
-    }
-  }
-  return { count, errors };
-}
-
-interface RegistryResult { valid: boolean; rulesetsCount: number; promptsCount: number; errors: RegistryError[] }
+interface RegistryResult { valid: boolean; rulesetsCount: number; errors: RegistryError[] }
 
 function outputRegistryResult(result: RegistryResult, format: string): void {
-  const { valid, rulesetsCount, promptsCount, errors } = result;
+  const { valid, rulesetsCount, errors } = result;
   if (format === "json") {
-    process.stdout.write(`${JSON.stringify({ valid, rulesetsCount, promptsCount, errors }, null, 2)}\n`);
+    process.stdout.write(`${JSON.stringify({ valid, rulesetsCount, errors }, null, 2)}\n`);
   } else if (valid) {
     process.stdout.write(chalk.green(`✓ Registry valid\n`));
     process.stdout.write(`  Rulesets: ${rulesetsCount} valid\n`);
-    process.stdout.write(`  Prompts: ${promptsCount} valid\n`);
   } else {
     console.error(chalk.red(`✗ Registry invalid\n`));
     errors.forEach(({ file, error }) => console.error(chalk.red(`  ${file}: ${error}`)));
@@ -185,14 +167,13 @@ function outputRegistryResult(result: RegistryResult, format: string): void {
 
 validateCommand
   .command("registry")
-  .description("Validate registry structure (rulesets/*.toml, prompts/*.md)")
+  .description("Validate registry structure (rulesets/*.toml)")
   .addOption(new Option("-f, --format <format>", "Output format").choices(["text", "json"]).default("text"))
   .action(async (options: { format: string }) => {
     const rulesets = validateRulesets(process.cwd());
-    const prompts = validatePrompts(process.cwd());
-    const errors = [...rulesets.errors, ...prompts.errors];
+    const { count: rulesetsCount, errors } = rulesets;
     const valid = errors.length === 0;
-    outputRegistryResult({ valid, rulesetsCount: rulesets.count, promptsCount: prompts.count, errors }, options.format);
+    outputRegistryResult({ valid, rulesetsCount, errors }, options.format);
     process.exit(valid ? ExitCode.SUCCESS : ExitCode.CONFIG_ERROR);
   });
 
