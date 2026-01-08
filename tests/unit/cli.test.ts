@@ -12,10 +12,11 @@ const mockConsoleError = vi.spyOn(console, "error").mockImplementation(() => und
 // Mock commander to capture action handlers
 let checkActionHandler: ((options: { config?: string; format: string }) => Promise<void>) | null = null;
 let auditActionHandler: ((options: { config?: string; format: string }) => Promise<void>) | null = null;
-let validateActionHandler: ((options: { config?: string; format: string }) => void) | null = null;
+let validateConfigActionHandler: ((options: { config?: string; format: string }) => void) | null = null;
+let validateRegistryActionHandler: ((options: { format: string }) => Promise<void>) | null = null;
 
 vi.mock("commander", () => {
-  const createMockCommand = () => {
+  const createMockCommand = (parentName?: string) => {
     const cmd: Record<string, unknown> = {};
     cmd.name = vi.fn().mockReturnValue(cmd);
     cmd.description = vi.fn().mockReturnValue(cmd);
@@ -25,21 +26,23 @@ vi.mock("commander", () => {
     cmd.addCommand = vi.fn().mockReturnValue(cmd);
     cmd.parse = vi.fn();
     cmd.command = vi.fn().mockImplementation((name: string) => {
-      const subCmd = createMockCommand();
+      const subCmd = createMockCommand(parentName || name);
       subCmd.action = vi.fn().mockImplementation((handler) => {
         if (name === "check") {
           checkActionHandler = handler;
         } else if (name === "audit") {
           auditActionHandler = handler;
-        } else if (name === "validate") {
-          validateActionHandler = handler;
+        } else if (name === "config" || (parentName === "validate" && name === "config")) {
+          validateConfigActionHandler = handler;
+        } else if (name === "registry" || (parentName === "validate" && name === "registry")) {
+          validateRegistryActionHandler = handler;
         }
         return subCmd;
       });
       return subCmd;
     });
     cmd.action = vi.fn().mockImplementation((handler) => {
-      validateActionHandler = handler;
+      validateConfigActionHandler = handler;
       return cmd;
     });
     return cmd;
@@ -53,7 +56,7 @@ vi.mock("commander", () => {
   };
 
   return {
-    Command: vi.fn().mockImplementation(() => createMockCommand()),
+    Command: vi.fn().mockImplementation((name?: string) => createMockCommand(name)),
     Option: vi.fn().mockImplementation(() => createMockOption()),
   };
 });
@@ -75,7 +78,8 @@ describe("CLI", () => {
     vi.clearAllMocks();
     checkActionHandler = null;
     auditActionHandler = null;
-    validateActionHandler = null;
+    validateConfigActionHandler = null;
+    validateRegistryActionHandler = null;
 
     // Import CLI to register handlers
     await import("../../src/cli.js");
@@ -339,7 +343,7 @@ enabled = true`
     });
   });
 
-  describe("validate command", () => {
+  describe("validate config command", () => {
     it("validates valid config in text format", () => {
       const configPath = path.join(tempDir, "check.toml");
       fs.writeFileSync(
@@ -348,7 +352,7 @@ enabled = true`
 enabled = true`
       );
 
-      validateActionHandler!({ config: configPath, format: "text" });
+      validateConfigActionHandler!({ config: configPath, format: "text" });
 
       const output = mockStdoutWrite.mock.calls[0][0] as string;
       expect(output).toContain("✓ Valid");
@@ -363,7 +367,7 @@ enabled = true`
 enabled = true`
       );
 
-      validateActionHandler!({ config: configPath, format: "json" });
+      validateConfigActionHandler!({ config: configPath, format: "json" });
 
       const output = mockStdoutWrite.mock.calls[0][0] as string;
       const parsed = JSON.parse(output);
@@ -376,7 +380,7 @@ enabled = true`
       const configPath = path.join(tempDir, "check.toml");
       fs.writeFileSync(configPath, "invalid [ toml syntax");
 
-      validateActionHandler!({ config: configPath, format: "text" });
+      validateConfigActionHandler!({ config: configPath, format: "text" });
 
       expect(mockConsoleError).toHaveBeenCalledWith(expect.stringContaining("✗ Invalid"));
       expect(mockExit).toHaveBeenCalledWith(2);
@@ -386,7 +390,7 @@ enabled = true`
       const configPath = path.join(tempDir, "check.toml");
       fs.writeFileSync(configPath, "invalid [ toml syntax");
 
-      validateActionHandler!({ config: configPath, format: "json" });
+      validateConfigActionHandler!({ config: configPath, format: "json" });
 
       const output = mockStdoutWrite.mock.calls[0][0] as string;
       const parsed = JSON.parse(output);
@@ -409,7 +413,7 @@ enabled = true`
         throw "string error";
       });
 
-      validateActionHandler!({ config: configPath, format: "text" });
+      validateConfigActionHandler!({ config: configPath, format: "text" });
 
       expect(mockConsoleError).toHaveBeenCalledWith(expect.stringContaining("Unknown error"));
       expect(mockExit).toHaveBeenCalledWith(3);
@@ -429,10 +433,169 @@ enabled = true`
         throw new Error("Validate runtime error");
       });
 
-      validateActionHandler!({ config: configPath, format: "text" });
+      validateConfigActionHandler!({ config: configPath, format: "text" });
 
       expect(mockConsoleError).toHaveBeenCalledWith(expect.stringContaining("Validate runtime error"));
       expect(mockExit).toHaveBeenCalledWith(3);
+    });
+  });
+
+  describe("validate registry command", () => {
+    let originalCwd: string;
+
+    beforeEach(() => {
+      originalCwd = process.cwd();
+    });
+
+    afterEach(() => {
+      process.chdir(originalCwd);
+    });
+
+    it("validates valid registry in text format", async () => {
+      // Create valid registry structure
+      const rulesetsDir = path.join(tempDir, "rulesets");
+      const promptsDir = path.join(tempDir, "prompts");
+      fs.mkdirSync(rulesetsDir);
+      fs.mkdirSync(promptsDir);
+      fs.writeFileSync(
+        path.join(rulesetsDir, "typescript.toml"),
+        `[code.linting.eslint]
+enabled = true`
+      );
+      fs.writeFileSync(path.join(promptsDir, "coding.md"), "# Coding Prompt");
+
+      process.chdir(tempDir);
+      await validateRegistryActionHandler!({ format: "text" });
+
+      const output = mockStdoutWrite.mock.calls[0][0] as string;
+      expect(output).toContain("✓ Registry valid");
+      expect(mockExit).toHaveBeenCalledWith(0);
+    });
+
+    it("validates valid registry in JSON format", async () => {
+      const rulesetsDir = path.join(tempDir, "rulesets");
+      const promptsDir = path.join(tempDir, "prompts");
+      fs.mkdirSync(rulesetsDir);
+      fs.mkdirSync(promptsDir);
+      fs.writeFileSync(
+        path.join(rulesetsDir, "typescript.toml"),
+        `[code.linting.eslint]
+enabled = true`
+      );
+      fs.writeFileSync(path.join(promptsDir, "coding.md"), "# Coding Prompt");
+
+      process.chdir(tempDir);
+      await validateRegistryActionHandler!({ format: "json" });
+
+      const output = mockStdoutWrite.mock.calls[0][0] as string;
+      const parsed = JSON.parse(output);
+      expect(parsed.valid).toBe(true);
+      expect(parsed.rulesetsCount).toBe(1);
+      expect(parsed.promptsCount).toBe(1);
+      expect(parsed.errors).toHaveLength(0);
+      expect(mockExit).toHaveBeenCalledWith(0);
+    });
+
+    it("reports invalid TOML in rulesets", async () => {
+      const rulesetsDir = path.join(tempDir, "rulesets");
+      const promptsDir = path.join(tempDir, "prompts");
+      fs.mkdirSync(rulesetsDir);
+      fs.mkdirSync(promptsDir);
+      fs.writeFileSync(path.join(rulesetsDir, "broken.toml"), "invalid [ toml");
+      fs.writeFileSync(path.join(promptsDir, "coding.md"), "# Coding Prompt");
+
+      process.chdir(tempDir);
+      await validateRegistryActionHandler!({ format: "text" });
+
+      expect(mockConsoleError).toHaveBeenCalledWith(expect.stringContaining("✗ Registry invalid"));
+      expect(mockExit).toHaveBeenCalledWith(2);
+    });
+
+    it("reports non-md files in prompts", async () => {
+      const rulesetsDir = path.join(tempDir, "rulesets");
+      const promptsDir = path.join(tempDir, "prompts");
+      fs.mkdirSync(rulesetsDir);
+      fs.mkdirSync(promptsDir);
+      fs.writeFileSync(
+        path.join(rulesetsDir, "typescript.toml"),
+        `[code.linting.eslint]
+enabled = true`
+      );
+      fs.writeFileSync(path.join(promptsDir, "notmarkdown.txt"), "Not a markdown file");
+
+      process.chdir(tempDir);
+      await validateRegistryActionHandler!({ format: "text" });
+
+      expect(mockConsoleError).toHaveBeenCalledWith(expect.stringContaining("✗ Registry invalid"));
+      expect(mockConsoleError).toHaveBeenCalledWith(
+        expect.stringContaining("File must have .md extension")
+      );
+      expect(mockExit).toHaveBeenCalledWith(2);
+    });
+
+    it("reports missing rulesets directory", async () => {
+      const promptsDir = path.join(tempDir, "prompts");
+      fs.mkdirSync(promptsDir);
+      fs.writeFileSync(path.join(promptsDir, "coding.md"), "# Coding Prompt");
+
+      process.chdir(tempDir);
+      await validateRegistryActionHandler!({ format: "text" });
+
+      expect(mockConsoleError).toHaveBeenCalledWith(expect.stringContaining("✗ Registry invalid"));
+      expect(mockExit).toHaveBeenCalledWith(2);
+    });
+
+    it("reports missing prompts directory", async () => {
+      const rulesetsDir = path.join(tempDir, "rulesets");
+      fs.mkdirSync(rulesetsDir);
+      fs.writeFileSync(
+        path.join(rulesetsDir, "typescript.toml"),
+        `[code.linting.eslint]
+enabled = true`
+      );
+
+      process.chdir(tempDir);
+      await validateRegistryActionHandler!({ format: "text" });
+
+      expect(mockConsoleError).toHaveBeenCalledWith(expect.stringContaining("✗ Registry invalid"));
+      expect(mockExit).toHaveBeenCalledWith(2);
+    });
+
+    it("reports multiple errors in JSON format", async () => {
+      const rulesetsDir = path.join(tempDir, "rulesets");
+      const promptsDir = path.join(tempDir, "prompts");
+      fs.mkdirSync(rulesetsDir);
+      fs.mkdirSync(promptsDir);
+      fs.writeFileSync(path.join(rulesetsDir, "broken.toml"), "invalid [ toml");
+      fs.writeFileSync(path.join(promptsDir, "notmarkdown.txt"), "Not a markdown file");
+
+      process.chdir(tempDir);
+      await validateRegistryActionHandler!({ format: "json" });
+
+      const output = mockStdoutWrite.mock.calls[0][0] as string;
+      const parsed = JSON.parse(output);
+      expect(parsed.valid).toBe(false);
+      expect(parsed.errors).toHaveLength(2);
+      expect(parsed.errors[0].file).toBe("rulesets/broken.toml");
+      expect(parsed.errors[1].file).toBe("prompts/notmarkdown.txt");
+      expect(mockExit).toHaveBeenCalledWith(2);
+    });
+
+    it("handles empty directories as valid", async () => {
+      const rulesetsDir = path.join(tempDir, "rulesets");
+      const promptsDir = path.join(tempDir, "prompts");
+      fs.mkdirSync(rulesetsDir);
+      fs.mkdirSync(promptsDir);
+
+      process.chdir(tempDir);
+      await validateRegistryActionHandler!({ format: "json" });
+
+      const output = mockStdoutWrite.mock.calls[0][0] as string;
+      const parsed = JSON.parse(output);
+      expect(parsed.valid).toBe(true);
+      expect(parsed.rulesetsCount).toBe(0);
+      expect(parsed.promptsCount).toBe(0);
+      expect(mockExit).toHaveBeenCalledWith(0);
     });
   });
 });
