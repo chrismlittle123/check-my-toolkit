@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.10.2
+
+### Patch Changes
+
+- 28f27f9: Fix naming config being dropped when using extends registry
+
 ## 0.10.1
 
 ### Patch Changes
