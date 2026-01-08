@@ -176,6 +176,14 @@ function mergeSecurity(base: CodeConfig["security"], override: CodeConfig["secur
   };
 }
 
+function mergeNaming(base: CodeConfig["naming"], override: CodeConfig["naming"]): CodeConfig["naming"] {
+  if (!override) return base;
+  return {
+    enabled: override.enabled ?? base?.enabled ?? false,
+    rules: override.rules ?? base?.rules,
+  };
+}
+
 function mergeCodeSection(base: CodeConfig | undefined, override: CodeConfig): CodeConfig {
   return {
     linting: mergeLinting(base?.linting, override.linting),
@@ -184,6 +192,7 @@ function mergeCodeSection(base: CodeConfig | undefined, override: CodeConfig): C
     unused: mergeUnused(base?.unused, override.unused),
     tests: mergeToolConfig(base?.tests, override.tests),
     security: mergeSecurity(base?.security, override.security),
+    naming: mergeNaming(base?.naming, override.naming),
   };
 }
 
