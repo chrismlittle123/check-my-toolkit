@@ -1,24 +1,25 @@
 # check-my-toolkit
 
-Unified project health checks for code quality, process compliance, and stack validation.
-
-## Installation
+A unified CLI for enforcing code quality standards across projects. One config file, multiple tools, consistent output.
 
 ```bash
 npm install -g check-my-toolkit
 ```
 
-Or use directly with npx:
+## Why?
 
-```bash
-npx check-my-toolkit code check
-```
+Most projects cobble together ESLint, Prettier, Ruff, tsc, and various other tools with inconsistent configs. `cm` unifies them:
+
+- **Single config** — `check.toml` controls all tools
+- **Consistent output** — Same format whether it's ESLint or Ruff
+- **Org standards** — Extend from a shared registry to enforce team conventions
+- **CI-ready** — Exit codes and JSON output for automation
 
 ## Quick Start
 
-1. Create a `check.toml` configuration file in your project root:
-
-```toml
+```bash
+# Create check.toml
+cat > check.toml << 'EOF'
 [code.linting.eslint]
 enabled = true
 
@@ -27,50 +28,20 @@ enabled = true
 
 [code.types.tsc]
 enabled = true
-```
+EOF
 
-2. Run checks:
-
-```bash
+# Run checks
 cm code check
 ```
 
-## Commands
-
-| Command | Description |
-|---------|-------------|
-| `cm code check` | Run linting (ESLint, Ruff) and type checking (tsc) |
-| `cm code audit` | Verify linting and type checking configs exist |
-| `cm validate` | Validate check.toml configuration file |
-
-## Configuration
-
-Configuration is stored in `check.toml` at your project root.
-
-### Code Domain
-
-```toml
-[code.linting.eslint]
-enabled = true    # Run ESLint
-
-[code.linting.ruff]
-enabled = true    # Run Ruff (Python)
-
-[code.types.tsc]
-enabled = true    # Run TypeScript type checking
-```
-
-### Config Discovery
-
-The CLI automatically discovers `check.toml` by walking up the directory tree from the current working directory.
-
-## Output Formats
-
-### Text (default)
+Output:
 
 ```
 [code.linting] ESLint
   ✗ src/index.ts:10:5 - 'foo' is assigned but never used
+
+[code.linting] Ruff
+  ✓ No violations
 
 [code.types] tsc
   ✓ No type errors
@@ -78,7 +49,136 @@ The CLI automatically discovers `check.toml` by walking up the directory tree fr
 code: 1 violation found
 ```
 
-### JSON
+## Supported Tools
+
+### Linting
+
+| Tool | Language | Config |
+|------|----------|--------|
+| ESLint | TypeScript/JavaScript | `[code.linting.eslint]` |
+| Ruff | Python | `[code.linting.ruff]` |
+
+### Formatting
+
+| Tool | Language | Config |
+|------|----------|--------|
+| Prettier | TypeScript/JavaScript | `[code.formatting.prettier]` |
+| Ruff Format | Python | `[code.linting.ruff] format = true` |
+
+### Type Checking
+
+| Tool | Language | Config |
+|------|----------|--------|
+| tsc | TypeScript | `[code.types.tsc]` |
+| ty | Python | `[code.types.ty]` |
+
+### Dead Code Detection
+
+| Tool | Language | Config |
+|------|----------|--------|
+| Knip | TypeScript/JavaScript | `[code.unused.knip]` |
+| Vulture | Python | `[code.unused.vulture]` |
+
+### Security
+
+| Tool | Purpose | Config |
+|------|---------|--------|
+| Gitleaks | Secret detection | `[code.security.gitleaks]` |
+| npm audit | JS dependency vulnerabilities | `[code.security.npm-audit]` |
+| pip-audit | Python dependency vulnerabilities | `[code.security.pip-audit]` |
+
+### Other
+
+| Tool | Purpose | Config |
+|------|---------|--------|
+| Tests | Verify test files exist | `[code.tests]` |
+| Naming | File/folder naming conventions | `[code.naming]` |
+
+## Commands
+
+```bash
+cm code check              # Run all enabled checks
+cm code check --format json  # JSON output for CI
+cm code audit              # Verify tool configs exist
+cm validate                # Validate check.toml syntax
+cm validate registry       # Validate a registry structure
+```
+
+## Configuration
+
+### Basic
+
+```toml
+[code.linting.eslint]
+enabled = true
+
+[code.linting.ruff]
+enabled = true
+line-length = 100
+lint.select = ["E", "F", "I"]
+
+[code.types.tsc]
+enabled = true
+
+[code.formatting.prettier]
+enabled = true
+
+[code.unused.knip]
+enabled = true
+
+[code.security.gitleaks]
+enabled = true
+```
+
+### Extending from a Registry
+
+Share standards across repos by extending from a registry:
+
+```toml
+[extends]
+registry = "github:myorg/standards"
+rulesets = ["typescript", "security"]
+```
+
+The registry contains reusable rulesets in `rulesets/*.toml` that get merged into your config.
+
+### File Naming Conventions
+
+```toml
+[code.naming]
+enabled = true
+
+[code.naming.rules.kebab-ts]
+pattern = "^[a-z][a-z0-9]*(-[a-z0-9]+)*$"
+extensions = [".ts", ".tsx"]
+exclude = ["*.test.ts", "*.spec.ts"]
+
+[code.naming.rules.snake-py]
+pattern = "^[a-z][a-z0-9]*(_[a-z0-9]+)*$"
+extensions = [".py"]
+```
+
+### Test File Validation
+
+```toml
+[code.tests]
+enabled = true
+pattern = "**/*.test.ts"  # Glob pattern for test files
+```
+
+## CI Integration
+
+### GitHub Actions
+
+```yaml
+- name: Install check-my-toolkit
+  run: npm install -g check-my-toolkit
+
+- name: Run code checks
+  run: cm code check
+```
+
+### JSON Output
 
 ```bash
 cm code check --format json
@@ -86,13 +186,13 @@ cm code check --format json
 
 ```json
 {
-  "version": "0.1.0",
+  "version": "0.10.4",
   "configPath": "/path/to/check.toml",
   "domains": {
     "code": {
       "status": "fail",
       "violationCount": 1,
-      "violations": [...]
+      "tools": { ... }
     }
   },
   "summary": {
@@ -102,7 +202,7 @@ cm code check --format json
 }
 ```
 
-## Exit Codes
+### Exit Codes
 
 | Code | Meaning |
 |------|---------|
@@ -111,62 +211,34 @@ cm code check --format json
 | 2 | Configuration error |
 | 3 | Runtime error |
 
-## Supported Tools
-
-| Tool | Language | Command |
-|------|----------|---------|
-| ESLint | TypeScript/JavaScript | `eslint .` |
-| Ruff | Python | `ruff check .` |
-| tsc | TypeScript | `tsc --noEmit` |
-
-Tools must be installed in your project. If a tool is not found, it will be skipped with a warning.
-
-## CI Integration
-
-Add to your GitHub Actions workflow:
-
-```yaml
-- name: Run code checks
-  run: npx check-my-toolkit code check
-```
-
 ## Roadmap
 
-This toolkit is designed to grow into three domains:
+| Domain | Status | Description |
+|--------|--------|-------------|
+| **code** | Stable | Linting, types, formatting, security |
+| **process** | Planned | PR size limits, branch naming, repo settings |
 
-- **code** - Linting, type checking, code quality (current focus)
-- **process** - PR checks, branch naming, commit conventions
-- **stack** - Tool versions, environment variables, service dependencies
+See [docs/roadmap/](docs/roadmap/) for detailed plans.
 
 ## Development
 
 ### Prerequisites
 
-macOS (using Homebrew):
-
 ```bash
+# macOS
 brew bundle
+
+# This installs Python 3.13, Ruff, Vulture for tests
 ```
 
-This installs Python 3.13, Ruff, and Vulture which are required for running tests.
-
-### Setup
+### Commands
 
 ```bash
-# Install dependencies
-npm install
-
-# Build
-npm run build
-
-# Run tests
-npm test
-
-# Type check
-npm run typecheck
-
-# Lint
-npm run lint
+npm install        # Install dependencies
+npm run build      # Compile TypeScript
+npm test           # Run tests
+npm run typecheck  # Type check
+npm run lint       # Lint
 ```
 
 ## License
