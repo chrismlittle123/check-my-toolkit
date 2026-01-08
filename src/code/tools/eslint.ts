@@ -1,7 +1,7 @@
-import * as fs from "node:fs";
 import * as path from "node:path";
 
 import { execa } from "execa";
+import { globSync } from "glob";
 
 import { CheckResult, type Violation } from "../../types/index.js";
 import { BaseToolRunner } from "./base.js";
@@ -143,9 +143,24 @@ export class ESLintRunner extends BaseToolRunner {
    * Audit that required rules are present in ESLint config
    */
   private async auditRules(projectRoot: string): Promise<Violation[]> {
+    // Check if files pattern is configured
+    if (!this.config.files || this.config.files.length === 0) {
+      return [
+        this.createAuditViolation(
+          'Rules audit requires "files" to be configured in check.toml (e.g., files = ["src/**/*.ts"])',
+          "error"
+        ),
+      ];
+    }
+
     const sampleFile = this.findSampleFile(projectRoot);
     if (!sampleFile) {
-      return [this.createAuditViolation("No source files found to verify ESLint config against", "warning")];
+      return [
+        this.createAuditViolation(
+          `No files found matching patterns: ${this.config.files.join(", ")}`,
+          "error"
+        ),
+      ];
     }
 
     const effectiveRules = await this.getEffectiveRules(projectRoot, sampleFile);
@@ -227,43 +242,23 @@ export class ESLintRunner extends BaseToolRunner {
   }
 
   /**
-   * Find a sample source file to check ESLint config against
+   * Find a sample source file to check ESLint config against.
+   * Requires 'files' to be configured in check.toml.
    */
   private findSampleFile(projectRoot: string): string | null {
-    // Common source file patterns
-    const patterns = [
-      "src/index.ts",
-      "src/index.js",
-      "src/main.ts",
-      "src/main.js",
-      "index.ts",
-      "index.js",
-      "src/app.ts",
-      "src/app.js",
-    ];
-
-    for (const pattern of patterns) {
-      const filePath = path.join(projectRoot, pattern);
-      if (fs.existsSync(filePath)) {
-        return pattern;
-      }
+    const filePatterns = this.config.files;
+    if (!filePatterns || filePatterns.length === 0) {
+      return null;
     }
 
-    // Try to find any .ts or .js file in src/
-    const srcDir = path.join(projectRoot, "src");
-    if (fs.existsSync(srcDir)) {
-      try {
-        const files = fs.readdirSync(srcDir);
-        const sourceFile = files.find((f) => f.endsWith(".ts") || f.endsWith(".js"));
-        if (sourceFile) {
-          return `src/${sourceFile}`;
-        }
-      } catch {
-        // Ignore errors
-      }
-    }
+    // Use glob to find a file matching the configured patterns
+    const matches = globSync(filePatterns, {
+      cwd: projectRoot,
+      nodir: true,
+      ignore: this.config.ignore ?? [],
+    });
 
-    return null;
+    return matches.length > 0 ? matches[0] : null;
   }
 
   /**

@@ -264,6 +264,7 @@ describe("ESLintRunner", () => {
       fs.writeFileSync(path.join(tempDir, "src/index.ts"), "");
 
       runner.setConfig({
+        files: ["src/**/*.ts"],
         rules: {
           "no-unused-vars": "error",
           semi: "warn",
@@ -299,6 +300,7 @@ describe("ESLintRunner", () => {
       fs.writeFileSync(path.join(tempDir, "src/index.ts"), "");
 
       runner.setConfig({
+        files: ["src/**/*.ts"],
         rules: {
           "no-unused-vars": "error",
         },
@@ -328,6 +330,7 @@ describe("ESLintRunner", () => {
       fs.writeFileSync(path.join(tempDir, "src/index.ts"), "");
 
       runner.setConfig({
+        files: ["src/**/*.ts"],
         rules: {
           "no-unused-vars": "error", // Require error (2)
         },
@@ -360,6 +363,7 @@ describe("ESLintRunner", () => {
       fs.writeFileSync(path.join(tempDir, "src/index.ts"), "");
 
       runner.setConfig({
+        files: ["src/**/*.ts"],
         rules: {
           "no-unused-vars": "error",
         },
@@ -377,9 +381,8 @@ describe("ESLintRunner", () => {
       expect(result.violations[0].message).toContain("Failed to read ESLint config");
     });
 
-    it("warns when no sample file found for rule audit", async () => {
+    it("fails when files config is missing but rules are defined", async () => {
       fs.writeFileSync(path.join(tempDir, "eslint.config.js"), "");
-      // No source files created
 
       runner.setConfig({
         rules: {
@@ -390,8 +393,26 @@ describe("ESLintRunner", () => {
       const result = await runner.audit(tempDir);
 
       expect(result.violations).toHaveLength(1);
-      expect(result.violations[0].severity).toBe("warning");
-      expect(result.violations[0].message).toContain("No source files found");
+      expect(result.violations[0].severity).toBe("error");
+      expect(result.violations[0].message).toContain('requires "files" to be configured');
+    });
+
+    it("fails when no files match the configured pattern", async () => {
+      fs.writeFileSync(path.join(tempDir, "eslint.config.js"), "");
+      // No source files created, but files pattern is configured
+
+      runner.setConfig({
+        files: ["src/**/*.ts"],
+        rules: {
+          "no-unused-vars": "error",
+        },
+      });
+
+      const result = await runner.audit(tempDir);
+
+      expect(result.violations).toHaveLength(1);
+      expect(result.violations[0].severity).toBe("error");
+      expect(result.violations[0].message).toContain("No files found matching patterns");
     });
 
     it("normalizes rule severity from array format", async () => {
@@ -400,6 +421,7 @@ describe("ESLintRunner", () => {
       fs.writeFileSync(path.join(tempDir, "src/index.ts"), "");
 
       runner.setConfig({
+        files: ["src/**/*.ts"],
         rules: {
           semi: ["error", "always"], // Array format with options
         },
@@ -428,6 +450,7 @@ describe("ESLintRunner", () => {
       fs.writeFileSync(path.join(tempDir, "src/index.ts"), "");
 
       runner.setConfig({
+        files: ["src/**/*.ts"],
         rules: {
           "no-console": "off",
         },
