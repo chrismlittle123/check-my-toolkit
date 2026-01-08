@@ -19,14 +19,12 @@ Registry (org standards) → check.toml [extends] → validates project configs
 ├── [code.types]        # tsc, ty
 ├── [code.unused]       # Knip, Vulture
 ├── [code.tests]        # Test file validation
-└── [code.security]     # Secrets, SAST, dependency audits
+└── [code.security]     # Secrets, dependency audits
 ```
 
 ---
 
-## v0.1 — MVP (v0.1.0)
-
-First release focuses on CODE domain fundamentals.
+## Implemented Features
 
 ### Linting: `[code.linting]`
 
@@ -41,30 +39,10 @@ enabled = true
 
 [code.linting.ruff]
 enabled = true
+line-length = 100
+lint.select = ["E", "F", "I"]
+lint.ignore = ["E501"]
 ```
-
-### Type Checking: `[code.types]`
-
-| Check | Description | Tool |
-|-------|-------------|------|
-| tsc | TypeScript type checking | tsc |
-
-```toml
-[code.types.tsc]
-enabled = true
-```
-
-### Commands
-
-| Command | Description |
-|---------|-------------|
-| `cm code check` | Run all enabled checks |
-| `cm code audit` | Verify tool configs exist |
-| `cm validate config` | Validate check.toml syntax and schema |
-
----
-
-## v0.2 — Formatting & Structure (v0.2.0 - v0.5.0)
 
 ### Formatting: `[code.formatting]`
 
@@ -82,17 +60,23 @@ enabled = true
 format = true  # Also check formatting
 ```
 
-### Tests: `[code.tests]`
+### Type Checking: `[code.types]`
 
-| Check | Description |
-|-------|-------------|
-| Test files exist | Validates test files match pattern |
+| Check | Description | Tool |
+|-------|-------------|------|
+| tsc | TypeScript type checking | tsc |
+| ty | Python type checking | ty (Astral) |
 
 ```toml
-[code.tests]
+[code.types.tsc]
 enabled = true
-pattern = "**/*.{test,spec}.{ts,tsx,js,jsx,py}"
-min_test_files = 1
+
+[code.types.tsc.require]
+strict = true
+noImplicitAny = true
+
+[code.types.ty]
+enabled = true
 ```
 
 ### Unused Code: `[code.unused]`
@@ -110,22 +94,20 @@ enabled = true
 enabled = true
 ```
 
-### Type Checking: `[code.types]`
+### Tests: `[code.tests]`
 
-| Check | Description | Tool |
-|-------|-------------|------|
-| ty | Python type checking | ty (Astral) |
+| Check | Description |
+|-------|-------------|
+| Test files exist | Validates test files match pattern |
 
 ```toml
-[code.types.ty]
+[code.tests]
 enabled = true
+pattern = "**/*.{test,spec}.{ts,tsx,js,jsx,py}"
+min_test_files = 1
 ```
 
----
-
-## v0.3 — Security (v0.6.0 - v0.7.x)
-
-### Security Scanning: `[code.security]`
+### Security: `[code.security]`
 
 | Check | Description | Tool |
 |-------|-------------|------|
@@ -144,155 +126,53 @@ enabled = true
 enabled = true
 ```
 
-**Behavior:**
-- Skip tool if not installed (warn, don't fail)
-- Report vulnerabilities in unified format
-- Exit code 1 if vulnerabilities found
+### Registry & Extends
 
----
-
-## v0.8 — Registry Validation
-
-Validate that a repository conforms to registry structure.
-
-### Registry Structure
-
-A registry repository contains:
-- `rulesets/*.toml` - Check.toml configuration files
-- `prompts/*.md` - Markdown prompt files
-
-### Commands
-
-| Command | Description |
-|---------|-------------|
-| `cm validate registry` | Validate registry structure |
-
-### Validation Rules
-
-1. `rulesets/` directory must exist
-2. All files in `rulesets/` must be valid `.toml` files conforming to check.toml schema
-3. `prompts/` directory must exist
-4. All files in `prompts/` must have `.md` extension
-
----
-
-## v0.9 — Registry Extends
-
-Central feature: inherit standards from organizational registries.
-
-### Registry Format
-
-A registry is a remote `check.toml` that defines organizational standards:
+Inherit standards from organizational registries:
 
 ```toml
-# github:myorg/standards/typescript.toml
-
-[code.linting.eslint]
-enabled = true
-
-[code.types.tsc]
-enabled = true
-
-[code.formatting.prettier]
-enabled = true
-
-[code.unused.knip]
-enabled = true
-```
-
-### Extending from Registry
-
-Projects extend from one or more registries:
-
-```toml
-# project check.toml
-
 [extends]
 registry = "github:myorg/standards"
 rulesets = ["base", "typescript"]
 
-# Local overrides (additive only)
-[code.tests]
+# Local overrides
+[code.linting.eslint]
 enabled = true
-min_test_files = 5
 ```
 
-### Resolution
+Registry structure:
+- `rulesets/*.toml` - Check.toml configuration files
+- `prompts/*.md` - Markdown prompt files
 
-1. Fetch remote configs via git (uses ambient SSH credentials)
-2. Merge configs in order: first ruleset → last ruleset → local
-3. Local can only add, not remove inherited rules
+### Config Audit
 
-### Commands
+Verify that project tool configs conform to the standard:
 
-| Command | Description |
-|---------|-------------|
-| `cm code check` | Run checks (merges extended configs) |
-| `cm code audit` | Audit configs (merges extended configs) |
-
----
-
-## v1.0 — Config Audit
-
-Verify that project tool configs conform to the standard.
-
-### How It Works
-
-The standard (from registry) says:
 ```toml
 [code.types.tsc]
 enabled = true
+
+[code.types.tsc.require]
 strict = true
 noImplicitAny = true
 ```
 
-`cm code audit` checks that `tsconfig.json` contains:
-```json
-{
-  "compilerOptions": {
-    "strict": true,
-    "noImplicitAny": true
-  }
-}
-```
+`cm code audit` checks that `tsconfig.json` contains the required compiler options.
 
-### Output
+---
 
-```
-$ cm code audit
-
-[code.types.tsc]
-  ✓ tsconfig.json exists
-  ✗ strict: expected true, got false
-  ✗ noImplicitAny: missing (expected true)
-
-[code.linting.eslint]
-  ✓ eslint.config.js exists
-  ✓ all required rules present
-
-audit: 2 issues found
-```
-
-### Commands
+## Commands
 
 | Command | Description |
 |---------|-------------|
-| `cm code audit` | Verify tool configs match standard |
-| `cm code audit --fix` | Show suggested fixes (does not modify files) |
+| `cm code check` | Run all enabled checks |
+| `cm code audit` | Verify tool configs exist and match requirements |
+| `cm validate config` | Validate check.toml syntax and schema |
+| `cm validate registry` | Validate registry structure |
 
 ---
 
 ## Future Considerations
-
-### Deferred
-
-| Feature | Reason |
-|---------|--------|
-| `cm code generate` | Users should write their own configs; audit tells them what's wrong |
-| `[code.files]` | "Required files" is low value; "docs for every feature" is too fuzzy to verify |
-| SAST (Semgrep) | Complex tool, may be out of scope |
-
-### Potential
 
 | Feature | Description |
 |---------|-------------|
