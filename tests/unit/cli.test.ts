@@ -450,15 +450,12 @@ enabled = true`
     it("validates valid registry in text format", async () => {
       // Create valid registry structure
       const rulesetsDir = path.join(tempDir, "rulesets");
-      const promptsDir = path.join(tempDir, "prompts");
       fs.mkdirSync(rulesetsDir);
-      fs.mkdirSync(promptsDir);
       fs.writeFileSync(
         path.join(rulesetsDir, "typescript.toml"),
         `[code.linting.eslint]
 enabled = true`
       );
-      fs.writeFileSync(path.join(promptsDir, "coding.md"), "# Coding Prompt");
 
       process.chdir(tempDir);
       await validateRegistryActionHandler!({ format: "text" });
@@ -470,15 +467,12 @@ enabled = true`
 
     it("validates valid registry in JSON format", async () => {
       const rulesetsDir = path.join(tempDir, "rulesets");
-      const promptsDir = path.join(tempDir, "prompts");
       fs.mkdirSync(rulesetsDir);
-      fs.mkdirSync(promptsDir);
       fs.writeFileSync(
         path.join(rulesetsDir, "typescript.toml"),
         `[code.linting.eslint]
 enabled = true`
       );
-      fs.writeFileSync(path.join(promptsDir, "coding.md"), "# Coding Prompt");
 
       process.chdir(tempDir);
       await validateRegistryActionHandler!({ format: "json" });
@@ -487,69 +481,23 @@ enabled = true`
       const parsed = JSON.parse(output);
       expect(parsed.valid).toBe(true);
       expect(parsed.rulesetsCount).toBe(1);
-      expect(parsed.promptsCount).toBe(1);
       expect(parsed.errors).toHaveLength(0);
       expect(mockExit).toHaveBeenCalledWith(0);
     });
 
     it("reports invalid TOML in rulesets", async () => {
       const rulesetsDir = path.join(tempDir, "rulesets");
-      const promptsDir = path.join(tempDir, "prompts");
       fs.mkdirSync(rulesetsDir);
-      fs.mkdirSync(promptsDir);
       fs.writeFileSync(path.join(rulesetsDir, "broken.toml"), "invalid [ toml");
-      fs.writeFileSync(path.join(promptsDir, "coding.md"), "# Coding Prompt");
 
       process.chdir(tempDir);
       await validateRegistryActionHandler!({ format: "text" });
 
       expect(mockConsoleError).toHaveBeenCalledWith(expect.stringContaining("✗ Registry invalid"));
-      expect(mockExit).toHaveBeenCalledWith(2);
-    });
-
-    it("reports non-md files in prompts", async () => {
-      const rulesetsDir = path.join(tempDir, "rulesets");
-      const promptsDir = path.join(tempDir, "prompts");
-      fs.mkdirSync(rulesetsDir);
-      fs.mkdirSync(promptsDir);
-      fs.writeFileSync(
-        path.join(rulesetsDir, "typescript.toml"),
-        `[code.linting.eslint]
-enabled = true`
-      );
-      fs.writeFileSync(path.join(promptsDir, "notmarkdown.txt"), "Not a markdown file");
-
-      process.chdir(tempDir);
-      await validateRegistryActionHandler!({ format: "text" });
-
-      expect(mockConsoleError).toHaveBeenCalledWith(expect.stringContaining("✗ Registry invalid"));
-      expect(mockConsoleError).toHaveBeenCalledWith(
-        expect.stringContaining("File must have .md extension")
-      );
       expect(mockExit).toHaveBeenCalledWith(2);
     });
 
     it("reports missing rulesets directory", async () => {
-      const promptsDir = path.join(tempDir, "prompts");
-      fs.mkdirSync(promptsDir);
-      fs.writeFileSync(path.join(promptsDir, "coding.md"), "# Coding Prompt");
-
-      process.chdir(tempDir);
-      await validateRegistryActionHandler!({ format: "text" });
-
-      expect(mockConsoleError).toHaveBeenCalledWith(expect.stringContaining("✗ Registry invalid"));
-      expect(mockExit).toHaveBeenCalledWith(2);
-    });
-
-    it("reports missing prompts directory", async () => {
-      const rulesetsDir = path.join(tempDir, "rulesets");
-      fs.mkdirSync(rulesetsDir);
-      fs.writeFileSync(
-        path.join(rulesetsDir, "typescript.toml"),
-        `[code.linting.eslint]
-enabled = true`
-      );
-
       process.chdir(tempDir);
       await validateRegistryActionHandler!({ format: "text" });
 
@@ -559,11 +507,9 @@ enabled = true`
 
     it("reports multiple errors in JSON format", async () => {
       const rulesetsDir = path.join(tempDir, "rulesets");
-      const promptsDir = path.join(tempDir, "prompts");
       fs.mkdirSync(rulesetsDir);
-      fs.mkdirSync(promptsDir);
       fs.writeFileSync(path.join(rulesetsDir, "broken.toml"), "invalid [ toml");
-      fs.writeFileSync(path.join(promptsDir, "notmarkdown.txt"), "Not a markdown file");
+      fs.writeFileSync(path.join(rulesetsDir, "also-broken.toml"), "also invalid [ toml");
 
       process.chdir(tempDir);
       await validateRegistryActionHandler!({ format: "json" });
@@ -572,16 +518,14 @@ enabled = true`
       const parsed = JSON.parse(output);
       expect(parsed.valid).toBe(false);
       expect(parsed.errors).toHaveLength(2);
-      expect(parsed.errors[0].file).toBe("rulesets/broken.toml");
-      expect(parsed.errors[1].file).toBe("prompts/notmarkdown.txt");
+      expect(parsed.errors[0].file).toMatch(/^rulesets\//);
+      expect(parsed.errors[1].file).toMatch(/^rulesets\//);
       expect(mockExit).toHaveBeenCalledWith(2);
     });
 
-    it("handles empty directories as valid", async () => {
+    it("handles empty rulesets directory as valid", async () => {
       const rulesetsDir = path.join(tempDir, "rulesets");
-      const promptsDir = path.join(tempDir, "prompts");
       fs.mkdirSync(rulesetsDir);
-      fs.mkdirSync(promptsDir);
 
       process.chdir(tempDir);
       await validateRegistryActionHandler!({ format: "json" });
@@ -590,7 +534,6 @@ enabled = true`
       const parsed = JSON.parse(output);
       expect(parsed.valid).toBe(true);
       expect(parsed.rulesetsCount).toBe(0);
-      expect(parsed.promptsCount).toBe(0);
       expect(mockExit).toHaveBeenCalledWith(0);
     });
   });
