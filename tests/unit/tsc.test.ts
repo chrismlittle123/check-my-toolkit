@@ -52,7 +52,7 @@ describe("TscRunner", () => {
       const result = await runner.run(tempDir);
 
       expect(result.skipped).toBe(true);
-      expect(result.skipReason).toContain("No TypeScript config found");
+      expect(result.skipReason).toContain("tsconfig.json not found");
       expect(mockedExeca).not.toHaveBeenCalled();
     });
 

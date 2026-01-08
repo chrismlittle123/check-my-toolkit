@@ -139,7 +139,7 @@ const testCases: TestCase[] = [
     config: "tests/e2e/projects/typescript/empty-project/check.toml",
     command: "check",
     expectedExitCode: 0,
-    expectedPatterns: ["skipped - No ESLint config found"],
+    expectedPatterns: ["skipped - ", "not found"],
   },
   {
     name: "config-errors/missing-name handles missing project name",

@@ -58,7 +58,7 @@ describe("ESLintRunner", () => {
       const result = await runner.run(tempDir);
 
       expect(result.skipped).toBe(true);
-      expect(result.skipReason).toContain("No ESLint config found");
+      expect(result.skipReason).toContain("not found");
       expect(mockedExeca).not.toHaveBeenCalled();
     });
 

@@ -103,9 +103,10 @@ validateCommand
   .description("Validate check.toml configuration file")
   .option("-c, --config <path>", "Path to check.toml config file")
   .addOption(new Option("-f, --format <format>", "Output format").choices(["text", "json"]).default("text"))
-  .action((options: { config?: string; format: string }) => {
+  .action(async (options: { config?: string; format: string }) => {
     try {
-      const { configPath } = loadConfig(options.config);
+      // Use async loader to validate extends registry and rulesets
+      const { configPath } = await loadConfigAsync(options.config);
 
       if (options.format === "json") {
         process.stdout.write(`${JSON.stringify({ valid: true, configPath }, null, 2)}\n`);

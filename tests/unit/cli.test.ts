@@ -12,7 +12,7 @@ const mockConsoleError = vi.spyOn(console, "error").mockImplementation(() => und
 // Mock commander to capture action handlers
 let checkActionHandler: ((options: { config?: string; format: string }) => Promise<void>) | null = null;
 let auditActionHandler: ((options: { config?: string; format: string }) => Promise<void>) | null = null;
-let validateConfigActionHandler: ((options: { config?: string; format: string }) => void) | null = null;
+let validateConfigActionHandler: ((options: { config?: string; format: string }) => Promise<void>) | null = null;
 let validateRegistryActionHandler: ((options: { format: string }) => Promise<void>) | null = null;
 
 vi.mock("commander", () => {
@@ -344,7 +344,7 @@ enabled = true`
   });
 
   describe("validate config command", () => {
-    it("validates valid config in text format", () => {
+    it("validates valid config in text format", async () => {
       const configPath = path.join(tempDir, "check.toml");
       fs.writeFileSync(
         configPath,
@@ -352,14 +352,14 @@ enabled = true`
 enabled = true`
       );
 
-      validateConfigActionHandler!({ config: configPath, format: "text" });
+      await validateConfigActionHandler!({ config: configPath, format: "text" });
 
       const output = mockStdoutWrite.mock.calls[0][0] as string;
       expect(output).toContain("✓ Valid");
       expect(mockExit).toHaveBeenCalledWith(0);
     });
 
-    it("validates valid config in JSON format", () => {
+    it("validates valid config in JSON format", async () => {
       const configPath = path.join(tempDir, "check.toml");
       fs.writeFileSync(
         configPath,
@@ -367,7 +367,7 @@ enabled = true`
 enabled = true`
       );
 
-      validateConfigActionHandler!({ config: configPath, format: "json" });
+      await validateConfigActionHandler!({ config: configPath, format: "json" });
 
       const output = mockStdoutWrite.mock.calls[0][0] as string;
       const parsed = JSON.parse(output);
@@ -376,21 +376,21 @@ enabled = true`
       expect(mockExit).toHaveBeenCalledWith(0);
     });
 
-    it("reports invalid config in text format", () => {
+    it("reports invalid config in text format", async () => {
       const configPath = path.join(tempDir, "check.toml");
       fs.writeFileSync(configPath, "invalid [ toml syntax");
 
-      validateConfigActionHandler!({ config: configPath, format: "text" });
+      await validateConfigActionHandler!({ config: configPath, format: "text" });
 
       expect(mockConsoleError).toHaveBeenCalledWith(expect.stringContaining("✗ Invalid"));
       expect(mockExit).toHaveBeenCalledWith(2);
     });
 
-    it("reports invalid config in JSON format", () => {
+    it("reports invalid config in JSON format", async () => {
       const configPath = path.join(tempDir, "check.toml");
       fs.writeFileSync(configPath, "invalid [ toml syntax");
 
-      validateConfigActionHandler!({ config: configPath, format: "json" });
+      await validateConfigActionHandler!({ config: configPath, format: "json" });
 
       const output = mockStdoutWrite.mock.calls[0][0] as string;
       const parsed = JSON.parse(output);
@@ -407,13 +407,11 @@ enabled = true`
 enabled = true`
       );
 
-      // Mock loadConfig to throw a non-Error, non-ConfigError object
+      // Mock loadConfigAsync to throw a non-Error, non-ConfigError object
       const configModule = await import("../../src/config/index.js");
-      vi.spyOn(configModule, "loadConfig").mockImplementationOnce(() => {
-        throw "string error";
-      });
+      vi.spyOn(configModule, "loadConfigAsync").mockRejectedValueOnce("string error");
 
-      validateConfigActionHandler!({ config: configPath, format: "text" });
+      await validateConfigActionHandler!({ config: configPath, format: "text" });
 
       expect(mockConsoleError).toHaveBeenCalledWith(expect.stringContaining("Unknown error"));
       expect(mockExit).toHaveBeenCalledWith(3);
@@ -427,13 +425,11 @@ enabled = true`
 enabled = true`
       );
 
-      // Mock loadConfig to throw a regular Error (not ConfigError)
+      // Mock loadConfigAsync to throw a regular Error (not ConfigError)
       const configModule = await import("../../src/config/index.js");
-      vi.spyOn(configModule, "loadConfig").mockImplementationOnce(() => {
-        throw new Error("Validate runtime error");
-      });
+      vi.spyOn(configModule, "loadConfigAsync").mockRejectedValueOnce(new Error("Validate runtime error"));
 
-      validateConfigActionHandler!({ config: configPath, format: "text" });
+      await validateConfigActionHandler!({ config: configPath, format: "text" });
 
       expect(mockConsoleError).toHaveBeenCalledWith(expect.stringContaining("Validate runtime error"));
       expect(mockExit).toHaveBeenCalledWith(3);
