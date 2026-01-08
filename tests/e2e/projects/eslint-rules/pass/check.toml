@@ -1,4 +1,5 @@
 [code.linting.eslint]
 enabled = true
+files = ["src/**/*.ts"]
 rules.no-unused-vars = "error"
 rules.semi = "warn"
