@@ -20,3 +20,13 @@ strict = true
 
 [code.unused.knip]
 enabled = true
+
+# Naming conventions
+[code.naming]
+enabled = true
+
+[[code.naming.rules]]
+extensions = ["ts"]
+file_case = "kebab-case"
+folder_case = "kebab-case"
+exclude = ["tests/e2e/projects/**"]

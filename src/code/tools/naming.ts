@@ -13,6 +13,7 @@ interface NamingRule {
   extensions: string[];
   file_case: CaseType;
   folder_case: CaseType;
+  exclude?: string[];
 }
 
 /** Configuration for naming validation */
@@ -154,9 +155,15 @@ export class NamingRunner extends BaseToolRunner {
   ): Promise<Violation[]> {
     const pattern = this.buildGlobPattern(rule.extensions);
 
+    // Combine default excludes with rule-specific excludes
+    const ignorePatterns = DEFAULT_EXCLUDE.map((dir) => `**/${dir}/**`);
+    if (rule.exclude) {
+      ignorePatterns.push(...rule.exclude);
+    }
+
     const files = await glob(pattern, {
       cwd: projectRoot,
-      ignore: DEFAULT_EXCLUDE.map((dir) => `**/${dir}/**`),
+      ignore: ignorePatterns,
       nodir: true,
     });
 
