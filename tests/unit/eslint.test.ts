@@ -258,4 +258,86 @@ describe("ESLintRunner", () => {
       expect(result.violations[0].message).toContain("ESLint config not found");
     });
   });
+
+  describe("setConfig", () => {
+    it("passes files option to eslint", async () => {
+      fs.writeFileSync(path.join(tempDir, "eslint.config.js"), "");
+      runner.setConfig({ files: ["src/**/*.ts", "lib/**/*.ts"] });
+
+      mockedExeca.mockResolvedValueOnce({
+        stdout: "[]",
+        stderr: "",
+        exitCode: 0,
+      } as never);
+
+      await runner.run(tempDir);
+
+      expect(mockedExeca).toHaveBeenCalledWith(
+        "npx",
+        ["eslint", "src/**/*.ts", "lib/**/*.ts", "--format", "json"],
+        expect.any(Object)
+      );
+    });
+
+    it("passes ignore patterns to eslint", async () => {
+      fs.writeFileSync(path.join(tempDir, "eslint.config.js"), "");
+      runner.setConfig({ ignore: ["dist/**", "node_modules/**"] });
+
+      mockedExeca.mockResolvedValueOnce({
+        stdout: "[]",
+        stderr: "",
+        exitCode: 0,
+      } as never);
+
+      await runner.run(tempDir);
+
+      expect(mockedExeca).toHaveBeenCalledWith(
+        "npx",
+        ["eslint", ".", "--format", "json", "--ignore-pattern", "dist/**", "--ignore-pattern", "node_modules/**"],
+        expect.any(Object)
+      );
+    });
+
+    it("passes max-warnings option to eslint", async () => {
+      fs.writeFileSync(path.join(tempDir, "eslint.config.js"), "");
+      runner.setConfig({ "max-warnings": 10 });
+
+      mockedExeca.mockResolvedValueOnce({
+        stdout: "[]",
+        stderr: "",
+        exitCode: 0,
+      } as never);
+
+      await runner.run(tempDir);
+
+      expect(mockedExeca).toHaveBeenCalledWith(
+        "npx",
+        ["eslint", ".", "--format", "json", "--max-warnings", "10"],
+        expect.any(Object)
+      );
+    });
+
+    it("combines all config options", async () => {
+      fs.writeFileSync(path.join(tempDir, "eslint.config.js"), "");
+      runner.setConfig({
+        files: ["src/**/*.ts"],
+        ignore: ["**/*.test.ts"],
+        "max-warnings": 5,
+      });
+
+      mockedExeca.mockResolvedValueOnce({
+        stdout: "[]",
+        stderr: "",
+        exitCode: 0,
+      } as never);
+
+      await runner.run(tempDir);
+
+      expect(mockedExeca).toHaveBeenCalledWith(
+        "npx",
+        ["eslint", "src/**/*.ts", "--format", "json", "--ignore-pattern", "**/*.test.ts", "--max-warnings", "5"],
+        expect.any(Object)
+      );
+    });
+  });
 });

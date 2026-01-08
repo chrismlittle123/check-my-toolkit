@@ -20,6 +20,14 @@ interface ESLintFileResult {
   messages: ESLintMessage[];
 }
 
+/** ESLint configuration options */
+interface ESLintConfig {
+  enabled?: boolean;
+  files?: string[];
+  ignore?: string[];
+  "max-warnings"?: number;
+}
+
 /**
  * ESLint tool runner
  */
@@ -37,6 +45,15 @@ export class ESLintRunner extends BaseToolRunner {
     ".eslintrc.yaml",
   ];
 
+  private config: ESLintConfig = {};
+
+  /**
+   * Set ESLint configuration options
+   */
+  setConfig(config: ESLintConfig): void {
+    this.config = config;
+  }
+
   async run(projectRoot: string): Promise<CheckResult> {
     const startTime = Date.now();
 
@@ -45,7 +62,8 @@ export class ESLintRunner extends BaseToolRunner {
     }
 
     try {
-      const result = await execa("npx", ["eslint", ".", "--format", "json"], {
+      const args = this.buildArgs();
+      const result = await execa("npx", ["eslint", ...args], {
         cwd: projectRoot,
         reject: false,
         timeout: 5 * 60 * 1000,
@@ -73,6 +91,34 @@ export class ESLintRunner extends BaseToolRunner {
         Date.now() - startTime
       );
     }
+  }
+
+  private buildArgs(): string[] {
+    const args: string[] = [];
+
+    // Files to lint (default to ".")
+    if (this.config.files && this.config.files.length > 0) {
+      args.push(...this.config.files);
+    } else {
+      args.push(".");
+    }
+
+    // Output format
+    args.push("--format", "json");
+
+    // Ignore patterns
+    if (this.config.ignore) {
+      for (const pattern of this.config.ignore) {
+        args.push("--ignore-pattern", pattern);
+      }
+    }
+
+    // Max warnings
+    if (this.config["max-warnings"] !== undefined) {
+      args.push("--max-warnings", String(this.config["max-warnings"]));
+    }
+
+    return args;
   }
 
   private parseOutput(stdout: string, projectRoot: string): Violation[] | null {
