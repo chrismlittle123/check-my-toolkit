@@ -33,8 +33,7 @@ describe("configSchema", () => {
       expect(result.success).toBe(true);
     });
 
-    it("rejects ESLint config with rules (not supported)", () => {
-      // ESLint rules are not supported in check.toml
+    it("accepts ESLint config with rules", () => {
       const config = {
         code: {
           linting: {
@@ -42,13 +41,15 @@ describe("configSchema", () => {
               enabled: true,
               rules: {
                 "no-unused-vars": "error",
+                semi: "warn",
+                "no-console": ["error", { allow: ["warn", "error"] }],
               },
             },
           },
         },
       };
       const result = configSchema.safeParse(config);
-      expect(result.success).toBe(false);
+      expect(result.success).toBe(true);
     });
 
     it("accepts full code config with Ruff", () => {
