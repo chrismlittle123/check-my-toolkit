@@ -128,12 +128,8 @@ export class NamingRunner extends BaseToolRunner {
     }
 
     try {
-      const violations: Violation[] = [];
-
-      for (const rule of rules) {
-        const ruleViolations = await this.checkRule(projectRoot, rule);
-        violations.push(...ruleViolations);
-      }
+      const ruleResults = await Promise.all(rules.map((rule) => this.checkRule(projectRoot, rule)));
+      const violations = ruleResults.flat();
 
       if (violations.length === 0) {
         return this.pass(Date.now() - startTime);
