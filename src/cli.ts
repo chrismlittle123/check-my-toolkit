@@ -6,9 +6,11 @@ import { fileURLToPath } from "node:url";
 
 import chalk from "chalk";
 import { Command, Option } from "commander";
+import { zodToJsonSchema } from "zod-to-json-schema";
 
 import { auditCodeConfig, runCodeChecks } from "./code/index.js";
 import { ConfigError, getProjectRoot, loadConfig, loadConfigAsync } from "./config/index.js";
+import { configSchema } from "./config/schema.js";
 import { formatOutput, type OutputFormat } from "./output/index.js";
 import { ExitCode, type FullResult } from "./types/index.js";
 
@@ -178,6 +180,26 @@ validateCommand
   });
 
 program.addCommand(validateCommand);
+
+// =============================================================================
+// Schema subcommand
+// =============================================================================
+
+const schemaCommand = new Command("schema").description("Output JSON schemas for configuration files");
+
+// cm schema config - output check.toml JSON schema
+schemaCommand
+  .command("config")
+  .description("Output JSON schema for check.toml configuration")
+  .action(() => {
+    const jsonSchema = zodToJsonSchema(configSchema, {
+      name: "CheckTomlConfig",
+      $refStrategy: "none",
+    });
+    process.stdout.write(`${JSON.stringify(jsonSchema, null, 2)}\n`);
+  });
+
+program.addCommand(schemaCommand);
 
 // =============================================================================
 // Code subcommand

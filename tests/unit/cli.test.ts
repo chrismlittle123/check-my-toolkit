@@ -14,6 +14,7 @@ let checkActionHandler: ((options: { config?: string; format: string }) => Promi
 let auditActionHandler: ((options: { config?: string; format: string }) => Promise<void>) | null = null;
 let validateConfigActionHandler: ((options: { config?: string; format: string }) => Promise<void>) | null = null;
 let validateRegistryActionHandler: ((options: { format: string }) => Promise<void>) | null = null;
+let schemaConfigActionHandler: (() => void) | null = null;
 
 vi.mock("commander", () => {
   const createMockCommand = (parentName?: string) => {
@@ -32,10 +33,12 @@ vi.mock("commander", () => {
           checkActionHandler = handler;
         } else if (name === "audit") {
           auditActionHandler = handler;
-        } else if (name === "config" || (parentName === "validate" && name === "config")) {
+        } else if (parentName === "validate" && name === "config") {
           validateConfigActionHandler = handler;
-        } else if (name === "registry" || (parentName === "validate" && name === "registry")) {
+        } else if (parentName === "validate" && name === "registry") {
           validateRegistryActionHandler = handler;
+        } else if (parentName === "schema" && name === "config") {
+          schemaConfigActionHandler = handler;
         }
         return subCmd;
       });
@@ -80,6 +83,7 @@ describe("CLI", () => {
     auditActionHandler = null;
     validateConfigActionHandler = null;
     validateRegistryActionHandler = null;
+    schemaConfigActionHandler = null;
 
     // Import CLI to register handlers
     await import("../../src/cli.js");
@@ -535,6 +539,54 @@ enabled = true`
       expect(parsed.valid).toBe(true);
       expect(parsed.rulesetsCount).toBe(0);
       expect(mockExit).toHaveBeenCalledWith(0);
+    });
+  });
+
+  describe("schema config command", () => {
+    it("outputs valid JSON schema", () => {
+      schemaConfigActionHandler!();
+
+      const output = mockStdoutWrite.mock.calls[0][0] as string;
+      const parsed = JSON.parse(output);
+
+      // Verify it's a valid JSON schema with definitions
+      expect(parsed).toHaveProperty("$ref");
+      expect(parsed).toHaveProperty("definitions");
+      expect(parsed.definitions).toHaveProperty("CheckTomlConfig");
+
+      const config = parsed.definitions.CheckTomlConfig;
+      expect(config).toHaveProperty("type", "object");
+      expect(config).toHaveProperty("properties");
+      expect(config.properties).toHaveProperty("code");
+      expect(config.properties).toHaveProperty("extends");
+    });
+
+    it("includes code.linting.eslint in schema", () => {
+      schemaConfigActionHandler!();
+
+      const output = mockStdoutWrite.mock.calls[0][0] as string;
+      const parsed = JSON.parse(output);
+
+      // Navigate to eslint config in schema through definitions
+      const config = parsed.definitions.CheckTomlConfig;
+      const eslintSchema = config.properties?.code?.properties?.linting?.properties?.eslint;
+      expect(eslintSchema).toBeDefined();
+      expect(eslintSchema.properties).toHaveProperty("enabled");
+    });
+
+    it("includes code.linting.ruff in schema with lint options", () => {
+      schemaConfigActionHandler!();
+
+      const output = mockStdoutWrite.mock.calls[0][0] as string;
+      const parsed = JSON.parse(output);
+
+      // Navigate to ruff config in schema through definitions
+      const config = parsed.definitions.CheckTomlConfig;
+      const ruffSchema = config.properties?.code?.properties?.linting?.properties?.ruff;
+      expect(ruffSchema).toBeDefined();
+      expect(ruffSchema.properties).toHaveProperty("enabled");
+      expect(ruffSchema.properties).toHaveProperty("line-length");
+      expect(ruffSchema.properties).toHaveProperty("lint");
     });
   });
 });
