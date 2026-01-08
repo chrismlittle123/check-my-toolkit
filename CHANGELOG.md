@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.12.0
+
+### Minor Changes
+
+- 73af2d5: Add granular ESLint configuration options to check.toml schema:
+  - `files` - array of glob patterns for files to lint
+  - `ignore` - array of glob patterns to ignore
+  - `max-warnings` - max number of warnings before failure
+
 ## 0.11.0
 
 ### Minor Changes
