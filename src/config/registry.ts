@@ -69,9 +69,12 @@ async function cloneRepo(location: RegistryLocation, repoDir: string): Promise<v
   cloneArgs.push(location.path, repoDir);
 
   try {
-    await execa("git", cloneArgs);
+    await execa("git", cloneArgs, { timeout: 30 * 1000 }); // 30 second timeout
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
+    if (message.includes("timed out")) {
+      throw new ConfigError(`Registry clone timed out after 30 seconds: ${location.path}`);
+    }
     throw new ConfigError(`Failed to clone registry: ${message}`);
   }
 }

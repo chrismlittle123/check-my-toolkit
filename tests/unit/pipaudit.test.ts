@@ -71,7 +71,7 @@ describe("PipAuditRunner", () => {
 
       expect(mockedExeca).toHaveBeenCalledWith(
         "uvx",
-        ["pip-audit", "--format", "json"],
+        ["pip-audit", "--format", "json", "-r", "requirements.txt"],
         expect.objectContaining({
           cwd: tempDir,
           reject: false,
@@ -240,8 +240,8 @@ describe("PipAuditRunner", () => {
       const result = await runner.run(tempDir);
 
       expect(mockedExeca).toHaveBeenCalledTimes(2);
-      expect(mockedExeca).toHaveBeenNthCalledWith(1, "uvx", ["pip-audit", "--format", "json"], expect.anything());
-      expect(mockedExeca).toHaveBeenNthCalledWith(2, "pip-audit", ["--format", "json"], expect.anything());
+      expect(mockedExeca).toHaveBeenNthCalledWith(1, "uvx", ["pip-audit", "--format", "json", "-r", "requirements.txt"], expect.anything());
+      expect(mockedExeca).toHaveBeenNthCalledWith(2, "pip-audit", ["--format", "json", "-r", "requirements.txt"], expect.anything());
       expect(result.passed).toBe(true);
     });
 

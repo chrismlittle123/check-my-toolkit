@@ -250,7 +250,8 @@ foo = "bar"`
 
       expect(mockedExeca).toHaveBeenCalledWith(
         "git",
-        expect.arrayContaining(["clone", "--depth", "1"])
+        expect.arrayContaining(["clone", "--depth", "1"]),
+        expect.objectContaining({ timeout: 30000 })
       );
     });
 
@@ -269,7 +270,8 @@ foo = "bar"`
 
       expect(mockedExeca).toHaveBeenCalledWith(
         "git",
-        expect.arrayContaining(["--branch", "v1.0.0"])
+        expect.arrayContaining(["--branch", "v1.0.0"]),
+        expect.objectContaining({ timeout: 30000 })
       );
     });
   });

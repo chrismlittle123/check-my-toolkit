@@ -19,12 +19,14 @@ npx check-my-toolkit code check
 1. Create a `check.toml` configuration file in your project root:
 
 ```toml
-[code.linting]
-eslint = true
-ruff = true
+[code.linting.eslint]
+enabled = true
 
-[code.types]
-tsc = true
+[code.linting.ruff]
+enabled = true
+
+[code.types.tsc]
+enabled = true
 ```
 
 2. Run checks:
@@ -48,12 +50,14 @@ Configuration is stored in `check.toml` at your project root.
 ### Code Domain
 
 ```toml
-[code.linting]
-eslint = true    # Run ESLint
-ruff = true      # Run Ruff (Python)
+[code.linting.eslint]
+enabled = true    # Run ESLint
 
-[code.types]
-tsc = true       # Run TypeScript type checking
+[code.linting.ruff]
+enabled = true    # Run Ruff (Python)
+
+[code.types.tsc]
+enabled = true    # Run TypeScript type checking
 ```
 
 ### Config Discovery

@@ -68,16 +68,22 @@ export class PipAuditRunner extends BaseToolRunner {
   }
 
   private async runPipAudit(projectRoot: string): Promise<Awaited<ReturnType<typeof execa>>> {
+    // Build args - use -r requirements.txt if it exists to audit project deps, not environment
+    const args = ["pip-audit", "--format", "json"];
+    if (fs.existsSync(`${projectRoot}/requirements.txt`)) {
+      args.push("-r", "requirements.txt");
+    }
+
     // Try uvx first
     try {
-      return await execa("uvx", ["pip-audit", "--format", "json"], {
+      return await execa("uvx", args, {
         cwd: projectRoot,
         reject: false,
         timeout: 5 * 60 * 1000,
       });
     } catch {
-      // Fall back to pip-audit directly
-      return await execa("pip-audit", ["--format", "json"], {
+      // Fall back to pip-audit directly (remove "pip-audit" from args for direct call)
+      return await execa("pip-audit", args.slice(1), {
         cwd: projectRoot,
         reject: false,
         timeout: 5 * 60 * 1000,
