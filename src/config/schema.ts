@@ -14,6 +14,9 @@ import { z } from "zod";
 const eslintConfigSchema = z
   .object({
     enabled: z.boolean().optional().default(true),
+    files: z.array(z.string()).optional(), // Glob patterns for files to lint
+    ignore: z.array(z.string()).optional(), // Glob patterns to ignore
+    "max-warnings": z.number().int().nonnegative().optional(), // Max warnings before failure
   })
   .strict()
   .optional();

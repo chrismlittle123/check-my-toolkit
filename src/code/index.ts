@@ -7,7 +7,6 @@ import {
 import { ESLintRunner, GitleaksRunner, KnipRunner, NamingRunner, NpmAuditRunner, PipAuditRunner, PrettierRunner, RuffFormatRunner, RuffRunner, TestsRunner, TscRunner, TyRunner, VultureRunner } from "./tools/index.js";
 
 // Tool runner instances (singletons for tools that don't need per-run config)
-const eslint = new ESLintRunner();
 const gitleaks = new GitleaksRunner();
 const knip = new KnipRunner();
 const npmaudit = new NpmAuditRunner();
@@ -31,6 +30,21 @@ interface ToolEntry {
 /** Check if a tool is enabled in config */
 function isEnabled(toolConfig: { enabled?: boolean } | undefined): boolean {
   return toolConfig?.enabled === true;
+}
+
+/** Create a configured ESLintRunner */
+function createEslintRunner(config: Config): ESLintRunner {
+  const runner = new ESLintRunner();
+  const eslintConfig = config.code?.linting?.eslint;
+  if (eslintConfig) {
+    runner.setConfig({
+      enabled: eslintConfig.enabled,
+      files: eslintConfig.files,
+      ignore: eslintConfig.ignore,
+      "max-warnings": eslintConfig["max-warnings"],
+    });
+  }
+  return runner;
 }
 
 /** Create a configured TestsRunner */
@@ -84,7 +98,7 @@ function createNamingRunner(config: Config): NamingRunner {
 
 /** All available tools with their config predicates */
 const toolRegistry: ToolEntry[] = [
-  { isEnabled: (c) => isEnabled(c.code?.linting?.eslint), runner: eslint },
+  { isEnabled: (c) => isEnabled(c.code?.linting?.eslint), runner: createEslintRunner },
   { isEnabled: (c) => isEnabled(c.code?.linting?.ruff), runner: createRuffRunner },
   { isEnabled: (c) => isEnabled(c.code?.linting?.ruff) && c.code?.linting?.ruff?.format === true, runner: ruffFormat },
   { isEnabled: (c) => isEnabled(c.code?.formatting?.prettier), runner: prettier },
