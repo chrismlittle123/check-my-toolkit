@@ -54,11 +54,12 @@ describe("ESLintRunner", () => {
   });
 
   describe("run", () => {
-    it("skips when no config file exists", async () => {
+    it("fails when no config file exists", async () => {
       const result = await runner.run(tempDir);
 
-      expect(result.skipped).toBe(true);
-      expect(result.skipReason).toContain("not found");
+      expect(result.passed).toBe(false);
+      expect(result.violations).toHaveLength(1);
+      expect(result.violations[0].message).toContain("Config not found");
       expect(mockedExeca).not.toHaveBeenCalled();
     });
 

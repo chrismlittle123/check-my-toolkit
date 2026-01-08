@@ -49,12 +49,12 @@ describe("PipAuditRunner", () => {
   });
 
   describe("run", () => {
-    it("skips when no Python dependency file exists", async () => {
+    it("fails when no Python dependency file exists", async () => {
       const result = await runner.run(tempDir);
 
-      expect(result.passed).toBe(true);
-      expect(result.skipped).toBe(true);
-      expect(result.violations).toEqual([]);
+      expect(result.passed).toBe(false);
+      expect(result.violations).toHaveLength(1);
+      expect(result.violations[0].message).toContain("Config not found");
     });
 
     it("runs pip-audit and passes when no vulnerabilities found", async () => {

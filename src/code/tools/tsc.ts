@@ -112,7 +112,7 @@ export class TscRunner extends BaseToolRunner {
     const elapsed = (): number => Date.now() - startTime;
 
     if (!this.hasConfig(projectRoot)) {
-      return this.skipNoConfig(elapsed());
+      return this.failNoConfig(elapsed());
     }
 
     try {

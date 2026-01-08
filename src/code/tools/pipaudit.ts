@@ -38,7 +38,7 @@ export class PipAuditRunner extends BaseToolRunner {
     this.projectRoot = projectRoot;
 
     if (!this.hasConfig(projectRoot)) {
-      return this.skipNoConfig(elapsed());
+      return this.failNoConfig(elapsed());
     }
 
     try {

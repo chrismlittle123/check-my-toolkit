@@ -1,3 +1,2 @@
 # Valid check.toml - cm schema doesn't require a project name
-[code.linting.eslint]
-enabled = true
+# No tools enabled to test schema validation only

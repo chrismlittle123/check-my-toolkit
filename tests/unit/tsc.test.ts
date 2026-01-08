@@ -48,11 +48,12 @@ describe("TscRunner", () => {
   });
 
   describe("run", () => {
-    it("skips when no tsconfig.json exists", async () => {
+    it("fails when no tsconfig.json exists", async () => {
       const result = await runner.run(tempDir);
 
-      expect(result.skipped).toBe(true);
-      expect(result.skipReason).toContain("tsconfig.json not found");
+      expect(result.passed).toBe(false);
+      expect(result.violations).toHaveLength(1);
+      expect(result.violations[0].message).toContain("Config not found");
       expect(mockedExeca).not.toHaveBeenCalled();
     });
 

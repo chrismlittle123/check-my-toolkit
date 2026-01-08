@@ -41,7 +41,7 @@ export class ESLintRunner extends BaseToolRunner {
     const startTime = Date.now();
 
     if (!this.hasConfig(projectRoot)) {
-      return this.skipNoConfig(Date.now() - startTime);
+      return this.failNoConfig(Date.now() - startTime);
     }
 
     try {

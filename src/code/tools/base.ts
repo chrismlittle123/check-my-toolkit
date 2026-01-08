@@ -48,14 +48,21 @@ export abstract class BaseToolRunner implements IToolRunner {
   }
 
   /**
-   * Create a skip result for when config is missing
+   * Create a fail result for when config is missing
    */
-  protected skipNoConfig(duration: number): CheckResult {
+  protected failNoConfig(duration: number): CheckResult {
     const expected = this.configFiles.join(" or ");
-    return CheckResult.skip(
+    return CheckResult.fail(
       this.name,
       this.rule,
-      `${expected} not found`,
+      [
+        {
+          rule: `${this.rule}.${this.toolId}`,
+          tool: this.toolId,
+          message: `Config not found. Expected one of: ${expected}`,
+          severity: "error",
+        },
+      ],
       duration
     );
   }

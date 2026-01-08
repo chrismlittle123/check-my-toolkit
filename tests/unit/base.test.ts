@@ -17,7 +17,7 @@ class TestToolRunner extends BaseToolRunner {
   async run(projectRoot: string): Promise<CheckResult> {
     const startTime = Date.now();
     if (!this.hasConfig(projectRoot)) {
-      return this.skipNoConfig(Date.now() - startTime);
+      return this.failNoConfig(Date.now() - startTime);
     }
     return this.pass(Date.now() - startTime);
   }
@@ -35,8 +35,8 @@ class TestToolRunner extends BaseToolRunner {
     return this.isNotInstalledError(error);
   }
 
-  public testSkipNoConfig(duration: number): CheckResult {
-    return this.skipNoConfig(duration);
+  public testFailNoConfig(duration: number): CheckResult {
+    return this.failNoConfig(duration);
   }
 
   public testSkipNotInstalled(duration: number): CheckResult {
@@ -131,17 +131,18 @@ describe("BaseToolRunner", () => {
     });
   });
 
-  describe("skipNoConfig", () => {
-    it("creates skip result with correct message", () => {
-      const result = runner.testSkipNoConfig(100);
+  describe("failNoConfig", () => {
+    it("creates fail result with correct message", () => {
+      const result = runner.testFailNoConfig(100);
 
       expect(result.name).toBe("TestTool");
       expect(result.rule).toBe("test.rule");
-      expect(result.passed).toBe(true);
-      expect(result.skipped).toBe(true);
-      expect(result.skipReason).toBe("test.config.js or .testrc not found");
+      expect(result.passed).toBe(false);
+      expect(result.skipped).toBe(false);
       expect(result.duration).toBe(100);
-      expect(result.violations).toEqual([]);
+      expect(result.violations).toHaveLength(1);
+      expect(result.violations[0].message).toContain("Config not found");
+      expect(result.violations[0].message).toContain("test.config.js");
     });
   });
 
@@ -217,11 +218,12 @@ describe("BaseToolRunner", () => {
   });
 
   describe("run", () => {
-    it("skips when no config found", async () => {
+    it("fails when no config found", async () => {
       const result = await runner.run(tempDir);
 
-      expect(result.skipped).toBe(true);
-      expect(result.skipReason).toContain("not found");
+      expect(result.passed).toBe(false);
+      expect(result.violations).toHaveLength(1);
+      expect(result.violations[0].message).toContain("Config not found");
     });
 
     it("passes when config exists", async () => {
