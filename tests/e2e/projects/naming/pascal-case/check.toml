@@ -1,0 +1,7 @@
+[code.naming]
+enabled = true
+
+[[code.naming.rules]]
+extensions = ["tsx"]
+file_case = "PascalCase"
+folder_case = "kebab-case"

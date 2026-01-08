@@ -179,6 +179,16 @@ function mergeTests(c: Config, dc: Config): CodeConfig["tests"] {
   return merge(dc.code?.tests, c.code?.tests);
 }
 
+function mergeNaming(c: Config, dc: Config): CodeConfig["naming"] {
+  const cn = c.code?.naming;
+  const dn = dc.code?.naming;
+  // For naming, we want to preserve the rules array from user config
+  return {
+    enabled: cn?.enabled ?? dn?.enabled ?? false,
+    rules: cn?.rules ?? dn?.rules,
+  };
+}
+
 function mergeCode(c: Config, dc: Config): CodeConfig {
   return {
     linting: mergeLinting(c, dc),
@@ -187,6 +197,7 @@ function mergeCode(c: Config, dc: Config): CodeConfig {
     unused: mergeUnused(c, dc),
     tests: mergeTests(c, dc),
     security: mergeSecurity(c, dc),
+    naming: mergeNaming(c, dc),
   };
 }
 

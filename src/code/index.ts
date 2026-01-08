@@ -4,7 +4,7 @@ import {
   DomainResult,
   type IToolRunner,
 } from "../types/index.js";
-import { ESLintRunner, GitleaksRunner, KnipRunner, NpmAuditRunner, PipAuditRunner, PrettierRunner, RuffFormatRunner, RuffRunner, TestsRunner, TscRunner, TyRunner, VultureRunner } from "./tools/index.js";
+import { ESLintRunner, GitleaksRunner, KnipRunner, NamingRunner, NpmAuditRunner, PipAuditRunner, PrettierRunner, RuffFormatRunner, RuffRunner, TestsRunner, TscRunner, TyRunner, VultureRunner } from "./tools/index.js";
 
 // Tool runner instances (singletons for tools that don't need per-run config)
 const eslint = new ESLintRunner();
@@ -20,7 +20,7 @@ const vulture = new VultureRunner();
 // Note: RuffRunner and TscRunner are created per-run to support config from check.toml
 
 // Export tool runners for direct access
-export { BaseToolRunner, ESLintRunner, KnipRunner, PrettierRunner, RuffFormatRunner, RuffRunner, TestsRunner, TscRunner, TyRunner, VultureRunner } from "./tools/index.js";
+export { BaseToolRunner, ESLintRunner, KnipRunner, NamingRunner, PrettierRunner, RuffFormatRunner, RuffRunner, TestsRunner, TscRunner, TyRunner, VultureRunner } from "./tools/index.js";
 
 /** Tool configuration entry mapping config getter to runner or runner factory */
 interface ToolEntry {
@@ -69,6 +69,19 @@ function createTscRunner(config: Config): TscRunner {
   return runner;
 }
 
+/** Create a configured NamingRunner */
+function createNamingRunner(config: Config): NamingRunner {
+  const runner = new NamingRunner();
+  const namingConfig = config.code?.naming;
+  if (namingConfig) {
+    runner.setConfig({
+      enabled: namingConfig.enabled,
+      rules: namingConfig.rules,
+    });
+  }
+  return runner;
+}
+
 /** All available tools with their config predicates */
 const toolRegistry: ToolEntry[] = [
   { isEnabled: (c) => isEnabled(c.code?.linting?.eslint), runner: eslint },
@@ -83,6 +96,7 @@ const toolRegistry: ToolEntry[] = [
   { isEnabled: (c) => isEnabled(c.code?.security?.npmaudit), runner: npmaudit },
   { isEnabled: (c) => isEnabled(c.code?.security?.pipaudit), runner: pipaudit },
   { isEnabled: (c) => isEnabled(c.code?.tests), runner: createTestsRunner },
+  { isEnabled: (c) => isEnabled(c.code?.naming), runner: createNamingRunner },
 ];
 
 /**

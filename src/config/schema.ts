@@ -172,6 +172,30 @@ const codeSecuritySchema = z
   .strict()
   .optional();
 
+// =============================================================================
+// Naming Conventions Configuration
+// =============================================================================
+
+/** Supported case types for naming conventions */
+const caseTypeSchema = z.enum(["kebab-case", "snake_case", "camelCase", "PascalCase"]);
+
+/** Single naming rule */
+const namingRuleSchema = z
+  .object({
+    extensions: z.array(z.string()), // e.g., ["ts", "tsx"]
+    file_case: caseTypeSchema,
+    folder_case: caseTypeSchema,
+  })
+  .strict();
+
+/** Naming conventions configuration */
+const namingConfigSchema = z
+  .object({
+    enabled: z.boolean().optional().default(false),
+    rules: z.array(namingRuleSchema).optional(),
+  })
+  .strict()
+  .optional();
 
 // =============================================================================
 // Code Domain Configuration
@@ -221,6 +245,7 @@ const codeSchema = z
     unused: codeUnusedSchema,
     tests: testsConfigSchema,
     security: codeSecuritySchema,
+    naming: namingConfigSchema,
   })
   .strict()
   .optional();
@@ -281,6 +306,9 @@ export const defaultConfig: Config = {
       secrets: { enabled: false },
       npmaudit: { enabled: false },
       pipaudit: { enabled: false },
+    },
+    naming: {
+      enabled: false,
     },
   },
 };
