@@ -51,10 +51,11 @@ export abstract class BaseToolRunner implements IToolRunner {
    * Create a skip result for when config is missing
    */
   protected skipNoConfig(duration: number): CheckResult {
+    const expected = this.configFiles.join(" or ");
     return CheckResult.skip(
       this.name,
       this.rule,
-      `No ${this.name} config found`,
+      `${expected} not found`,
       duration
     );
   }

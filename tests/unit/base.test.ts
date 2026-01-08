@@ -139,7 +139,7 @@ describe("BaseToolRunner", () => {
       expect(result.rule).toBe("test.rule");
       expect(result.passed).toBe(true);
       expect(result.skipped).toBe(true);
-      expect(result.skipReason).toBe("No TestTool config found");
+      expect(result.skipReason).toBe("test.config.js or .testrc not found");
       expect(result.duration).toBe(100);
       expect(result.violations).toEqual([]);
     });
@@ -221,7 +221,7 @@ describe("BaseToolRunner", () => {
       const result = await runner.run(tempDir);
 
       expect(result.skipped).toBe(true);
-      expect(result.skipReason).toContain("No TestTool config found");
+      expect(result.skipReason).toContain("not found");
     });
 
     it("passes when config exists", async () => {
