@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.10.1
+
+### Patch Changes
+
+- 2bbffc0: Fix bugs in v0.8.0+ features:
+
+  - **Config Validation**: `cm validate config` now validates extends registry paths and ruleset references exist
+  - **Skip Messages**: Improved clarity by showing actual missing file names (e.g., "package-lock.json not found" instead of "No npmaudit config found")
+
 ## 0.10.0
 
 ### Minor Changes
