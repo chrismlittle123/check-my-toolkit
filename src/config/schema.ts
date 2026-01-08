@@ -185,6 +185,7 @@ const namingRuleSchema = z
     extensions: z.array(z.string()), // e.g., ["ts", "tsx"]
     file_case: caseTypeSchema,
     folder_case: caseTypeSchema,
+    exclude: z.array(z.string()).optional(), // Glob patterns to exclude, e.g., ["tests/**"]
   })
   .strict();
 
