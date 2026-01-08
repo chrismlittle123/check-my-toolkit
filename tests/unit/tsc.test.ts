@@ -277,5 +277,134 @@ More info
       expect(result.passed).toBe(false);
       expect(result.violations[0].message).toContain("TypeScript config not found");
     });
+
+    describe("with required options", () => {
+      beforeEach(() => {
+        runner.setRequiredOptions({ strict: true, noImplicitAny: true });
+      });
+
+      it("passes when all required options are met", async () => {
+        const tsconfig = {
+          compilerOptions: {
+            strict: true,
+            noImplicitAny: true,
+          },
+        };
+        fs.writeFileSync(
+          path.join(tempDir, "tsconfig.json"),
+          JSON.stringify(tsconfig)
+        );
+
+        const result = await runner.audit(tempDir);
+
+        expect(result.passed).toBe(true);
+      });
+
+      it("fails when required option is missing", async () => {
+        const tsconfig = {
+          compilerOptions: {
+            strict: true,
+            // noImplicitAny is missing
+          },
+        };
+        fs.writeFileSync(
+          path.join(tempDir, "tsconfig.json"),
+          JSON.stringify(tsconfig)
+        );
+
+        const result = await runner.audit(tempDir);
+
+        expect(result.passed).toBe(false);
+        expect(result.violations).toHaveLength(1);
+        expect(result.violations[0].message).toContain("noImplicitAny");
+        expect(result.violations[0].message).toContain("expected true");
+        expect(result.violations[0].message).toContain("missing");
+      });
+
+      it("fails when required option has wrong value", async () => {
+        const tsconfig = {
+          compilerOptions: {
+            strict: false, // Wrong value
+            noImplicitAny: true,
+          },
+        };
+        fs.writeFileSync(
+          path.join(tempDir, "tsconfig.json"),
+          JSON.stringify(tsconfig)
+        );
+
+        const result = await runner.audit(tempDir);
+
+        expect(result.passed).toBe(false);
+        expect(result.violations).toHaveLength(1);
+        expect(result.violations[0].message).toContain("strict");
+        expect(result.violations[0].message).toContain("expected true");
+        expect(result.violations[0].message).toContain("got false");
+      });
+
+      it("reports multiple violations", async () => {
+        const tsconfig = {
+          compilerOptions: {
+            // Both options missing
+          },
+        };
+        fs.writeFileSync(
+          path.join(tempDir, "tsconfig.json"),
+          JSON.stringify(tsconfig)
+        );
+
+        const result = await runner.audit(tempDir);
+
+        expect(result.passed).toBe(false);
+        expect(result.violations).toHaveLength(2);
+      });
+
+      it("handles missing compilerOptions section", async () => {
+        fs.writeFileSync(path.join(tempDir, "tsconfig.json"), "{}");
+
+        const result = await runner.audit(tempDir);
+
+        expect(result.passed).toBe(false);
+        expect(result.violations.length).toBeGreaterThan(0);
+      });
+
+      it("handles malformed JSON", async () => {
+        fs.writeFileSync(
+          path.join(tempDir, "tsconfig.json"),
+          "{ invalid json }"
+        );
+
+        const result = await runner.audit(tempDir);
+
+        expect(result.passed).toBe(false);
+        expect(result.violations[0].message).toContain("Failed to parse");
+      });
+
+      it("includes file in violation", async () => {
+        const tsconfig = {
+          compilerOptions: {
+            strict: false,
+          },
+        };
+        fs.writeFileSync(
+          path.join(tempDir, "tsconfig.json"),
+          JSON.stringify(tsconfig)
+        );
+
+        const result = await runner.audit(tempDir);
+
+        expect(result.violations[0].file).toBe("tsconfig.json");
+      });
+    });
+
+    describe("without required options", () => {
+      it("passes when config exists and no requirements set", async () => {
+        fs.writeFileSync(path.join(tempDir, "tsconfig.json"), "{}");
+
+        const result = await runner.audit(tempDir);
+
+        expect(result.passed).toBe(true);
+      });
+    });
   });
 });

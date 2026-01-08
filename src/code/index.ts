@@ -14,11 +14,10 @@ const npmaudit = new NpmAuditRunner();
 const pipaudit = new PipAuditRunner();
 const prettier = new PrettierRunner();
 const ruffFormat = new RuffFormatRunner();
-const tsc = new TscRunner();
 const ty = new TyRunner();
 const vulture = new VultureRunner();
 
-// Note: RuffRunner is created per-run to support config from check.toml
+// Note: RuffRunner and TscRunner are created per-run to support config from check.toml
 
 // Export tool runners for direct access
 export { BaseToolRunner, ESLintRunner, KnipRunner, PrettierRunner, RuffFormatRunner, RuffRunner, TestsRunner, TscRunner, TyRunner, VultureRunner } from "./tools/index.js";
@@ -60,13 +59,23 @@ function createRuffRunner(config: Config): RuffRunner {
   return runner;
 }
 
+/** Create a configured TscRunner */
+function createTscRunner(config: Config): TscRunner {
+  const runner = new TscRunner();
+  const tscConfig = config.code?.types?.tsc;
+  if (tscConfig?.require) {
+    runner.setRequiredOptions(tscConfig.require);
+  }
+  return runner;
+}
+
 /** All available tools with their config predicates */
 const toolRegistry: ToolEntry[] = [
   { isEnabled: (c) => isEnabled(c.code?.linting?.eslint), runner: eslint },
   { isEnabled: (c) => isEnabled(c.code?.linting?.ruff), runner: createRuffRunner },
   { isEnabled: (c) => isEnabled(c.code?.linting?.ruff) && c.code?.linting?.ruff?.format === true, runner: ruffFormat },
   { isEnabled: (c) => isEnabled(c.code?.formatting?.prettier), runner: prettier },
-  { isEnabled: (c) => isEnabled(c.code?.types?.tsc), runner: tsc },
+  { isEnabled: (c) => isEnabled(c.code?.types?.tsc), runner: createTscRunner },
   { isEnabled: (c) => isEnabled(c.code?.types?.ty), runner: ty },
   { isEnabled: (c) => isEnabled(c.code?.unused?.knip), runner: knip },
   { isEnabled: (c) => isEnabled(c.code?.unused?.vulture), runner: vulture },

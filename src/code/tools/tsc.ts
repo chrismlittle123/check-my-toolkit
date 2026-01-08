@@ -1,9 +1,24 @@
+import * as fs from "node:fs";
 import * as path from "node:path";
 
 import { execa } from "execa";
 
-import { type CheckResult, type Violation } from "../../types/index.js";
+import { CheckResult, type Violation } from "../../types/index.js";
 import { BaseToolRunner } from "./base.js";
+
+/** TypeScript compiler options that can be audited */
+interface TscRequiredOptions {
+  strict?: boolean;
+  noImplicitAny?: boolean;
+  strictNullChecks?: boolean;
+  noUnusedLocals?: boolean;
+  noUnusedParameters?: boolean;
+  noImplicitReturns?: boolean;
+  noFallthroughCasesInSwitch?: boolean;
+  esModuleInterop?: boolean;
+  skipLibCheck?: boolean;
+  forceConsistentCasingInFileNames?: boolean;
+}
 
 /** Parsed tsc diagnostic */
 interface TscDiagnostic {
@@ -22,6 +37,15 @@ export class TscRunner extends BaseToolRunner {
   readonly rule = "code.types";
   readonly toolId = "tsc";
   readonly configFiles = ["tsconfig.json"];
+
+  private requiredOptions: TscRequiredOptions = {};
+
+  /**
+   * Set required compiler options for audit
+   */
+  setRequiredOptions(options: TscRequiredOptions): void {
+    this.requiredOptions = options;
+  }
 
   /**
    * Strip ANSI escape codes from a string
@@ -148,6 +172,82 @@ export class TscRunner extends BaseToolRunner {
       rule: `${this.rule}.${this.toolId}`,
       tool: this.toolId,
       message,
+      severity: "error",
+    };
+  }
+
+  /**
+   * Audit tsconfig.json - check existence and required compiler options
+   */
+  async audit(projectRoot: string): Promise<CheckResult> {
+    const startTime = Date.now();
+    const elapsed = (): number => Date.now() - startTime;
+
+    // First check if config exists
+    if (!this.hasConfig(projectRoot)) {
+      return this.fail([{
+        rule: `${this.rule}.${this.toolId}`,
+        tool: "audit",
+        message: `${this.name} config not found. Expected: ${this.configFiles.join(", ")}`,
+        severity: "error",
+      }], elapsed());
+    }
+
+    // If no required options, just pass
+    if (Object.keys(this.requiredOptions).length === 0) {
+      return CheckResult.pass(`${this.name} Config`, this.rule, elapsed());
+    }
+
+    // Read and parse tsconfig.json
+    const configPath = path.join(projectRoot, "tsconfig.json");
+    const violations = this.auditCompilerOptions(configPath);
+
+    if (violations.length === 0) {
+      return CheckResult.pass(`${this.name} Config`, this.rule, elapsed());
+    }
+
+    return CheckResult.fail(`${this.name} Config`, this.rule, violations, elapsed());
+  }
+
+  private auditCompilerOptions(configPath: string): Violation[] {
+    let tsconfig: { compilerOptions?: Record<string, unknown> };
+    try {
+      const content = fs.readFileSync(configPath, "utf-8");
+      tsconfig = JSON.parse(content);
+    } catch {
+      return [{
+        rule: `${this.rule}.${this.toolId}`,
+        tool: "audit",
+        file: "tsconfig.json",
+        message: "Failed to parse tsconfig.json",
+        severity: "error",
+      }];
+    }
+
+    const compilerOptions = tsconfig.compilerOptions ?? {};
+    const violations: Violation[] = [];
+
+    for (const [option, expectedValue] of Object.entries(this.requiredOptions)) {
+      if (expectedValue === undefined) continue;
+
+      const actualValue = compilerOptions[option];
+      if (actualValue === undefined) {
+        violations.push(this.createAuditViolation(option, expectedValue, "missing"));
+      } else if (actualValue !== expectedValue) {
+        violations.push(this.createAuditViolation(option, expectedValue, actualValue));
+      }
+    }
+
+    return violations;
+  }
+
+  private createAuditViolation(option: string, expected: unknown, actual: unknown): Violation {
+    const actualStr = actual === "missing" ? "missing" : String(actual);
+    return {
+      rule: `${this.rule}.${this.toolId}`,
+      tool: "audit",
+      file: "tsconfig.json",
+      message: `${option}: expected ${String(expected)}, got ${actualStr}`,
       severity: "error",
     };
   }
