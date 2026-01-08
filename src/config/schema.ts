@@ -8,15 +8,26 @@ import { z } from "zod";
 // ESLint Configuration
 // =============================================================================
 
+/** ESLint rule severity */
+const eslintRuleSeverity = z.enum(["off", "warn", "error"]);
+
+/** ESLint rule value - can be severity string or [severity, ...options] */
+const eslintRuleValue = z.union([
+  eslintRuleSeverity,
+  z.tuple([eslintRuleSeverity]).rest(z.unknown()), // ["error", options...]
+]);
+
+/** ESLint rules configuration */
+const eslintRulesSchema = z.record(z.string(), eslintRuleValue).optional();
+
 /** ESLint configuration */
-// Note: ESLint rules are not configurable via check.toml because ESLint flat config
-// doesn't support CLI rule overrides. Configure rules in your eslint.config.js file.
 const eslintConfigSchema = z
   .object({
     enabled: z.boolean().optional().default(true),
     files: z.array(z.string()).optional(), // Glob patterns for files to lint
     ignore: z.array(z.string()).optional(), // Glob patterns to ignore
     "max-warnings": z.number().int().nonnegative().optional(), // Max warnings before failure
+    rules: eslintRulesSchema, // Required rules for audit (verifies eslint.config.js)
   })
   .strict()
   .optional();

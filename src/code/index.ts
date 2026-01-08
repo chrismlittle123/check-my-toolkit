@@ -42,6 +42,7 @@ function createEslintRunner(config: Config): ESLintRunner {
       files: eslintConfig.files,
       ignore: eslintConfig.ignore,
       "max-warnings": eslintConfig["max-warnings"],
+      rules: eslintConfig.rules,
     });
   }
   return runner;

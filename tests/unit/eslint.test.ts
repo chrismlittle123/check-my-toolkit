@@ -243,7 +243,7 @@ describe("ESLintRunner", () => {
   });
 
   describe("audit", () => {
-    it("passes when config exists", async () => {
+    it("passes when config exists and no rules required", async () => {
       fs.writeFileSync(path.join(tempDir, "eslint.config.js"), "");
       const result = await runner.audit(tempDir);
 
@@ -256,6 +256,198 @@ describe("ESLintRunner", () => {
 
       expect(result.passed).toBe(false);
       expect(result.violations[0].message).toContain("ESLint config not found");
+    });
+
+    it("passes when required rules match effective config", async () => {
+      fs.writeFileSync(path.join(tempDir, "eslint.config.js"), "");
+      fs.mkdirSync(path.join(tempDir, "src"));
+      fs.writeFileSync(path.join(tempDir, "src/index.ts"), "");
+
+      runner.setConfig({
+        rules: {
+          "no-unused-vars": "error",
+          semi: "warn",
+        },
+      });
+
+      const printConfigOutput = JSON.stringify({
+        rules: {
+          "no-unused-vars": [2],
+          semi: [1, "always"],
+        },
+      });
+
+      mockedExeca.mockResolvedValueOnce({
+        stdout: printConfigOutput,
+        stderr: "",
+        exitCode: 0,
+      } as never);
+
+      const result = await runner.audit(tempDir);
+
+      expect(mockedExeca).toHaveBeenCalledWith(
+        "npx",
+        ["eslint", "--print-config", "src/index.ts"],
+        expect.objectContaining({ cwd: tempDir })
+      );
+      expect(result.passed).toBe(true);
+    });
+
+    it("fails when required rule is missing from effective config", async () => {
+      fs.writeFileSync(path.join(tempDir, "eslint.config.js"), "");
+      fs.mkdirSync(path.join(tempDir, "src"));
+      fs.writeFileSync(path.join(tempDir, "src/index.ts"), "");
+
+      runner.setConfig({
+        rules: {
+          "no-unused-vars": "error",
+        },
+      });
+
+      const printConfigOutput = JSON.stringify({
+        rules: {}, // Rule not present
+      });
+
+      mockedExeca.mockResolvedValueOnce({
+        stdout: printConfigOutput,
+        stderr: "",
+        exitCode: 0,
+      } as never);
+
+      const result = await runner.audit(tempDir);
+
+      expect(result.passed).toBe(false);
+      expect(result.violations).toHaveLength(1);
+      expect(result.violations[0].message).toContain("no-unused-vars");
+      expect(result.violations[0].message).toContain("required but not configured");
+    });
+
+    it("fails when required rule has wrong severity", async () => {
+      fs.writeFileSync(path.join(tempDir, "eslint.config.js"), "");
+      fs.mkdirSync(path.join(tempDir, "src"));
+      fs.writeFileSync(path.join(tempDir, "src/index.ts"), "");
+
+      runner.setConfig({
+        rules: {
+          "no-unused-vars": "error", // Require error (2)
+        },
+      });
+
+      const printConfigOutput = JSON.stringify({
+        rules: {
+          "no-unused-vars": [1], // Actual is warn (1)
+        },
+      });
+
+      mockedExeca.mockResolvedValueOnce({
+        stdout: printConfigOutput,
+        stderr: "",
+        exitCode: 0,
+      } as never);
+
+      const result = await runner.audit(tempDir);
+
+      expect(result.passed).toBe(false);
+      expect(result.violations).toHaveLength(1);
+      expect(result.violations[0].message).toContain("no-unused-vars");
+      expect(result.violations[0].message).toContain('expected "error"');
+      expect(result.violations[0].message).toContain('got "warn"');
+    });
+
+    it("handles eslint --print-config failure", async () => {
+      fs.writeFileSync(path.join(tempDir, "eslint.config.js"), "");
+      fs.mkdirSync(path.join(tempDir, "src"));
+      fs.writeFileSync(path.join(tempDir, "src/index.ts"), "");
+
+      runner.setConfig({
+        rules: {
+          "no-unused-vars": "error",
+        },
+      });
+
+      mockedExeca.mockResolvedValueOnce({
+        stdout: "",
+        stderr: "Error parsing config",
+        exitCode: 1,
+      } as never);
+
+      const result = await runner.audit(tempDir);
+
+      expect(result.passed).toBe(false);
+      expect(result.violations[0].message).toContain("Failed to read ESLint config");
+    });
+
+    it("warns when no sample file found for rule audit", async () => {
+      fs.writeFileSync(path.join(tempDir, "eslint.config.js"), "");
+      // No source files created
+
+      runner.setConfig({
+        rules: {
+          "no-unused-vars": "error",
+        },
+      });
+
+      const result = await runner.audit(tempDir);
+
+      expect(result.violations).toHaveLength(1);
+      expect(result.violations[0].severity).toBe("warning");
+      expect(result.violations[0].message).toContain("No source files found");
+    });
+
+    it("normalizes rule severity from array format", async () => {
+      fs.writeFileSync(path.join(tempDir, "eslint.config.js"), "");
+      fs.mkdirSync(path.join(tempDir, "src"));
+      fs.writeFileSync(path.join(tempDir, "src/index.ts"), "");
+
+      runner.setConfig({
+        rules: {
+          semi: ["error", "always"], // Array format with options
+        },
+      });
+
+      const printConfigOutput = JSON.stringify({
+        rules: {
+          semi: [2, "always"],
+        },
+      });
+
+      mockedExeca.mockResolvedValueOnce({
+        stdout: printConfigOutput,
+        stderr: "",
+        exitCode: 0,
+      } as never);
+
+      const result = await runner.audit(tempDir);
+
+      expect(result.passed).toBe(true);
+    });
+
+    it("supports 'off' severity", async () => {
+      fs.writeFileSync(path.join(tempDir, "eslint.config.js"), "");
+      fs.mkdirSync(path.join(tempDir, "src"));
+      fs.writeFileSync(path.join(tempDir, "src/index.ts"), "");
+
+      runner.setConfig({
+        rules: {
+          "no-console": "off",
+        },
+      });
+
+      const printConfigOutput = JSON.stringify({
+        rules: {
+          "no-console": [0],
+        },
+      });
+
+      mockedExeca.mockResolvedValueOnce({
+        stdout: printConfigOutput,
+        stderr: "",
+        exitCode: 0,
+      } as never);
+
+      const result = await runner.audit(tempDir);
+
+      expect(result.passed).toBe(true);
     });
   });
 
