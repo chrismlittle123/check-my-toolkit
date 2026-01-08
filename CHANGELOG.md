@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.10.4
+
+### Patch Changes
+
+- 319e995: Remove prompts validation from `cm validate registry` command. The command now only validates rulesets/\*.toml files, as prompts are no longer a core feature of the registry.
+
 ## 0.10.3
 
 ### Patch Changes
