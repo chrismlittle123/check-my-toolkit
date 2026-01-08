@@ -1,0 +1,6 @@
+[code.linting.eslint]
+enabled = true
+rules.no-unused-vars = "error"
+rules.semi = "error"
+rules.eqeqeq = "warn"
+rules.no-console = "error"
