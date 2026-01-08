@@ -7,7 +7,7 @@ import { CheckResult, type Violation } from "../../types/index.js";
 import { BaseToolRunner } from "./base.js";
 
 /** TypeScript compiler options that can be audited */
-export interface TscRequiredOptions {
+interface TscRequiredOptions {
   strict?: boolean;
   noImplicitAny?: boolean;
   strictNullChecks?: boolean;
