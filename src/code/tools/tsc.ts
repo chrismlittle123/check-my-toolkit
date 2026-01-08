@@ -228,7 +228,9 @@ export class TscRunner extends BaseToolRunner {
     const violations: Violation[] = [];
 
     for (const [option, expectedValue] of Object.entries(this.requiredOptions)) {
-      if (expectedValue === undefined) continue;
+      if (expectedValue === undefined) {
+        continue;
+      }
 
       const actualValue = compilerOptions[option];
       if (actualValue === undefined) {

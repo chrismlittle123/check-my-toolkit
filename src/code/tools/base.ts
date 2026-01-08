@@ -42,7 +42,9 @@ export abstract class BaseToolRunner implements IToolRunner {
    * Check if an error indicates the tool is not installed
    */
   protected isNotInstalledError(error: unknown): boolean {
-    if (!(error instanceof Error)) return false;
+    if (!(error instanceof Error)) {
+      return false;
+    }
     const message = error.message.toLowerCase();
     return message.includes("enoent") || message.includes("not found");
   }

@@ -56,8 +56,12 @@ function getStatusIcon(status: DomainStatus): string {
 }
 
 function getCheckIcon(passed: boolean, skipped: boolean): string {
-  if (passed) return chalk.green("✓");
-  if (skipped) return chalk.gray("○");
+  if (passed) {
+    return chalk.green("✓");
+  }
+  if (skipped) {
+    return chalk.gray("○");
+  }
   return chalk.red("✗");
 }
 

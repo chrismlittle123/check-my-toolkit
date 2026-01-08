@@ -131,18 +131,26 @@ export class VultureRunner extends BaseToolRunner {
     };
   }
 
+  private static readonly CODE_PATTERNS: [string, string][] = [
+    ["unused function", "unused-function"],
+    ["unused class", "unused-class"],
+    ["unused method", "unused-method"],
+    ["unused variable", "unused-variable"],
+    ["unused import", "unused-import"],
+    ["unused attribute", "unused-attribute"],
+    ["unused property", "unused-property"],
+    ["unreachable code", "unreachable-code"],
+  ];
+
   /**
    * Extract a code identifier from the vulture message
    */
   private getCodeFromMessage(message: string): string {
-    if (message.includes("unused function")) return "unused-function";
-    if (message.includes("unused class")) return "unused-class";
-    if (message.includes("unused method")) return "unused-method";
-    if (message.includes("unused variable")) return "unused-variable";
-    if (message.includes("unused import")) return "unused-import";
-    if (message.includes("unused attribute")) return "unused-attribute";
-    if (message.includes("unused property")) return "unused-property";
-    if (message.includes("unreachable code")) return "unreachable-code";
+    for (const [pattern, code] of VultureRunner.CODE_PATTERNS) {
+      if (message.includes(pattern)) {
+        return code;
+      }
+    }
     return "unused-code";
   }
 

@@ -51,8 +51,8 @@ export default tseslint.config(
       // TypeScript-specific rules
       // ============================================
 
-      // Disallow `any` type - error for new code, but existing code may need it
-      '@typescript-eslint/no-explicit-any': 'warn',
+      // Disallow `any` type
+      '@typescript-eslint/no-explicit-any': 'error',
 
       // Require using `type` imports for types
       '@typescript-eslint/consistent-type-imports': [
@@ -83,13 +83,18 @@ export default tseslint.config(
       '@typescript-eslint/array-type': ['error', { default: 'array' }],
 
       // No non-null assertions (!)
-      '@typescript-eslint/no-non-null-assertion': 'warn',
+      '@typescript-eslint/no-non-null-assertion': 'error',
 
       // Prefer RegExp.exec() over String.match()
       '@typescript-eslint/prefer-regexp-exec': 'warn',
 
       // Require explicit return types on functions
-      '@typescript-eslint/explicit-function-return-type': 'warn',
+      '@typescript-eslint/explicit-function-return-type': 'error',
+
+      // Promise-related rules (type-aware)
+      '@typescript-eslint/no-floating-promises': 'error',
+      '@typescript-eslint/no-misused-promises': 'error',
+      '@typescript-eslint/await-thenable': 'error',
 
       // ============================================
       // File and function size limits
@@ -110,7 +115,14 @@ export default tseslint.config(
       // ============================================
 
       // No console in production code (except error and warn)
-      'no-console': ['warn', { allow: ['error', 'warn'] }],
+      'no-console': ['error', { allow: ['error', 'warn'] }],
+
+      // Require curly braces for all control statements
+      curly: 'error',
+
+      // No eval
+      'no-eval': 'error',
+      'no-implied-eval': 'error',
 
       // Require const for variables that are never reassigned
       'prefer-const': 'error',

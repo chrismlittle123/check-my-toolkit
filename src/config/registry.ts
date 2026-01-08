@@ -130,12 +130,16 @@ export function loadRuleset(registryDir: string, rulesetName: string): Config {
 type CodeConfig = NonNullable<Config["code"]>;
 
 function mergeToolConfig<T extends object>(base?: T, override?: T): T | undefined {
-  if (!override) return base;
+  if (!override) {
+    return base;
+  }
   return { ...base, ...override };
 }
 
 function mergeLinting(base: CodeConfig["linting"], override: CodeConfig["linting"]): CodeConfig["linting"] {
-  if (!override) return base;
+  if (!override) {
+    return base;
+  }
   return {
     ...base,
     eslint: mergeToolConfig(base?.eslint, override.eslint),
@@ -144,7 +148,9 @@ function mergeLinting(base: CodeConfig["linting"], override: CodeConfig["linting
 }
 
 function mergeFormatting(base: CodeConfig["formatting"], override: CodeConfig["formatting"]): CodeConfig["formatting"] {
-  if (!override) return base;
+  if (!override) {
+    return base;
+  }
   return {
     ...base,
     prettier: mergeToolConfig(base?.prettier, override.prettier),
@@ -152,7 +158,9 @@ function mergeFormatting(base: CodeConfig["formatting"], override: CodeConfig["f
 }
 
 function mergeTypes(base: CodeConfig["types"], override: CodeConfig["types"]): CodeConfig["types"] {
-  if (!override) return base;
+  if (!override) {
+    return base;
+  }
   return {
     ...base,
     tsc: mergeToolConfig(base?.tsc, override.tsc),
@@ -161,7 +169,9 @@ function mergeTypes(base: CodeConfig["types"], override: CodeConfig["types"]): C
 }
 
 function mergeUnused(base: CodeConfig["unused"], override: CodeConfig["unused"]): CodeConfig["unused"] {
-  if (!override) return base;
+  if (!override) {
+    return base;
+  }
   return {
     ...base,
     knip: mergeToolConfig(base?.knip, override.knip),
@@ -170,7 +180,9 @@ function mergeUnused(base: CodeConfig["unused"], override: CodeConfig["unused"])
 }
 
 function mergeSecurity(base: CodeConfig["security"], override: CodeConfig["security"]): CodeConfig["security"] {
-  if (!override) return base;
+  if (!override) {
+    return base;
+  }
   return {
     ...base,
     secrets: mergeToolConfig(base?.secrets, override.secrets),
@@ -180,7 +192,9 @@ function mergeSecurity(base: CodeConfig["security"], override: CodeConfig["secur
 }
 
 function mergeNaming(base: CodeConfig["naming"], override: CodeConfig["naming"]): CodeConfig["naming"] {
-  if (!override) return base;
+  if (!override) {
+    return base;
+  }
   return {
     enabled: override.enabled ?? base?.enabled ?? false,
     rules: override.rules ?? base?.rules,
@@ -200,7 +214,9 @@ function mergeCodeSection(base: CodeConfig | undefined, override: CodeConfig): C
 }
 
 export function mergeConfigs(base: Config, override: Config): Config {
-  if (!override.code) return { ...base };
+  if (!override.code) {
+    return { ...base };
+  }
   return { ...base, code: mergeCodeSection(base.code, override.code) };
 }
 

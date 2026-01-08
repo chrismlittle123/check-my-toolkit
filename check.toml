@@ -8,25 +8,14 @@ rulesets = ["typescript-internal"]
 # Local overrides
 [code.linting.eslint]
 enabled = true
+files = ["src/**/*.ts"]
 
-[code.linting.ruff]
-enabled = false
-
-[code.types.tsc]
-enabled = true
-
-[code.types.tsc.require]
-strict = true
-
-[code.unused.knip]
-enabled = true
-
-# Naming conventions
+# Naming conventions (override to exclude test fixtures)
 [code.naming]
 enabled = true
 
 [[code.naming.rules]]
-extensions = ["ts"]
+extensions = ["ts", "tsx"]
 file_case = "kebab-case"
 folder_case = "kebab-case"
 exclude = ["tests/e2e/projects/**"]
