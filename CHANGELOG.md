@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.11.0
+
+### Minor Changes
+
+- 5428090: Add `cm schema config` command to output JSON schema for check.toml configuration. This allows AI agents and IDEs to understand the configuration structure.
+
 ## 0.10.4
 
 ### Patch Changes
