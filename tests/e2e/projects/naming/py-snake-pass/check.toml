@@ -1,0 +1,7 @@
+[code.naming]
+enabled = true
+
+[[code.naming.rules]]
+extensions = ["py"]
+file_case = "snake_case"
+folder_case = "snake_case"

@@ -627,6 +627,81 @@ const testCases: TestCase[] = [
     expectedPatterns: ["CODE"],
     notExpectedPatterns: ["ty:"],
   },
+
+  // ============================================================
+  // Naming: File and folder naming conventions
+  // ============================================================
+  {
+    name: "naming/ts-kebab-pass passes for correct kebab-case TypeScript files",
+    config: "tests/e2e/projects/naming/ts-kebab-pass/check.toml",
+    command: "check",
+    expectedExitCode: 0,
+    expectedPatterns: ["Naming: passed", "All checks passed"],
+  },
+  {
+    name: "naming/ts-kebab-fail detects PascalCase and camelCase violations",
+    config: "tests/e2e/projects/naming/ts-kebab-fail/check.toml",
+    command: "check",
+    expectedExitCode: 1,
+    expectedPatterns: ["Naming:", "MyComponent", "kebab-case", "userService"],
+  },
+  {
+    name: "naming/py-snake-pass passes for correct snake_case Python files",
+    config: "tests/e2e/projects/naming/py-snake-pass/check.toml",
+    command: "check",
+    expectedExitCode: 0,
+    expectedPatterns: ["Naming: passed", "All checks passed"],
+  },
+  {
+    name: "naming/py-snake-fail detects camelCase and kebab-case violations in Python",
+    config: "tests/e2e/projects/naming/py-snake-fail/check.toml",
+    command: "check",
+    expectedExitCode: 1,
+    expectedPatterns: ["Naming:", "myModule", "snake_case", "my-helper"],
+  },
+  {
+    name: "naming/folder-fail detects folder naming violations",
+    config: "tests/e2e/projects/naming/folder-fail/check.toml",
+    command: "check",
+    expectedExitCode: 1,
+    expectedPatterns: ["Naming:", "BadFolder", "folder-case"],
+  },
+  {
+    name: "naming/mixed-rules applies different rules to different extensions",
+    config: "tests/e2e/projects/naming/mixed-rules/check.toml",
+    command: "check",
+    expectedExitCode: 0,
+    expectedPatterns: ["Naming: passed"],
+  },
+  {
+    name: "naming/pascal-case passes for PascalCase React components",
+    config: "tests/e2e/projects/naming/pascal-case/check.toml",
+    command: "check",
+    expectedExitCode: 0,
+    expectedPatterns: ["Naming: passed"],
+  },
+  {
+    name: "naming/nested-folders validates all folder levels",
+    config: "tests/e2e/projects/naming/nested-folders/check.toml",
+    command: "check",
+    expectedExitCode: 0,
+    expectedPatterns: ["Naming: passed"],
+  },
+  {
+    name: "naming/disabled skips naming check when disabled",
+    config: "tests/e2e/projects/naming/disabled/check.toml",
+    command: "check",
+    expectedExitCode: 0,
+    expectedPatterns: ["CODE"],
+    notExpectedPatterns: ["Naming"],
+  },
+  {
+    name: "naming/audit passes when config is valid",
+    config: "tests/e2e/projects/naming/ts-kebab-pass/check.toml",
+    command: "audit",
+    expectedExitCode: 0,
+    expectedPatterns: ["Naming Config: passed"],
+  },
 ];
 
 function runCli(command: string, config: string, format = "text"): { stdout: string; exitCode: number } {

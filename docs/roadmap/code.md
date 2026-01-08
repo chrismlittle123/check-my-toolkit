@@ -19,7 +19,8 @@ Registry (org standards) → check.toml [extends] → validates project configs
 ├── [code.types]        # tsc, ty
 ├── [code.unused]       # Knip, Vulture
 ├── [code.tests]        # Test file validation
-└── [code.security]     # Secrets, dependency audits
+├── [code.security]     # Secrets, dependency audits
+└── [code.naming]       # File and folder naming conventions
 ```
 
 ---
@@ -158,6 +159,39 @@ noImplicitAny = true
 ```
 
 `cm code audit` checks that `tsconfig.json` contains the required compiler options.
+
+### Naming Conventions: `[code.naming]`
+
+Enforce file and folder naming conventions based on file extensions.
+
+| Case | Example |
+|------|---------|
+| `kebab-case` | `my-component.ts` |
+| `snake_case` | `my_module.py` |
+| `camelCase` | `myHelper.ts` |
+| `PascalCase` | `MyComponent.tsx` |
+
+```toml
+[code.naming]
+enabled = true
+
+# TypeScript/JavaScript files and folders should be kebab-case
+[[code.naming.rules]]
+extensions = ["ts", "tsx", "js", "jsx"]
+file_case = "kebab-case"
+folder_case = "kebab-case"
+
+# Python files and folders should be snake_case
+[[code.naming.rules]]
+extensions = ["py"]
+file_case = "snake_case"
+folder_case = "snake_case"
+```
+
+**How it works:**
+- Files are validated against `file_case` based on their extension
+- Folders containing files with matching extensions are validated against `folder_case`
+- Common directories (`node_modules`, `.git`, `dist`, `__pycache__`) are automatically excluded
 
 ---
 

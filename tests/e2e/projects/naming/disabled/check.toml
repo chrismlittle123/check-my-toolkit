@@ -1,0 +1,7 @@
+[code.naming]
+enabled = false
+
+[[code.naming.rules]]
+extensions = ["ts"]
+file_case = "kebab-case"
+folder_case = "kebab-case"
