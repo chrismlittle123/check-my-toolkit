@@ -338,4 +338,69 @@ describe("auditCodeConfig", () => {
     expect(result.checks.every((c) => c.passed)).toBe(true);
     expect(result.status).toBe("pass");
   });
+
+  it("audits tsc with required options - passes when met", async () => {
+    const config: Config = {
+      code: {
+        types: {
+          tsc: {
+            enabled: true,
+            require: {
+              strict: true,
+              noImplicitAny: true,
+            },
+          },
+        },
+      },
+    };
+
+    const tsconfig = {
+      compilerOptions: {
+        strict: true,
+        noImplicitAny: true,
+      },
+    };
+    fs.writeFileSync(
+      path.join(tempDir, "tsconfig.json"),
+      JSON.stringify(tsconfig)
+    );
+
+    const result = await auditCodeConfig(tempDir, config);
+
+    expect(result.checks).toHaveLength(1);
+    expect(result.checks[0].name).toBe("TypeScript Config");
+    expect(result.checks[0].passed).toBe(true);
+  });
+
+  it("audits tsc with required options - fails when not met", async () => {
+    const config: Config = {
+      code: {
+        types: {
+          tsc: {
+            enabled: true,
+            require: {
+              strict: true,
+            },
+          },
+        },
+      },
+    };
+
+    const tsconfig = {
+      compilerOptions: {
+        strict: false, // Wrong value
+      },
+    };
+    fs.writeFileSync(
+      path.join(tempDir, "tsconfig.json"),
+      JSON.stringify(tsconfig)
+    );
+
+    const result = await auditCodeConfig(tempDir, config);
+
+    expect(result.checks).toHaveLength(1);
+    expect(result.checks[0].passed).toBe(false);
+    expect(result.checks[0].violations[0].message).toContain("strict");
+    expect(result.checks[0].violations[0].message).toContain("expected true");
+  });
 });

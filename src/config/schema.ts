@@ -46,13 +46,28 @@ const ruffConfigSchema = z
 // TypeScript Configuration
 // =============================================================================
 
+/** TypeScript compiler options that can be required via audit */
+const tscCompilerOptionsSchema = z
+  .object({
+    strict: z.boolean().optional(),
+    noImplicitAny: z.boolean().optional(),
+    strictNullChecks: z.boolean().optional(),
+    noUnusedLocals: z.boolean().optional(),
+    noUnusedParameters: z.boolean().optional(),
+    noImplicitReturns: z.boolean().optional(),
+    noFallthroughCasesInSwitch: z.boolean().optional(),
+    esModuleInterop: z.boolean().optional(),
+    skipLibCheck: z.boolean().optional(),
+    forceConsistentCasingInFileNames: z.boolean().optional(),
+  })
+  .strict()
+  .optional();
+
 /** TypeScript compiler configuration */
-// Note: TypeScript compiler options (strict, noImplicitAny, etc.) are not configurable
-// via check.toml because tsc CLI flags can only ADD strictness, not override tsconfig.json.
-// Configure compiler options in your tsconfig.json file.
 const tscConfigSchema = z
   .object({
     enabled: z.boolean().optional().default(false),
+    require: tscCompilerOptionsSchema, // Required compiler options for audit
   })
   .strict()
   .optional();
