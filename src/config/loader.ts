@@ -3,6 +3,7 @@ import * as path from "node:path";
 
 import TOML from "@iarna/toml";
 
+import { resolveExtends } from "./registry.js";
 import { type Config, configSchema, defaultConfig } from "./schema.js";
 
 interface LoadConfigResult {
@@ -104,13 +105,30 @@ function validateConfig(rawConfig: unknown): Config {
 }
 
 /**
- * Load and parse check.toml configuration
+ * Load and parse check.toml configuration (sync version without extends resolution)
+ * Use loadConfigAsync for full extends support
  */
 export function loadConfig(configPath?: string): LoadConfigResult {
   const resolvedPath = resolveConfigPath(configPath);
   const rawConfig = parseTomlFile(resolvedPath);
   const validatedConfig = validateConfig(rawConfig);
   const config = mergeWithDefaults(validatedConfig);
+  return { config, configPath: resolvedPath };
+}
+
+/**
+ * Load and parse check.toml configuration with extends resolution
+ */
+export async function loadConfigAsync(configPath?: string): Promise<LoadConfigResult> {
+  const resolvedPath = resolveConfigPath(configPath);
+  const rawConfig = parseTomlFile(resolvedPath);
+  const validatedConfig = validateConfig(rawConfig);
+
+  // Resolve extends if present
+  const configDir = path.dirname(resolvedPath);
+  const resolvedConfig = await resolveExtends(validatedConfig, configDir);
+
+  const config = mergeWithDefaults(resolvedConfig);
   return { config, configPath: resolvedPath };
 }
 

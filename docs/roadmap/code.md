@@ -24,7 +24,7 @@ Registry (org standards) → check.toml [extends] → validates project configs
 
 ---
 
-## v0.1 — MVP ✅
+## v0.1 — MVP (v0.1.0)
 
 First release focuses on CODE domain fundamentals.
 
@@ -60,11 +60,11 @@ enabled = true
 |---------|-------------|
 | `cm code check` | Run all enabled checks |
 | `cm code audit` | Verify tool configs exist |
-| `cm validate` | Validate check.toml syntax and schema |
+| `cm validate config` | Validate check.toml syntax and schema |
 
 ---
 
-## v0.2 — Formatting & Structure ✅
+## v0.2 — Formatting & Structure (v0.2.0 - v0.5.0)
 
 ### Formatting: `[code.formatting]`
 
@@ -110,9 +110,20 @@ enabled = true
 enabled = true
 ```
 
+### Type Checking: `[code.types]`
+
+| Check | Description | Tool |
+|-------|-------------|------|
+| ty | Python type checking | ty (Astral) |
+
+```toml
+[code.types.ty]
+enabled = true
+```
+
 ---
 
-## v0.3 — Security
+## v0.3 — Security (v0.6.0 - v0.7.x)
 
 ### Security Scanning: `[code.security]`
 
@@ -126,10 +137,10 @@ enabled = true
 [code.security.secrets]
 enabled = true
 
-[code.security.npm_audit]
+[code.security.npmaudit]
 enabled = true
 
-[code.security.pip_audit]
+[code.security.pipaudit]
 enabled = true
 ```
 
@@ -140,7 +151,32 @@ enabled = true
 
 ---
 
-## v0.4 — Registry & Extends
+## v0.8 — Registry Validation
+
+Validate that a repository conforms to registry structure.
+
+### Registry Structure
+
+A registry repository contains:
+- `rulesets/*.toml` - Check.toml configuration files
+- `prompts/*.md` - Markdown prompt files
+
+### Commands
+
+| Command | Description |
+|---------|-------------|
+| `cm validate registry` | Validate registry structure |
+
+### Validation Rules
+
+1. `rulesets/` directory must exist
+2. All files in `rulesets/` must be valid `.toml` files conforming to check.toml schema
+3. `prompts/` directory must exist
+4. All files in `prompts/` must have `.md` extension
+
+---
+
+## v0.9 — Registry Extends
 
 Central feature: inherit standards from organizational registries.
 
@@ -156,7 +192,6 @@ enabled = true
 
 [code.types.tsc]
 enabled = true
-strict = true
 
 [code.formatting.prettier]
 enabled = true
@@ -173,8 +208,8 @@ Projects extend from one or more registries:
 # project check.toml
 
 [extends]
-base = "github:myorg/standards/base@v1.0.0"
-typescript = "github:myorg/standards/typescript@v1.0.0"
+registry = "github:myorg/standards"
+rulesets = ["base", "typescript"]
 
 # Local overrides (additive only)
 [code.tests]
@@ -182,22 +217,22 @@ enabled = true
 min_test_files = 5
 ```
 
+### Resolution
+
+1. Fetch remote configs via git (uses ambient SSH credentials)
+2. Merge configs in order: first ruleset → last ruleset → local
+3. Local can only add, not remove inherited rules
+
 ### Commands
 
 | Command | Description |
 |---------|-------------|
-| `cm validate registry` | Validate registry format |
 | `cm code check` | Run checks (merges extended configs) |
-
-### Resolution
-
-1. Fetch remote configs via git (uses ambient SSH credentials)
-2. Merge configs: base → extended → local
-3. Local can only add, not remove inherited rules
+| `cm code audit` | Audit configs (merges extended configs) |
 
 ---
 
-## v0.5 — Config Audit
+## v1.0 — Config Audit
 
 Verify that project tool configs conform to the standard.
 

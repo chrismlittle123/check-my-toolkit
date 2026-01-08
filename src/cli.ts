@@ -8,7 +8,7 @@ import chalk from "chalk";
 import { Command, Option } from "commander";
 
 import { auditCodeConfig, runCodeChecks } from "./code/index.js";
-import { ConfigError, getProjectRoot, loadConfig } from "./config/index.js";
+import { ConfigError, getProjectRoot, loadConfig, loadConfigAsync } from "./config/index.js";
 import { formatOutput, type OutputFormat } from "./output/index.js";
 import { ExitCode, type FullResult } from "./types/index.js";
 
@@ -31,7 +31,7 @@ program
 
 async function runCheck(options: { config?: string; format: string }): Promise<void> {
   try {
-    const { config, configPath } = loadConfig(options.config);
+    const { config, configPath } = await loadConfigAsync(options.config);
     const projectRoot = getProjectRoot(configPath);
 
     const domainResult = await runCodeChecks(projectRoot, config);
@@ -62,7 +62,7 @@ async function runCheck(options: { config?: string; format: string }): Promise<v
 
 async function runAudit(options: { config?: string; format: string }): Promise<void> {
   try {
-    const { config, configPath } = loadConfig(options.config);
+    const { config, configPath } = await loadConfigAsync(options.config);
     const projectRoot = getProjectRoot(configPath);
 
     const domainResult = await auditCodeConfig(projectRoot, config);
@@ -92,12 +92,14 @@ async function runAudit(options: { config?: string; format: string }): Promise<v
 }
 
 // =============================================================================
-// Top-level commands
+// Validate subcommand
 // =============================================================================
 
-// cm validate - validate check.toml
-program
-  .command("validate")
+const validateCommand = new Command("validate").description("Validate configuration files");
+
+// cm validate config - validate check.toml
+validateCommand
+  .command("config")
   .description("Validate check.toml configuration file")
   .option("-c, --config <path>", "Path to check.toml config file")
   .addOption(new Option("-f, --format <format>", "Output format").choices(["text", "json"]).default("text"))
@@ -124,6 +126,76 @@ program
       process.exit(ExitCode.RUNTIME_ERROR);
     }
   });
+
+// cm validate registry - validate registry structure
+interface RegistryError { file: string; error: string }
+interface RegistryValidation { count: number; errors: RegistryError[] }
+
+function validateRulesets(cwd: string): RegistryValidation {
+  const dir = path.join(cwd, "rulesets");
+  if (!fs.existsSync(dir)) {
+    return { count: 0, errors: [{ file: "rulesets/", error: "Directory does not exist" }] };
+  }
+  const errors: RegistryError[] = [];
+  let count = 0;
+  for (const file of fs.readdirSync(dir).filter((f) => f.endsWith(".toml"))) {
+    try {
+      loadConfig(path.join(dir, file));
+      count++;
+    } catch (error) {
+      errors.push({ file: `rulesets/${file}`, error: error instanceof Error ? error.message : "Unknown error" });
+    }
+  }
+  return { count, errors };
+}
+
+function validatePrompts(cwd: string): RegistryValidation {
+  const dir = path.join(cwd, "prompts");
+  if (!fs.existsSync(dir)) {
+    return { count: 0, errors: [{ file: "prompts/", error: "Directory does not exist" }] };
+  }
+  const errors: RegistryError[] = [];
+  let count = 0;
+  for (const file of fs.readdirSync(dir)) {
+    if (file.endsWith(".md")) {
+      count++;
+    } else {
+      errors.push({ file: `prompts/${file}`, error: "File must have .md extension" });
+    }
+  }
+  return { count, errors };
+}
+
+interface RegistryResult { valid: boolean; rulesetsCount: number; promptsCount: number; errors: RegistryError[] }
+
+function outputRegistryResult(result: RegistryResult, format: string): void {
+  const { valid, rulesetsCount, promptsCount, errors } = result;
+  if (format === "json") {
+    process.stdout.write(`${JSON.stringify({ valid, rulesetsCount, promptsCount, errors }, null, 2)}\n`);
+  } else if (valid) {
+    process.stdout.write(chalk.green(`✓ Registry valid\n`));
+    process.stdout.write(`  Rulesets: ${rulesetsCount} valid\n`);
+    process.stdout.write(`  Prompts: ${promptsCount} valid\n`);
+  } else {
+    console.error(chalk.red(`✗ Registry invalid\n`));
+    errors.forEach(({ file, error }) => console.error(chalk.red(`  ${file}: ${error}`)));
+  }
+}
+
+validateCommand
+  .command("registry")
+  .description("Validate registry structure (rulesets/*.toml, prompts/*.md)")
+  .addOption(new Option("-f, --format <format>", "Output format").choices(["text", "json"]).default("text"))
+  .action(async (options: { format: string }) => {
+    const rulesets = validateRulesets(process.cwd());
+    const prompts = validatePrompts(process.cwd());
+    const errors = [...rulesets.errors, ...prompts.errors];
+    const valid = errors.length === 0;
+    outputRegistryResult({ valid, rulesetsCount: rulesets.count, promptsCount: prompts.count, errors }, options.format);
+    process.exit(valid ? ExitCode.SUCCESS : ExitCode.CONFIG_ERROR);
+  });
+
+program.addCommand(validateCommand);
 
 // =============================================================================
 // Code subcommand

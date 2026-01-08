@@ -211,6 +211,19 @@ const codeSchema = z
   .optional();
 
 // =============================================================================
+// Extends Configuration
+// =============================================================================
+
+/** Extends configuration for inheriting from registries */
+const extendsSchema = z
+  .object({
+    registry: z.string(), // e.g., "github:myorg/standards" or local path
+    rulesets: z.array(z.string()), // e.g., ["base", "typescript"]
+  })
+  .strict()
+  .optional();
+
+// =============================================================================
 // Full Configuration
 // =============================================================================
 
@@ -220,6 +233,7 @@ const codeSchema = z
 /** Full check.toml schema */
 export const configSchema = z
   .object({
+    extends: extendsSchema,
     code: codeSchema,
   })
   .strict();

@@ -633,7 +633,7 @@ function runCli(command: string, config: string, format = "text"): { stdout: str
   const formatArg = format !== "text" ? ` -f ${format}` : "";
   const cmd =
     command === "validate"
-      ? `node dist/cli.js validate -c "${config}"${formatArg}`
+      ? `node dist/cli.js validate config -c "${config}"${formatArg}`
       : `node dist/cli.js code ${command} -c "${config}"${formatArg}`;
 
   try {
