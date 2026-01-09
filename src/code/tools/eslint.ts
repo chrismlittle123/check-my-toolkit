@@ -222,6 +222,26 @@ export class ESLintRunner extends BaseToolRunner {
   }
 
   /**
+   * Get effective option value, handling both object and primitive formats.
+   * ESLint normalizes some rules like max-depth from ["error", { max: 4 }] to [2, 4].
+   */
+  private getEffectiveOptionValue(
+    effectiveOptions: unknown,
+    optionName: string
+  ): unknown {
+    // If effectiveOptions is an object, look up the key
+    if (typeof effectiveOptions === "object" && effectiveOptions !== null) {
+      return (effectiveOptions as Record<string, unknown>)[optionName];
+    }
+    // If effectiveOptions is a primitive and we're looking for "max", return the primitive
+    // This handles rules like max-depth, max-params, complexity where ESLint uses [severity, number]
+    if (optionName === "max" && (typeof effectiveOptions === "number" || typeof effectiveOptions === "string")) {
+      return effectiveOptions;
+    }
+    return undefined;
+  }
+
+  /**
    * Compare rule options between required and effective config
    */
   private compareRuleOptions(
@@ -233,13 +253,11 @@ export class ESLintRunner extends BaseToolRunner {
     const violations: Violation[] = [];
 
     // ESLint effective config format: [severity, options]
-    // Options can be a single object or multiple values
+    // Options can be a single object, a primitive, or multiple values
     const effectiveOptions = effectiveRule.length > 1 ? effectiveRule[1] : {};
 
     for (const [optionName, requiredValue] of Object.entries(requiredOptions)) {
-      const effectiveValue = typeof effectiveOptions === "object" && effectiveOptions !== null
-        ? (effectiveOptions as Record<string, unknown>)[optionName]
-        : undefined;
+      const effectiveValue = this.getEffectiveOptionValue(effectiveOptions, optionName);
 
       if (effectiveValue === undefined) {
         violations.push(

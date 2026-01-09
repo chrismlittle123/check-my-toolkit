@@ -10,6 +10,12 @@ rulesets = ["typescript-internal"]
 enabled = true
 files = ["src/**/*.ts"]
 
+[code.linting.eslint.rules]
+# Test rules with options auditing
+"max-depth" = { severity = "error", max = 4 }
+"max-params" = { severity = "error", max = 4 }
+"no-console" = { severity = "error", allow = ["error", "warn"] }
+
 # Naming conventions (override to exclude test fixtures)
 [code.naming]
 enabled = true
