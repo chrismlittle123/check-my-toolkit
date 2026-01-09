@@ -125,6 +125,13 @@ export class NpmAuditRunner extends BaseToolRunner {
     pm: PackageManagerConfig,
     elapsed: () => number
   ): CheckResult {
+    // Check if the command was not found (tool not installed)
+    // execa with reject:false returns a result object with message property for spawn errors
+    const resultMessage = String((result as { message?: string }).message ?? "");
+    if (resultMessage.toLowerCase().includes("enoent") || resultMessage.toLowerCase().includes("not found")) {
+      return this.skipNotInstalled(elapsed());
+    }
+
     const output = String(result.stdout ?? result.stderr ?? "");
     const violations = this.parseOutput(output, pm);
 
