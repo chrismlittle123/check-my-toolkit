@@ -1,4 +1,5 @@
 export { BaseToolRunner } from "./base.js";
+export { DisableCommentsRunner } from "./disable-comments.js";
 export { ESLintRunner } from "./eslint.js";
 export { GitleaksRunner } from "./gitleaks.js";
 export { KnipRunner } from "./knip.js";

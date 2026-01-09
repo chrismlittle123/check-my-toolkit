@@ -4,7 +4,7 @@ import {
   DomainResult,
   type IToolRunner,
 } from "../types/index.js";
-import { ESLintRunner, GitleaksRunner, KnipRunner, NamingRunner, NpmAuditRunner, PipAuditRunner, PrettierRunner, RuffFormatRunner, RuffRunner, TestsRunner, TscRunner, TyRunner, VultureRunner } from "./tools/index.js";
+import { DisableCommentsRunner, ESLintRunner, GitleaksRunner, KnipRunner, NamingRunner, NpmAuditRunner, PipAuditRunner, PrettierRunner, RuffFormatRunner, RuffRunner, TestsRunner, TscRunner, TyRunner, VultureRunner } from "./tools/index.js";
 
 // Tool runner instances (singletons for tools that don't need per-run config)
 const gitleaks = new GitleaksRunner();
@@ -97,6 +97,21 @@ function createNamingRunner(config: Config): NamingRunner {
   return runner;
 }
 
+/** Create a configured DisableCommentsRunner */
+function createDisableCommentsRunner(config: Config): DisableCommentsRunner {
+  const runner = new DisableCommentsRunner();
+  const disableCommentsConfig = config.code?.quality?.["disable-comments"];
+  if (disableCommentsConfig) {
+    runner.setConfig({
+      enabled: disableCommentsConfig.enabled,
+      patterns: disableCommentsConfig.patterns,
+      extensions: disableCommentsConfig.extensions,
+      exclude: disableCommentsConfig.exclude,
+    });
+  }
+  return runner;
+}
+
 /** All available tools with their config predicates */
 const toolRegistry: ToolEntry[] = [
   { isEnabled: (c) => isEnabled(c.code?.linting?.eslint), runner: createEslintRunner },
@@ -112,6 +127,7 @@ const toolRegistry: ToolEntry[] = [
   { isEnabled: (c) => isEnabled(c.code?.security?.pipaudit), runner: pipaudit },
   { isEnabled: (c) => isEnabled(c.code?.tests), runner: createTestsRunner },
   { isEnabled: (c) => isEnabled(c.code?.naming), runner: createNamingRunner },
+  { isEnabled: (c) => isEnabled(c.code?.quality?.["disable-comments"]), runner: createDisableCommentsRunner },
 ];
 
 /**

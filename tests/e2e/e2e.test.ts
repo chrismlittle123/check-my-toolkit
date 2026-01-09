@@ -741,6 +741,32 @@ const testCases: TestCase[] = [
     expectedExitCode: 0,
     expectedPatterns: ["Naming Config: passed"],
   },
+
+  // ============================================================
+  // Disable Comments: Detect linter disable comments
+  // ============================================================
+  {
+    name: "disable-comments/clean passes when no disable comments exist",
+    config: "tests/e2e/projects/disable-comments/clean/check.toml",
+    command: "check",
+    expectedExitCode: 0,
+    expectedPatterns: ["✓ Disable Comments: passed"],
+  },
+  {
+    name: "disable-comments/violations detects disable comments",
+    config: "tests/e2e/projects/disable-comments/violations/check.toml",
+    command: "check",
+    expectedExitCode: 1,
+    expectedPatterns: ["✗ Disable Comments:", "@ts-ignore", "eslint-disable-next-line"],
+  },
+  {
+    name: "disable-comments/disabled skips check when disabled",
+    config: "tests/e2e/projects/disable-comments/disabled/check.toml",
+    command: "check",
+    expectedExitCode: 0,
+    expectedPatterns: ["CODE"],
+    notExpectedPatterns: ["Disable Comments"],
+  },
 ];
 
 function runCli(command: string, config: string, format = "text"): { stdout: string; exitCode: number } {
