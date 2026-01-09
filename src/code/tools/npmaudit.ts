@@ -1,7 +1,21 @@
+import * as fs from "node:fs";
+import * as path from "node:path";
+
 import { execa } from "execa";
 
 import { type CheckResult, type Violation } from "../../types/index.js";
 import { BaseToolRunner } from "./base.js";
+
+/** Supported package managers */
+type PackageManager = "npm" | "pnpm";
+
+/** Package manager configuration */
+interface PackageManagerConfig {
+  name: PackageManager;
+  lockFile: string;
+  command: string;
+  args: string[];
+}
 
 /** npm audit vulnerability entry */
 interface NpmVulnerability {
@@ -30,47 +44,94 @@ interface NpmAuditOutput {
   };
 }
 
+/** pnpm audit advisory entry */
+interface PnpmAdvisory {
+  module_name: string;
+  severity: "info" | "low" | "moderate" | "high" | "critical";
+  title: string;
+  url: string;
+  findings: { version: string; paths: string[] }[];
+}
+
+/** pnpm audit JSON output format */
+interface PnpmAuditOutput {
+  advisories?: Record<string, PnpmAdvisory>;
+  metadata: {
+    vulnerabilities: {
+      info: number;
+      low: number;
+      moderate: number;
+      high: number;
+      critical: number;
+    };
+  };
+}
+
+/** Package manager configurations */
+const PACKAGE_MANAGERS: PackageManagerConfig[] = [
+  { name: "pnpm", lockFile: "pnpm-lock.yaml", command: "pnpm", args: ["audit", "--json"] },
+  { name: "npm", lockFile: "package-lock.json", command: "npm", args: ["audit", "--json"] },
+];
+
 /**
- * npm audit tool runner for detecting dependency vulnerabilities
+ * Dependency audit tool runner for detecting vulnerabilities.
+ * Supports npm and pnpm (auto-detected based on lock file).
  */
 export class NpmAuditRunner extends BaseToolRunner {
   readonly name = "npmaudit";
   readonly rule = "code.security";
   readonly toolId = "npmaudit";
-  readonly configFiles = ["package-lock.json"];
+  readonly configFiles = ["package-lock.json", "pnpm-lock.yaml"];
+
+  /**
+   * Detect which package manager is being used
+   */
+  private detectPackageManager(projectRoot: string): PackageManagerConfig | null {
+    for (const pm of PACKAGE_MANAGERS) {
+      if (fs.existsSync(path.join(projectRoot, pm.lockFile))) {
+        return pm;
+      }
+    }
+    return null;
+  }
 
   async run(projectRoot: string): Promise<CheckResult> {
     const startTime = Date.now();
     const elapsed = (): number => Date.now() - startTime;
 
-    if (!this.hasConfig(projectRoot)) {
-      return this.failNoConfig(elapsed());
+    const pm = this.detectPackageManager(projectRoot);
+    if (!pm) {
+      return this.fail(
+        [this.createErrorViolation("No lock file found (package-lock.json or pnpm-lock.yaml)")],
+        elapsed()
+      );
     }
 
     try {
-      const result = await execa("npm", ["audit", "--json"], {
+      const result = await execa(pm.command, pm.args, {
         cwd: projectRoot,
         reject: false,
         timeout: 5 * 60 * 1000,
       });
 
-      return this.processAuditResult(result, elapsed);
+      return this.processAuditResult(result, pm, elapsed);
     } catch (error) {
-      return this.handleRunError(error, elapsed);
+      return this.handleRunError(error, pm, elapsed);
     }
   }
 
   private processAuditResult(
     result: Awaited<ReturnType<typeof execa>>,
+    pm: PackageManagerConfig,
     elapsed: () => number
   ): CheckResult {
     const output = String(result.stdout ?? result.stderr ?? "");
-    const violations = this.parseOutput(output);
+    const violations = this.parseOutput(output, pm);
 
     if (violations === null) {
       if (result.exitCode !== 0) {
         return this.fail(
-          [this.createErrorViolation(`npm audit error: ${result.stderr ?? "Unknown error"}`)],
+          [this.createErrorViolation(`${pm.name} audit error: ${result.stderr ?? "Unknown error"}`)],
           elapsed()
         );
       }
@@ -80,43 +141,79 @@ export class NpmAuditRunner extends BaseToolRunner {
     return this.fromViolations(violations, elapsed());
   }
 
-  private handleRunError(error: unknown, elapsed: () => number): CheckResult {
+  private handleRunError(
+    error: unknown,
+    pm: PackageManagerConfig,
+    elapsed: () => number
+  ): CheckResult {
     if (this.isNotInstalledError(error)) {
       return this.skipNotInstalled(elapsed());
     }
 
     const message = error instanceof Error ? error.message : "Unknown error";
-    return this.fail([this.createErrorViolation(`npm audit error: ${message}`)], elapsed());
+    return this.fail([this.createErrorViolation(`${pm.name} audit error: ${message}`)], elapsed());
   }
 
-  private parseOutput(output: string): Violation[] | null {
+  private parseOutput(output: string, pm: PackageManagerConfig): Violation[] | null {
     try {
-      const result = JSON.parse(output) as NpmAuditOutput;
-      const violations: Violation[] = [];
-
-      for (const [pkgName, vuln] of Object.entries(result.vulnerabilities)) {
-        const severity = this.mapSeverity(vuln.severity);
-        const title = this.getVulnerabilityTitle(vuln);
-        const fixInfo = this.getFixInfo(vuln);
-
-        violations.push({
-          rule: `${this.rule}.${this.toolId}`,
-          tool: this.toolId,
-          file: "package-lock.json",
-          message: `${pkgName}: ${title}${fixInfo}`,
-          code: vuln.severity,
-          severity,
-        });
+      if (pm.name === "pnpm") {
+        return this.parsePnpmOutput(output, pm);
       }
-
-      return violations;
+      return this.parseNpmOutput(output, pm);
     } catch {
       return null;
     }
   }
 
-  private mapSeverity(npmSeverity: string): "error" | "warning" {
-    switch (npmSeverity) {
+  private parseNpmOutput(output: string, pm: PackageManagerConfig): Violation[] {
+    const result = JSON.parse(output) as NpmAuditOutput;
+    const violations: Violation[] = [];
+
+    for (const [pkgName, vuln] of Object.entries(result.vulnerabilities)) {
+      const severity = this.mapSeverity(vuln.severity);
+      const title = this.getNpmVulnerabilityTitle(vuln);
+      const fixInfo = this.getNpmFixInfo(vuln);
+
+      violations.push({
+        rule: `${this.rule}.${this.toolId}`,
+        tool: this.toolId,
+        file: pm.lockFile,
+        message: `${pkgName}: ${title}${fixInfo}`,
+        code: vuln.severity,
+        severity,
+      });
+    }
+
+    return violations;
+  }
+
+  private parsePnpmOutput(output: string, pm: PackageManagerConfig): Violation[] {
+    const result = JSON.parse(output) as PnpmAuditOutput;
+    const violations: Violation[] = [];
+
+    // pnpm audit uses "advisories" instead of "vulnerabilities"
+    if (!result.advisories) {
+      return violations;
+    }
+
+    for (const [, advisory] of Object.entries(result.advisories)) {
+      const severity = this.mapSeverity(advisory.severity);
+
+      violations.push({
+        rule: `${this.rule}.${this.toolId}`,
+        tool: this.toolId,
+        file: pm.lockFile,
+        message: `${advisory.module_name}: ${advisory.title}`,
+        code: advisory.severity,
+        severity,
+      });
+    }
+
+    return violations;
+  }
+
+  private mapSeverity(auditSeverity: string): "error" | "warning" {
+    switch (auditSeverity) {
       case "critical":
       case "high":
         return "error";
@@ -128,8 +225,7 @@ export class NpmAuditRunner extends BaseToolRunner {
     }
   }
 
-  private getVulnerabilityTitle(vuln: NpmVulnerability): string {
-    // Try to get a descriptive title from the via field
+  private getNpmVulnerabilityTitle(vuln: NpmVulnerability): string {
     for (const v of vuln.via) {
       if (typeof v === "object" && v.title) {
         return v.title;
@@ -138,7 +234,7 @@ export class NpmAuditRunner extends BaseToolRunner {
     return `${vuln.severity} severity vulnerability`;
   }
 
-  private getFixInfo(vuln: NpmVulnerability): string {
+  private getNpmFixInfo(vuln: NpmVulnerability): string {
     if (vuln.fixAvailable === false) {
       return " (no fix available)";
     }
@@ -159,17 +255,18 @@ export class NpmAuditRunner extends BaseToolRunner {
   }
 
   /**
-   * Audit - check if package-lock.json exists
+   * Audit - check if a lock file exists (npm or pnpm)
    */
   async audit(projectRoot: string): Promise<CheckResult> {
     const startTime = Date.now();
 
-    if (!this.hasConfig(projectRoot)) {
+    const pm = this.detectPackageManager(projectRoot);
+    if (!pm) {
       return this.fail(
         [{
           rule: `${this.rule}.${this.toolId}`,
           tool: "audit",
-          message: "package-lock.json not found (required for npm audit)",
+          message: "No lock file found (package-lock.json or pnpm-lock.yaml required)",
           severity: "error",
         }],
         Date.now() - startTime

@@ -48,12 +48,12 @@ describe("NpmAuditRunner", () => {
   });
 
   describe("run", () => {
-    it("fails when no package-lock.json exists", async () => {
+    it("fails when no lock file exists", async () => {
       const result = await runner.run(tempDir);
 
       expect(result.passed).toBe(false);
       expect(result.violations).toHaveLength(1);
-      expect(result.violations[0].message).toContain("Config not found");
+      expect(result.violations[0].message).toContain("No lock file found");
     });
 
     it("runs npm audit and passes when no vulnerabilities found", async () => {
@@ -340,12 +340,12 @@ describe("NpmAuditRunner", () => {
       expect(result.passed).toBe(true);
     });
 
-    it("fails when package-lock.json is missing", async () => {
+    it("fails when no lock file exists", async () => {
       const result = await runner.audit(tempDir);
 
       expect(result.passed).toBe(false);
       expect(result.violations).toHaveLength(1);
-      expect(result.violations[0].message).toContain("package-lock.json not found");
+      expect(result.violations[0].message).toContain("No lock file found");
     });
   });
 });
