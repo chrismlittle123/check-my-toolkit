@@ -1,3 +1,6 @@
+import * as fs from "node:fs";
+import * as path from "node:path";
+
 import { execa } from "execa";
 
 import { type CheckResult, type Violation } from "../../types/index.js";
@@ -33,20 +36,37 @@ export class GitleaksRunner extends BaseToolRunner {
   readonly toolId = "secrets";
   readonly configFiles = [".gitleaks.toml", "gitleaks.toml"];
 
+  /**
+   * Find gitleaks config file if it exists
+   */
+  private findGitleaksConfig(projectRoot: string): string | null {
+    for (const configFile of this.configFiles) {
+      const configPath = path.join(projectRoot, configFile);
+      if (fs.existsSync(configPath)) {
+        return configPath;
+      }
+    }
+    return null;
+  }
+
   async run(projectRoot: string): Promise<CheckResult> {
     const startTime = Date.now();
     const elapsed = (): number => Date.now() - startTime;
 
     try {
-      const result = await execa(
-        "gitleaks",
-        ["detect", "--source", projectRoot, "--report-format", "json", "--report-path", "/dev/stdout", "--no-git"],
-        {
-          cwd: projectRoot,
-          reject: false,
-          timeout: 5 * 60 * 1000,
-        }
-      );
+      const args = ["detect", "--source", projectRoot, "--report-format", "json", "--report-path", "/dev/stdout", "--no-git"];
+
+      // Use custom config if it exists
+      const configPath = this.findGitleaksConfig(projectRoot);
+      if (configPath) {
+        args.push("--config", configPath);
+      }
+
+      const result = await execa("gitleaks", args, {
+        cwd: projectRoot,
+        reject: false,
+        timeout: 5 * 60 * 1000,
+      });
 
       return this.processResult(result, elapsed);
     } catch (error) {
