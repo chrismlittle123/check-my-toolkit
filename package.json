@@ -50,6 +50,7 @@
     "@types/node": "^22.10.2",
     "@vitest/coverage-v8": "^2.1.9",
     "eslint": "^9.39.2",
+    "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-simple-import-sort": "^12.1.1",
     "globals": "^16.5.0",
     "husky": "^9.1.7",

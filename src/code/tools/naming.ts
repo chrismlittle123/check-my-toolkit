@@ -77,6 +77,10 @@ function matchesCase(str: string, caseType: CaseType): boolean {
       return isCamelCase(str);
     case "PascalCase":
       return isPascalCase(str);
+    default: {
+      const exhaustiveCheck: never = caseType;
+      throw new Error(`Unknown case type: ${exhaustiveCheck}`);
+    }
   }
 }
 
@@ -313,7 +317,7 @@ export class NamingRunner extends BaseToolRunner {
     const rules = this.config.rules ?? [];
 
     for (const rule of rules) {
-      if (!rule.extensions || rule.extensions.length === 0) {
+      if (rule.extensions.length === 0) {
         return {
           name: `${this.name} Config`,
           rule: this.rule,
