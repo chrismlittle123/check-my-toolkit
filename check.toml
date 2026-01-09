@@ -11,10 +11,24 @@ enabled = true
 files = ["src/**/*.ts"]
 
 [code.linting.eslint.rules]
-# Test rules with options auditing
+# Code quality limits
 "max-depth" = { severity = "error", max = 4 }
 "max-params" = { severity = "error", max = 4 }
 "no-console" = { severity = "error", allow = ["error", "warn"] }
+
+# Bug prevention - Core ESLint
+"array-callback-return" = "error"
+"no-template-curly-in-string" = "error"
+"consistent-return" = "error"
+
+# Bug prevention - Import plugin
+"import/no-cycle" = { severity = "error", maxDepth = 10 }
+
+# Bug prevention - TypeScript-ESLint
+"@typescript-eslint/no-floating-promises" = "error"
+"@typescript-eslint/no-non-null-assertion" = "error"
+"@typescript-eslint/no-unnecessary-condition" = "error"
+"@typescript-eslint/switch-exhaustiveness-check" = "error"
 
 # Naming conventions (override to exclude test fixtures)
 [code.naming]

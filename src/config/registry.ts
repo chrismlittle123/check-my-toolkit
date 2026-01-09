@@ -195,8 +195,9 @@ function mergeNaming(base: CodeConfig["naming"], override: CodeConfig["naming"])
   if (!override) {
     return base;
   }
+  // enabled has a default value from schema, so it's always defined after parsing
   return {
-    enabled: override.enabled ?? base?.enabled ?? false,
+    enabled: override.enabled,
     rules: override.rules ?? base?.rules,
   };
 }

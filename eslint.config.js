@@ -2,6 +2,7 @@ import eslint from '@eslint/js';
 import tseslint from 'typescript-eslint';
 import globals from 'globals';
 import simpleImportSort from 'eslint-plugin-simple-import-sort';
+import importPlugin from 'eslint-plugin-import';
 
 export default tseslint.config(
   // Base recommended configs
@@ -30,6 +31,7 @@ export default tseslint.config(
     files: ['src/**/*.ts'],
     plugins: {
       'simple-import-sort': simpleImportSort,
+      import: importPlugin,
     },
     languageOptions: {
       globals: {
@@ -42,14 +44,39 @@ export default tseslint.config(
     },
     rules: {
       // ============================================
-      // Import sorting
+      // Import sorting and cycles
       // ============================================
       'simple-import-sort/imports': 'error',
       'simple-import-sort/exports': 'error',
 
+      // Detect circular dependencies (architecture rot, weird runtime bugs)
+      'import/no-cycle': ['error', { maxDepth: 10 }],
+
+      // ============================================
+      // Bug prevention rules
+      // ============================================
+
+      // Catch missing return in array callbacks: .map(x => { x * 2 })
+      'array-callback-return': 'error',
+
+      // Catch wrong quotes on template literals: 'Hello ${name}'
+      'no-template-curly-in-string': 'error',
+
+      // All code paths must return or none (prevents inconsistent behavior)
+      'consistent-return': 'error',
+
       // ============================================
       // TypeScript-specific rules
       // ============================================
+
+      // Catch unnecessary conditions (dead code, logic errors)
+      '@typescript-eslint/no-unnecessary-condition': 'error',
+
+      // Ensure switch statements handle all union cases
+      '@typescript-eslint/switch-exhaustiveness-check': 'error',
+
+      // Prevent false confidence from ! assertions that cause runtime null errors
+      '@typescript-eslint/no-non-null-assertion': 'error',
 
       // Disallow `any` type
       '@typescript-eslint/no-explicit-any': 'error',
@@ -116,6 +143,12 @@ export default tseslint.config(
 
       // No console in production code (except error and warn)
       'no-console': ['error', { allow: ['error', 'warn'] }],
+
+      // Catch template literal typos like 'Hello ${name}' (wrong quotes)
+      'no-template-curly-in-string': 'error',
+
+      // Consistent return - all paths must return or none
+      'consistent-return': 'error',
 
       // Require curly braces for all control statements
       curly: 'error',
