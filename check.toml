@@ -26,3 +26,8 @@ extensions = ["ts", "tsx"]
 file_case = "kebab-case"
 folder_case = "kebab-case"
 exclude = ["tests/e2e/projects/**"]
+
+# Detect linter disable comments
+[code.quality.disable-comments]
+enabled = true
+exclude = ["tests/**", "src/code/tools/disable-comments.ts"]

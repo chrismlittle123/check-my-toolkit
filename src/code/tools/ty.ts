@@ -132,9 +132,10 @@ export class TyRunner extends BaseToolRunner {
     }
 
     if (result.exitCode === 2) {
-      // Use || instead of ?? because empty string should fall through to next option
-      // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
-      const errorMessage = result.stderr || result.stdout || "Configuration error";
+      // Use trimmed string values so empty strings are falsy with ||
+      const stderr = String(result.stderr ?? "").trim();
+      const stdout = String(result.stdout ?? "").trim();
+      const errorMessage = stderr || stdout || "Configuration error";
       return this.fail([this.createErrorViolation(`ty configuration error: ${errorMessage.slice(0, 500)}`)], elapsed());
     }
 
