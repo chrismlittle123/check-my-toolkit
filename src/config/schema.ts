@@ -11,10 +11,25 @@ import { z } from "zod";
 /** ESLint rule severity */
 const eslintRuleSeverity = z.enum(["off", "warn", "error"]);
 
-/** ESLint rule value - can be severity string or [severity, ...options] */
+/**
+ * ESLint rule with options in TOML-friendly object format.
+ * Example: { severity = "error", max = 10 }
+ * The 'severity' key is required, all other keys are rule-specific options.
+ */
+const eslintRuleWithOptions = z
+  .object({
+    severity: eslintRuleSeverity,
+  })
+  .catchall(z.unknown()); // Allow any additional options (max, skipBlankLines, etc.)
+
+/**
+ * ESLint rule value - can be:
+ * - severity string: "error"
+ * - object with severity and options: { severity: "error", max: 10 }
+ */
 const eslintRuleValue = z.union([
   eslintRuleSeverity,
-  z.tuple([eslintRuleSeverity]).rest(z.unknown()), // ["error", options...]
+  eslintRuleWithOptions,
 ]);
 
 /** ESLint rules configuration */

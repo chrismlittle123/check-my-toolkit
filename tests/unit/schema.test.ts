@@ -42,7 +42,8 @@ describe("configSchema", () => {
               rules: {
                 "no-unused-vars": "error",
                 semi: "warn",
-                "no-console": ["error", { allow: ["warn", "error"] }],
+                // TOML-friendly object format for rules with options
+                "no-console": { severity: "error", allow: ["warn", "error"] },
               },
             },
           },

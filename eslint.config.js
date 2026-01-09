@@ -102,7 +102,7 @@ export default tseslint.config(
 
       // Max lines per file - enforces small, focused modules
       'max-lines': [
-        'warn',
+        'error',
         {
           max: 400,
           skipBlankLines: true,
