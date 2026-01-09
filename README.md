@@ -83,9 +83,9 @@ code: 1 violation found
 
 | Tool | Purpose | Config |
 |------|---------|--------|
-| Gitleaks | Secret detection | `[code.security.gitleaks]` |
-| npm audit | JS dependency vulnerabilities | `[code.security.npm-audit]` |
-| pip-audit | Python dependency vulnerabilities | `[code.security.pip-audit]` |
+| Gitleaks | Secret detection | `[code.security.secrets]` |
+| npm audit | JS dependency vulnerabilities | `[code.security.npmaudit]` |
+| pip-audit | Python dependency vulnerabilities | `[code.security.pipaudit]` |
 
 ### Other
 
@@ -100,7 +100,7 @@ code: 1 violation found
 cm code check              # Run all enabled checks
 cm code check --format json  # JSON output for CI
 cm code audit              # Verify tool configs exist
-cm validate                # Validate check.toml syntax
+cm validate config         # Validate check.toml syntax
 cm validate registry       # Validate a registry structure
 ```
 
@@ -126,7 +126,7 @@ enabled = true
 [code.unused.knip]
 enabled = true
 
-[code.security.gitleaks]
+[code.security.secrets]
 enabled = true
 ```
 
@@ -148,14 +148,16 @@ The registry contains reusable rulesets in `rulesets/*.toml` that get merged int
 [code.naming]
 enabled = true
 
-[code.naming.rules.kebab-ts]
-pattern = "^[a-z][a-z0-9]*(-[a-z0-9]+)*$"
-extensions = [".ts", ".tsx"]
-exclude = ["*.test.ts", "*.spec.ts"]
+[[code.naming.rules]]
+extensions = ["ts", "tsx"]
+file_case = "kebab-case"
+folder_case = "kebab-case"
+exclude = ["**/*.test.ts", "**/*.spec.ts"]
 
-[code.naming.rules.snake-py]
-pattern = "^[a-z][a-z0-9]*(_[a-z0-9]+)*$"
-extensions = [".py"]
+[[code.naming.rules]]
+extensions = ["py"]
+file_case = "snake_case"
+folder_case = "snake_case"
 ```
 
 ### Test File Validation
