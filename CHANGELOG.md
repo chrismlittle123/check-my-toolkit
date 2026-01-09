@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.17.1
+
+### Patch Changes
+
+- d667914: fix: documentation and schema validation bugs
+
+  - **README.md**: Fixed incorrect config names in documentation
+
+    - `[code.security.gitleaks]` → `[code.security.secrets]`
+    - `[code.security.npm-audit]` → `[code.security.npmaudit]`
+    - `[code.security.pip-audit]` → `[code.security.pipaudit]`
+    - `cm validate` → `cm validate config`
+    - Fixed naming conventions example to use correct `[[code.naming.rules]]` array syntax
+
+  - **Schema**: Changed `min_test_files` from `.positive()` to `.nonnegative()` to allow 0
+
+- d667914: fix: resolve three real bugs
+
+  - Fix numeric filenames (e.g., 404.tsx, 500.tsx) failing naming validation - common for Next.js error pages
+  - Fix tsconfig.json with comments (JSONC) failing to parse during audit
+  - Fix gitleaks custom config files (.gitleaks.toml, gitleaks.toml) being ignored
+
 ## 0.17.0
 
 ### Minor Changes
