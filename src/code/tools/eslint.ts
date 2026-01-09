@@ -21,8 +21,17 @@ interface ESLintFileResult {
   messages: ESLintMessage[];
 }
 
-/** ESLint rule value - severity or [severity, ...options] */
-type ESLintRuleValue = "off" | "warn" | "error" | [string, ...unknown[]];
+/**
+ * ESLint rule with options in TOML-friendly object format.
+ * Example: { severity: "error", max: 10 }
+ */
+interface ESLintRuleWithOptions {
+  severity: "off" | "warn" | "error";
+  [key: string]: unknown;
+}
+
+/** ESLint rule value - severity string or object with severity and options */
+type ESLintRuleValue = "off" | "warn" | "error" | ESLintRuleWithOptions;
 
 /** ESLint configuration options */
 interface ESLintConfig {
@@ -198,6 +207,119 @@ export class ESLintRunner extends BaseToolRunner {
   }
 
   /**
+   * Extract options from a rule value (excludes severity)
+   */
+  private extractRuleOptions(value: ESLintRuleValue): Record<string, unknown> | null {
+    if (typeof value === "string") {
+      return null; // No options for severity-only rules
+    }
+    if (this.isRuleWithOptions(value)) {
+      // Extract all keys except 'severity'
+      const { severity: _, ...options } = value;
+      return Object.keys(options).length > 0 ? options : null;
+    }
+    return null;
+  }
+
+  /**
+   * Compare rule options between required and effective config
+   */
+  private compareRuleOptions(
+    ruleName: string,
+    requiredOptions: Record<string, unknown>,
+    effectiveRule: unknown[],
+    configFile: string | undefined
+  ): Violation[] {
+    const violations: Violation[] = [];
+
+    // ESLint effective config format: [severity, options]
+    // Options can be a single object or multiple values
+    const effectiveOptions = effectiveRule.length > 1 ? effectiveRule[1] : {};
+
+    for (const [optionName, requiredValue] of Object.entries(requiredOptions)) {
+      const effectiveValue = typeof effectiveOptions === "object" && effectiveOptions !== null
+        ? (effectiveOptions as Record<string, unknown>)[optionName]
+        : undefined;
+
+      if (effectiveValue === undefined) {
+        violations.push(
+          this.createAuditViolation(
+            `Rule "${ruleName}": option "${optionName}" is required but not configured`,
+            "error",
+            configFile
+          )
+        );
+      } else if (!this.deepEqual(requiredValue, effectiveValue)) {
+        violations.push(
+          this.createAuditViolation(
+            `Rule "${ruleName}": option "${optionName}" expected ${JSON.stringify(requiredValue)}, got ${JSON.stringify(effectiveValue)}`,
+            "error",
+            configFile
+          )
+        );
+      }
+    }
+
+    return violations;
+  }
+
+  /**
+   * Deep equality check for comparing option values
+   */
+  private deepEqual(a: unknown, b: unknown): boolean {
+    if (a === b) {
+      return true;
+    }
+    if (typeof a !== typeof b) {
+      return false;
+    }
+    if (typeof a !== "object" || a === null || b === null) {
+      return false;
+    }
+    const keysA = Object.keys(a as object);
+    const keysB = Object.keys(b as object);
+    if (keysA.length !== keysB.length) {
+      return false;
+    }
+    for (const key of keysA) {
+      if (!this.deepEqual((a as Record<string, unknown>)[key], (b as Record<string, unknown>)[key])) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  /**
+   * Compare a single rule against effective config
+   */
+  private compareSingleRule(
+    ruleName: string,
+    requiredValue: ESLintRuleValue,
+    effectiveRule: unknown[] | undefined,
+    configFile: string | undefined
+  ): Violation[] {
+    if (!effectiveRule) {
+      return [this.createAuditViolation(`Rule "${ruleName}" is required but not configured`, "error", configFile)];
+    }
+
+    const violations: Violation[] = [];
+    const requiredSeverity = this.normalizeSeverity(requiredValue);
+    const effectiveSeverity = this.normalizeSeverity(effectiveRule[0]);
+
+    if (requiredSeverity !== effectiveSeverity) {
+      const msg = `Rule "${ruleName}": expected "${this.severityToString(requiredSeverity)}", got "${this.severityToString(effectiveSeverity)}"`;
+      violations.push(this.createAuditViolation(msg, "error", configFile));
+    }
+
+    const requiredOptions = this.extractRuleOptions(requiredValue);
+    if (requiredOptions) {
+      violations.push(...this.compareRuleOptions(ruleName, requiredOptions, effectiveRule, configFile));
+    }
+
+    return violations;
+  }
+
+  /**
    * Compare required rules against effective rules
    */
   private compareRules(
@@ -205,27 +327,11 @@ export class ESLintRunner extends BaseToolRunner {
     requiredRules: Record<string, ESLintRuleValue>,
     effectiveRules: Record<string, unknown[]>
   ): Violation[] {
-    const violations: Violation[] = [];
     const configFile = this.findConfig(projectRoot) ?? undefined;
 
-    for (const [ruleName, requiredValue] of Object.entries(requiredRules)) {
-      const effectiveRule = effectiveRules[ruleName];
-
-      if (!effectiveRule) {
-        violations.push(this.createAuditViolation(`Rule "${ruleName}" is required but not configured`, "error", configFile));
-        continue;
-      }
-
-      const requiredSeverity = this.normalizeSeverity(requiredValue);
-      const effectiveSeverity = this.normalizeSeverity(effectiveRule[0]);
-
-      if (requiredSeverity !== effectiveSeverity) {
-        const msg = `Rule "${ruleName}": expected "${this.severityToString(requiredSeverity)}", got "${this.severityToString(effectiveSeverity)}"`;
-        violations.push(this.createAuditViolation(msg, "error", configFile));
-      }
-    }
-
-    return violations;
+    return Object.entries(requiredRules).flatMap(([ruleName, requiredValue]) =>
+      this.compareSingleRule(ruleName, requiredValue, effectiveRules[ruleName], configFile)
+    );
   }
 
   /**
@@ -262,6 +368,13 @@ export class ESLintRunner extends BaseToolRunner {
   }
 
   /**
+   * Check if a value is an ESLint rule with options object
+   */
+  private isRuleWithOptions(value: unknown): value is ESLintRuleWithOptions {
+    return typeof value === "object" && value !== null && "severity" in value;
+  }
+
+  /**
    * Normalize rule severity to number (0, 1, 2)
    */
   private normalizeSeverity(value: unknown): number {
@@ -282,6 +395,9 @@ export class ESLintRunner extends BaseToolRunner {
     }
     if (Array.isArray(value)) {
       return this.normalizeSeverity(value[0]);
+    }
+    if (this.isRuleWithOptions(value)) {
+      return this.normalizeSeverity(value.severity);
     }
     return 0;
   }
