@@ -381,6 +381,23 @@ More info
         expect(result.violations[0].message).toContain("Failed to parse");
       });
 
+      it("handles tsconfig.json with comments (JSONC)", async () => {
+        const tsconfigWithComments = `{
+  // Enable strict type checking
+  "compilerOptions": {
+    "strict": true, // This is important
+    /* Multi-line
+       comment */
+    "noImplicitAny": true
+  }
+}`;
+        fs.writeFileSync(path.join(tempDir, "tsconfig.json"), tsconfigWithComments);
+
+        const result = await runner.audit(tempDir);
+
+        expect(result.passed).toBe(true);
+      });
+
       it("includes file in violation", async () => {
         const tsconfig = {
           compilerOptions: {

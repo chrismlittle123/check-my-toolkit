@@ -20,6 +20,26 @@ interface TscRequiredOptions {
   forceConsistentCasingInFileNames?: boolean;
 }
 
+/**
+ * Strip comments from JSONC content (JSON with Comments).
+ * Uses regex replacement to handle single-line and multi-line comments.
+ * Note: This is a simplified approach that works for typical tsconfig.json files.
+ */
+function stripJsonComments(content: string): string {
+  // Remove single-line comments (// ...) not inside strings
+  // Remove multi-line comments (/* ... */)
+  // This regex-based approach handles most tsconfig.json cases
+  return content
+    .replace(/\\"|"(?:\\"|[^"])*"|\/\/[^\n]*/g, (match) => {
+      // Keep strings, remove single-line comments
+      return match.startsWith("//") ? "" : match;
+    })
+    .replace(/\\"|"(?:\\"|[^"])*"|\/\*[\s\S]*?\*\//g, (match) => {
+      // Keep strings, remove multi-line comments
+      return match.startsWith("/*") ? "" : match;
+    });
+}
+
 /** Parsed tsc diagnostic */
 interface TscDiagnostic {
   file: string;
@@ -209,12 +229,19 @@ export class TscRunner extends BaseToolRunner {
     return CheckResult.fail(`${this.name} Config`, this.rule, violations, elapsed());
   }
 
-  private auditCompilerOptions(configPath: string): Violation[] {
-    let tsconfig: { compilerOptions?: Record<string, unknown> };
+  private parseConfigFile(configPath: string): { compilerOptions?: Record<string, unknown> } | null {
     try {
       const content = fs.readFileSync(configPath, "utf-8");
-      tsconfig = JSON.parse(content);
+      const jsonContent = stripJsonComments(content);
+      return JSON.parse(jsonContent);
     } catch {
+      return null;
+    }
+  }
+
+  private auditCompilerOptions(configPath: string): Violation[] {
+    const tsconfig = this.parseConfigFile(configPath);
+    if (tsconfig === null) {
       return [{
         rule: `${this.rule}.${this.toolId}`,
         tool: "audit",
@@ -225,8 +252,11 @@ export class TscRunner extends BaseToolRunner {
     }
 
     const compilerOptions = tsconfig.compilerOptions ?? {};
-    const violations: Violation[] = [];
+    return this.validateCompilerOptions(compilerOptions);
+  }
 
+  private validateCompilerOptions(compilerOptions: Record<string, unknown>): Violation[] {
+    const violations: Violation[] = [];
     for (const [option, expectedValue] of Object.entries(this.requiredOptions)) {
       if (expectedValue === undefined) {
         continue;
@@ -239,7 +269,6 @@ export class TscRunner extends BaseToolRunner {
         violations.push(this.createAuditViolation(option, expectedValue, actualValue));
       }
     }
-
     return violations;
   }
 

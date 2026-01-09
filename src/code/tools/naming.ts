@@ -38,29 +38,49 @@ const DEFAULT_EXCLUDE = [
 
 /**
  * Check if a string matches kebab-case (lowercase with hyphens)
+ * Also allows pure numeric names like "404" for Next.js pages
  */
 function isKebabCase(str: string): boolean {
+  // Allow pure numeric names (e.g., 404, 500)
+  if (/^\d+$/.test(str)) {
+    return true;
+  }
   return /^[a-z][a-z0-9]*(-[a-z0-9]+)*$/.test(str);
 }
 
 /**
  * Check if a string matches snake_case (lowercase with underscores)
+ * Also allows pure numeric names like "404" for Next.js pages
  */
 function isSnakeCase(str: string): boolean {
+  // Allow pure numeric names (e.g., 404, 500)
+  if (/^\d+$/.test(str)) {
+    return true;
+  }
   return /^[a-z][a-z0-9]*(_[a-z0-9]+)*$/.test(str);
 }
 
 /**
  * Check if a string matches camelCase (starts lowercase, no separators)
+ * Also allows pure numeric names like "404" for Next.js pages
  */
 function isCamelCase(str: string): boolean {
+  // Allow pure numeric names (e.g., 404, 500)
+  if (/^\d+$/.test(str)) {
+    return true;
+  }
   return /^[a-z][a-zA-Z0-9]*$/.test(str);
 }
 
 /**
  * Check if a string matches PascalCase (starts uppercase, no separators)
+ * Also allows pure numeric names like "404" for Next.js pages
  */
 function isPascalCase(str: string): boolean {
+  // Allow pure numeric names (e.g., 404, 500)
+  if (/^\d+$/.test(str)) {
+    return true;
+  }
   return /^[A-Z][a-zA-Z0-9]*$/.test(str);
 }
 

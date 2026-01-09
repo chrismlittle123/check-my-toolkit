@@ -396,18 +396,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- VERSION constant mismatch (was showing 0.2.0 instead of actual version)
-- Detect and report broken symlinks for check.toml instead of silently ignoring
-- Handle tsc not installed error with clean message instead of garbled ANSI output
-- Fix gitleaks audit to fail on non-install errors instead of returning pass
-- Show just filename when line/column are undefined instead of misleading :0:0
-- Improve pip-audit to detect actual dependency file instead of always reporting requirements.txt
-
-### Added
-
-- Knip integration for unused code detection (`[code.unused.knip]`)
-  - Detect unused files, dependencies, exports, and types
-  - Support for unlisted dependencies and unresolved imports
+- **README.md**: Fixed incorrect config names in documentation
+  - `[code.security.gitleaks]` → `[code.security.secrets]`
+  - `[code.security.npm-audit]` → `[code.security.npmaudit]`
+  - `[code.security.pip-audit]` → `[code.security.pipaudit]`
+  - `cm validate` → `cm validate config`
+  - Fixed naming conventions example to use correct `[[code.naming.rules]]` array syntax
+- **Schema**: Changed `min_test_files` from `.positive()` to `.nonnegative()` to allow 0
 
 ## [0.1.0] - 2025-12-23
 

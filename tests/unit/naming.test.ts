@@ -94,6 +94,24 @@ describe("NamingRunner", () => {
         expect(result.violations[0].code).toBe("file-case");
       });
 
+      it("passes for numeric filenames like 404.tsx (Next.js pages)", async () => {
+        runner.setConfig({
+          enabled: true,
+          rules: [
+            { extensions: ["tsx"], file_case: "kebab-case", folder_case: "kebab-case" },
+          ],
+        });
+
+        fs.mkdirSync(path.join(tempDir, "pages"));
+        fs.writeFileSync(path.join(tempDir, "pages", "404.tsx"), "");
+        fs.writeFileSync(path.join(tempDir, "pages", "500.tsx"), "");
+
+        const result = await runner.run(tempDir);
+
+        expect(result.passed).toBe(true);
+        expect(result.violations).toEqual([]);
+      });
+
       it("passes for snake_case Python files", async () => {
         runner.setConfig({
           enabled: true,

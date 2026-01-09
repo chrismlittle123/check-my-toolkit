@@ -158,7 +158,7 @@ const testsConfigSchema = z
   .object({
     enabled: z.boolean().optional().default(false),
     pattern: z.string().optional(), // Glob pattern for test files
-    min_test_files: z.number().int().positive().optional(), // Minimum test files required
+    min_test_files: z.number().int().nonnegative().optional(), // Minimum test files required (0 = just verify pattern works)
   })
   .strict()
   .optional();
