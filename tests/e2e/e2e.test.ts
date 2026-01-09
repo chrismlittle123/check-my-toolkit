@@ -223,6 +223,45 @@ const testCases: TestCase[] = [
       "required but not configured",
     ],
   },
+  {
+    name: "eslint-rules/with-options-pass audit passes when rule options match",
+    config: "tests/e2e/projects/eslint-rules/with-options-pass/check.toml",
+    command: "audit",
+    expectedExitCode: 0,
+    expectedPatterns: ["✓ ESLint Config: passed"],
+  },
+  {
+    name: "eslint-rules/with-options-fail audit fails when rule options mismatch",
+    config: "tests/e2e/projects/eslint-rules/with-options-fail/check.toml",
+    command: "audit",
+    expectedExitCode: 1,
+    expectedPatterns: ["✗ ESLint Config:", "max-depth", "expected 4", "got 6"],
+  },
+
+  // ============================================================
+  // Security: npm/pnpm audit
+  // ============================================================
+  {
+    name: "security/npmaudit-pass passes when no vulnerabilities",
+    config: "tests/e2e/projects/security/npmaudit-pass/check.toml",
+    command: "check",
+    expectedExitCode: 0,
+    expectedPatterns: ["✓ npmaudit: passed"],
+  },
+  {
+    name: "security/pnpm-audit-pass passes or skips based on pnpm availability",
+    config: "tests/e2e/projects/security/pnpm-audit-pass/check.toml",
+    command: "check",
+    expectedExitCode: 0,
+    expectedPatterns: ["npmaudit:"], // either "passed" or "skipped"
+  },
+  {
+    name: "security/npmaudit-no-lockfile fails when no lock file exists",
+    config: "tests/e2e/projects/security/npmaudit-no-lockfile/check.toml",
+    command: "check",
+    expectedExitCode: 1,
+    expectedPatterns: ["✗ npmaudit:", "No lock file found"],
+  },
 
   // ============================================================
   // Validate command

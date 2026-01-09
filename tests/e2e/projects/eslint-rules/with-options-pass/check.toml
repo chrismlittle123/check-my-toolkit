@@ -1,0 +1,8 @@
+[code.linting.eslint]
+enabled = true
+files = ["src/**/*.ts"]
+
+[code.linting.eslint.rules]
+"max-depth" = { severity = "error", max = 4 }
+"max-params" = { severity = "error", max = 4 }
+"complexity" = { severity = "warn", max = 10 }
