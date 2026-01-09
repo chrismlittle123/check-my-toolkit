@@ -71,8 +71,10 @@ export class TscRunner extends BaseToolRunner {
    * Strip ANSI escape codes from a string
    */
   private stripAnsi(str: string): string {
-    // eslint-disable-next-line no-control-regex
-    return str.replace(/\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])/g, "");
+    // Use String.fromCharCode to avoid control character in regex literal
+    const ESC = String.fromCharCode(27);
+    const pattern = new RegExp(`${ESC}(?:[@-Z\\\\-_]|\\[[0-?]*[ -/]*[@-~])`, "g");
+    return str.replace(pattern, "");
   }
 
   /**

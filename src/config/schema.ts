@@ -228,6 +228,29 @@ const namingConfigSchema = z
   .optional();
 
 // =============================================================================
+// Quality Configuration (Disable Comments Detection)
+// =============================================================================
+
+/** Disable comments configuration */
+const disableCommentsConfigSchema = z
+  .object({
+    enabled: z.boolean().optional().default(false),
+    patterns: z.array(z.string()).optional(), // Override default patterns
+    extensions: z.array(z.string()).optional(), // File extensions to scan
+    exclude: z.array(z.string()).optional(), // Glob patterns to exclude
+  })
+  .strict()
+  .optional();
+
+/** Code quality configuration */
+const codeQualitySchema = z
+  .object({
+    "disable-comments": disableCommentsConfigSchema,
+  })
+  .strict()
+  .optional();
+
+// =============================================================================
 // Code Domain Configuration
 // =============================================================================
 
@@ -276,6 +299,7 @@ const codeSchema = z
     tests: testsConfigSchema,
     security: codeSecuritySchema,
     naming: namingConfigSchema,
+    quality: codeQualitySchema,
   })
   .strict()
   .optional();
@@ -339,6 +363,9 @@ export const defaultConfig: Config = {
     },
     naming: {
       enabled: false,
+    },
+    quality: {
+      "disable-comments": { enabled: false },
     },
   },
 };

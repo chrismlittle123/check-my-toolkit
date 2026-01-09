@@ -202,6 +202,16 @@ function mergeNaming(base: CodeConfig["naming"], override: CodeConfig["naming"])
   };
 }
 
+function mergeQuality(base: CodeConfig["quality"], override: CodeConfig["quality"]): CodeConfig["quality"] {
+  if (!override) {
+    return base;
+  }
+  return {
+    ...base,
+    "disable-comments": mergeToolConfig(base?.["disable-comments"], override["disable-comments"]),
+  };
+}
+
 function mergeCodeSection(base: CodeConfig | undefined, override: CodeConfig): CodeConfig {
   return {
     linting: mergeLinting(base?.linting, override.linting),
@@ -211,6 +221,7 @@ function mergeCodeSection(base: CodeConfig | undefined, override: CodeConfig): C
     tests: mergeToolConfig(base?.tests, override.tests),
     security: mergeSecurity(base?.security, override.security),
     naming: mergeNaming(base?.naming, override.naming),
+    quality: mergeQuality(base?.quality, override.quality),
   };
 }
 

@@ -189,6 +189,14 @@ function mergeNaming(c: Config, dc: Config): CodeConfig["naming"] {
   };
 }
 
+function mergeQuality(c: Config, dc: Config): CodeConfig["quality"] {
+  const cq = c.code?.quality;
+  const dq = dc.code?.quality;
+  return {
+    "disable-comments": merge(dq?.["disable-comments"], cq?.["disable-comments"]),
+  };
+}
+
 function mergeCode(c: Config, dc: Config): CodeConfig {
   return {
     linting: mergeLinting(c, dc),
@@ -198,6 +206,7 @@ function mergeCode(c: Config, dc: Config): CodeConfig {
     tests: mergeTests(c, dc),
     security: mergeSecurity(c, dc),
     naming: mergeNaming(c, dc),
+    quality: mergeQuality(c, dc),
   };
 }
 
