@@ -34,6 +34,10 @@ jobs:
       - name: Install Python tools (Ruff, Vulture)
         run: pip install ruff vulture
 
+      - name: Install Gitleaks
+        run: |
+          curl -sSfL https://github.com/gitleaks/gitleaks/releases/download/v8.21.2/gitleaks_8.21.2_linux_x64.tar.gz | tar -xz -C /usr/local/bin gitleaks
+
       - name: Install dependencies
         run: npm ci
 
