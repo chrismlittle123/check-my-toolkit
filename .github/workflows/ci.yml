@@ -50,6 +50,23 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Debug gitleaks test
+        run: |
+          echo "=== Testing gitleaks detection ==="
+          cd tests/e2e/projects/gitleaks/with-secret
+          echo "=== Files in directory ==="
+          ls -la
+          echo "=== Config contents ==="
+          cat .gitleaks.toml
+          echo "=== Running gitleaks with absolute path config ==="
+          FULL_PATH=$(pwd)/.gitleaks.toml
+          echo "Config path: $FULL_PATH"
+          gitleaks detect --source . --report-format json --report-path /dev/stdout --no-git --config "$FULL_PATH" || echo "Exit code: $?"
+          echo "=== Running via Node test ==="
+          cd ../../../..
+          node dist/cli.js code check --config tests/e2e/projects/gitleaks/with-secret/check.toml || echo "Exit code: $?"
+          echo "=== Done ==="
+
       - name: Run tests with coverage
         run: npm run test:coverage
 
