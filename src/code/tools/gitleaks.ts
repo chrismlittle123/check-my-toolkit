@@ -58,10 +58,12 @@ export class GitleaksRunner extends BaseToolRunner {
       // Use "." as source since cwd is already set to projectRoot
       const args = ["detect", "--source", ".", "--report-format", "json", "--report-path", "/dev/stdout", "--no-git"];
 
-      // Use custom config if it exists
+      // Use custom config if it exists - use absolute path for reliability
       const configPath = this.findGitleaksConfig(projectRoot);
       if (configPath) {
-        args.push("--config", configPath);
+        // Use absolute path to avoid working directory issues
+        const absoluteConfigPath = path.join(projectRoot, configPath);
+        args.push("--config", absoluteConfigPath);
       }
 
       const result = await execa("gitleaks", args, {
