@@ -829,7 +829,7 @@ const testCases: TestCase[] = [
     config: "tests/e2e/projects/gitleaks/with-secret/check.toml",
     command: "check",
     expectedExitCode: 1,
-    expectedPatterns: ["✗ gitleaks:", "private-key"],
+    expectedPatterns: ["✗ gitleaks:", "github-pat"],
   },
   {
     name: "gitleaks/disabled skips when secrets check is disabled",
