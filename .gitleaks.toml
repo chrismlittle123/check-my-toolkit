@@ -1,0 +1,8 @@
+# Gitleaks configuration
+# Exclude test fixtures that intentionally contain fake secrets for testing
+
+[extend]
+useDefault = true
+
+[[allowlist.paths]]
+regex = '''tests/e2e/projects/gitleaks/'''
