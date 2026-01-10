@@ -81,6 +81,12 @@ export default tseslint.config(
       // Disallow `any` type
       '@typescript-eslint/no-explicit-any': 'error',
 
+      // Prevent unsafe operations with `any` values
+      '@typescript-eslint/no-unsafe-assignment': 'error',
+      '@typescript-eslint/no-unsafe-call': 'error',
+      '@typescript-eslint/no-unsafe-member-access': 'error',
+      '@typescript-eslint/no-unsafe-return': 'error',
+
       // Require using `type` imports for types
       '@typescript-eslint/consistent-type-imports': [
         'error',

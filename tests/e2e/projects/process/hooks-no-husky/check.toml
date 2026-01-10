@@ -1,0 +1,5 @@
+# Test project: Process hooks without husky installed
+
+[process.hooks]
+enabled = true
+require_husky = true

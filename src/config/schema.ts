@@ -305,6 +305,32 @@ const codeSchema = z
   .optional();
 
 // =============================================================================
+// Process Domain Configuration
+// =============================================================================
+
+/** Hook commands configuration - maps hook name to required commands */
+const hookCommandsSchema = z.record(z.string(), z.array(z.string())).optional();
+
+/** Git hooks (husky) configuration */
+const hooksConfigSchema = z
+  .object({
+    enabled: z.boolean().optional().default(false),
+    require_husky: z.boolean().optional().default(true), // Require .husky/ directory
+    require_hooks: z.array(z.string()).optional(), // e.g., ["pre-commit", "pre-push"]
+    commands: hookCommandsSchema, // e.g., { "pre-commit": ["lint-staged"] }
+  })
+  .strict()
+  .optional();
+
+/** Process domain configuration */
+const processSchema = z
+  .object({
+    hooks: hooksConfigSchema,
+  })
+  .strict()
+  .optional();
+
+// =============================================================================
 // Extends Configuration
 // =============================================================================
 
@@ -321,14 +347,15 @@ const extendsSchema = z
 // Full Configuration
 // =============================================================================
 
-// Note: process and stack domains are not yet implemented.
-// They are reserved for future use and will be added when implemented.
+// Note: stack domain is not yet implemented.
+// It is reserved for future use and will be added when implemented.
 
 /** Full check.toml schema */
 export const configSchema = z
   .object({
     extends: extendsSchema,
     code: codeSchema,
+    process: processSchema,
   })
   .strict();
 
@@ -366,6 +393,12 @@ export const defaultConfig: Config = {
     },
     quality: {
       "disable-comments": { enabled: false },
+    },
+  },
+  process: {
+    hooks: {
+      enabled: false,
+      require_husky: true,
     },
   },
 };
