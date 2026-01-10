@@ -1,0 +1,4 @@
+# Test project: pip-audit with no vulnerabilities
+
+[code.security.pipaudit]
+enabled = true

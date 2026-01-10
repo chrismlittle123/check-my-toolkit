@@ -1,0 +1,7 @@
+# Base ruleset - enables ESLint and Ruff
+
+[code.linting.eslint]
+enabled = true
+
+[code.linting.ruff]
+enabled = true

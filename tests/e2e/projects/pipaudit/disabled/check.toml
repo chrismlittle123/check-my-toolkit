@@ -1,0 +1,4 @@
+# Test project: pip-audit disabled
+
+[code.security.pipaudit]
+enabled = false

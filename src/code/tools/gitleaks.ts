@@ -54,7 +54,8 @@ export class GitleaksRunner extends BaseToolRunner {
     const elapsed = (): number => Date.now() - startTime;
 
     try {
-      const args = ["detect", "--source", projectRoot, "--report-format", "json", "--report-path", "/dev/stdout", "--no-git"];
+      // Use "." as source since cwd is already set to projectRoot
+      const args = ["detect", "--source", ".", "--report-format", "json", "--report-path", "/dev/stdout", "--no-git"];
 
       // Use custom config if it exists
       const configPath = this.findGitleaksConfig(projectRoot);

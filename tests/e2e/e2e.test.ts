@@ -813,6 +813,82 @@ const testCases: TestCase[] = [
     expectedPatterns: ["PROCESS"],
     notExpectedPatterns: ["Hooks"],
   },
+
+  // ============================================================
+  // Gitleaks: Secret detection
+  // ============================================================
+  {
+    name: "gitleaks/clean passes when no secrets found",
+    config: "tests/e2e/projects/gitleaks/clean/check.toml",
+    command: "check",
+    expectedExitCode: 0,
+    expectedPatterns: ["✓ gitleaks: passed"],
+  },
+  {
+    name: "gitleaks/with-secret detects hardcoded secrets",
+    config: "tests/e2e/projects/gitleaks/with-secret/check.toml",
+    command: "check",
+    expectedExitCode: 1,
+    expectedPatterns: ["✗ gitleaks:", "private-key"],
+  },
+  {
+    name: "gitleaks/disabled skips when secrets check is disabled",
+    config: "tests/e2e/projects/gitleaks/disabled/check.toml",
+    command: "check",
+    expectedExitCode: 0,
+    expectedPatterns: ["CODE"],
+    notExpectedPatterns: ["gitleaks:"], // Check for tool output, not config path
+  },
+
+  // ============================================================
+  // npm audit: Dependency vulnerability scanning
+  // ============================================================
+  {
+    name: "npmaudit/clean passes when no vulnerabilities",
+    config: "tests/e2e/projects/npmaudit/clean/check.toml",
+    command: "check",
+    expectedExitCode: 0,
+    expectedPatterns: ["✓ npmaudit: passed"],
+  },
+  {
+    name: "npmaudit/disabled skips when npm audit is disabled",
+    config: "tests/e2e/projects/npmaudit/disabled/check.toml",
+    command: "check",
+    expectedExitCode: 0,
+    expectedPatterns: ["CODE"],
+    notExpectedPatterns: ["npmaudit:"], // Check for tool output, not config path
+  },
+
+  // ============================================================
+  // pip-audit: Python dependency vulnerability scanning
+  // ============================================================
+  {
+    name: "pipaudit/clean passes when no vulnerabilities",
+    config: "tests/e2e/projects/pipaudit/clean/check.toml",
+    command: "check",
+    expectedExitCode: 0,
+    expectedPatterns: ["✓ pipaudit: passed"],
+  },
+  {
+    name: "pipaudit/disabled skips when pip-audit is disabled",
+    config: "tests/e2e/projects/pipaudit/disabled/check.toml",
+    command: "check",
+    expectedExitCode: 0,
+    expectedPatterns: ["CODE"],
+    notExpectedPatterns: ["pipaudit:"], // Check for tool output, not config path
+  },
+
+  // ============================================================
+  // Registry/Extends: Config inheritance from rulesets
+  // ============================================================
+  {
+    name: "registry/local-extends inherits config from local registry",
+    config: "tests/e2e/projects/registry/local-extends/check.toml",
+    command: "check",
+    expectedExitCode: 0,
+    expectedPatterns: ["✓ ESLint: passed"],
+    notExpectedPatterns: ["Ruff"], // Ruff is disabled in local override
+  },
 ];
 
 function runCli(command: string, config: string, format = "text", domain = "code"): { stdout: string; exitCode: number } {

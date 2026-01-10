@@ -1,0 +1,4 @@
+# Test project: Gitleaks disabled
+
+[code.security.secrets]
+enabled = false
