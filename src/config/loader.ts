@@ -67,16 +67,19 @@ export function findConfigFile(startDir: string = process.cwd()): string | null 
 
 /**
  * Resolve and validate config file path
+ * Always returns an absolute path to ensure consistent behavior
  */
 function resolveConfigPath(configPath?: string): string {
   const resolved = configPath ?? findConfigFile();
   if (!resolved) {
     throw new ConfigError("No check.toml found. Create one or specify --config path.");
   }
-  if (!fs.existsSync(resolved)) {
+  // Convert to absolute path for consistent behavior across tools
+  const absolutePath = path.resolve(resolved);
+  if (!fs.existsSync(absolutePath)) {
     throw new ConfigError(`Config file not found: ${resolved}`);
   }
-  return resolved;
+  return absolutePath;
 }
 
 /**
