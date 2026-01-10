@@ -1,0 +1,9 @@
+# Test project: Extends from local registry
+
+[extends]
+registry = "../local-registry"
+rulesets = ["base"]
+
+# Local override - disable ruff
+[code.linting.ruff]
+enabled = false

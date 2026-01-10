@@ -1,0 +1,4 @@
+# Test project: Gitleaks detecting a secret
+
+[code.security.secrets]
+enabled = true
