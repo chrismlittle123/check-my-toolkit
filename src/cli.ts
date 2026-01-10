@@ -11,8 +11,16 @@ import { zodToJsonSchema } from "zod-to-json-schema";
 import { auditCodeConfig, runCodeChecks } from "./code/index.js";
 import { ConfigError, getProjectRoot, loadConfig, loadConfigAsync } from "./config/index.js";
 import { configSchema } from "./config/schema.js";
-import { formatOutput, type OutputFormat } from "./output/index.js";
+import {
+  formatDetectionJson,
+  formatDetectionText,
+  formatFixJson,
+  formatFixText,
+  formatOutput,
+  type OutputFormat,
+} from "./output/index.js";
 import { auditProcessConfig, runProcessChecks } from "./process/index.js";
+import { detectProjects, fixProjects } from "./projects/index.js";
 import { type DomainResult, ExitCode, type FullResult } from "./types/index.js";
 
 // Read version from package.json to avoid hardcoding
@@ -258,6 +266,52 @@ processCommand
   .action((options) => runAudit(options, "process"));
 
 program.addCommand(processCommand);
+
+// =============================================================================
+// Projects subcommand
+// =============================================================================
+
+const projectsCommand = new Command("projects").description("Project detection and initialization");
+
+// cm projects detect
+projectsCommand
+  .command("detect")
+  .description("Discover projects in repository, show which have/don't have check.toml")
+  .option("--fix", "Create missing check.toml files")
+  .option("--registry <path>", "Create shared registry and extend from it")
+  .option("--dry-run", "Show what would be created without creating")
+  .addOption(new Option("-f, --format <format>", "Output format").choices(["text", "json"]).default("text"))
+  .action(
+    (options: {
+      fix?: boolean;
+      registry?: string;
+      dryRun?: boolean;
+      format: string;
+    }) => {
+      const result = detectProjects();
+
+      if (options.fix) {
+        const fixResult = fixProjects(result.projects, {
+          registry: options.registry,
+          dryRun: options.dryRun,
+        });
+
+        if (options.format === "json") {
+          process.stdout.write(`${formatFixJson(fixResult)}\n`);
+        } else {
+          process.stdout.write(`${formatFixText(fixResult, options.dryRun ?? false)}\n`);
+        }
+      } else {
+        if (options.format === "json") {
+          process.stdout.write(`${formatDetectionJson(result)}\n`);
+        } else {
+          process.stdout.write(`${formatDetectionText(result)}\n`);
+        }
+      }
+    }
+  );
+
+program.addCommand(projectsCommand);
 
 // =============================================================================
 // Top-level aliases (run all domains)
