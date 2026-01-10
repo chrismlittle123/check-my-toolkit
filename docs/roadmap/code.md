@@ -206,6 +206,95 @@ folder_case = "snake_case"
 
 ---
 
+## Planned: Project Detection
+
+Detect and initialize check.toml files across monorepos and multi-project repositories.
+
+### Commands
+
+| Command | Description |
+|---------|-------------|
+| `cm projects detect` | Discover all projects, show which have/don't have check.toml |
+| `cm projects detect --fix` | Create missing check.toml files |
+
+### Project Detection Rules
+
+| Marker File | Project Type |
+|-------------|--------------|
+| `package.json` | typescript (skip if has `"workspaces"` field) |
+| `pyproject.toml` | python |
+| `Cargo.toml` | rust |
+| `go.mod` | go |
+
+### Flags
+
+| Flag | Description |
+|------|-------------|
+| `--fix` | Create missing check.toml files |
+| `--registry <path>` | Create shared registry and extend from it |
+| `--dry-run` | Show what would be created without creating |
+| `--json` | Output as JSON (for tooling/CI) |
+
+### Example Usage
+
+**Detect projects:**
+```bash
+$ cm projects detect
+
+Detected 4 projects:
+
+  PATH                    TYPE          STATUS
+  apps/web                typescript    ✓ has check.toml
+  apps/api                typescript    ✓ has check.toml
+  lambdas/processor       python        ✗ missing check.toml
+  lambdas/notifier        python        ✗ missing check.toml
+
+2 projects missing check.toml. Run 'cm projects detect --fix' to create them.
+```
+
+**Create missing check.toml files:**
+```bash
+$ cm projects detect --fix
+
+Creating check.toml files...
+
+  lambdas/processor/check.toml    created (python defaults)
+  lambdas/notifier/check.toml     created (python defaults)
+
+Done. 2 files created.
+```
+
+**Create with shared registry:**
+```bash
+$ cm projects detect --fix --registry .cm
+
+Creating shared registry...
+  .cm/rulesets/typescript.toml    created
+  .cm/rulesets/python.toml        created
+
+Creating check.toml files (extending from registry)...
+  lambdas/processor/check.toml    created (extends .cm/rulesets/python)
+  lambdas/notifier/check.toml     created (extends .cm/rulesets/python)
+```
+
+### Skipped Directories
+
+The following directories are automatically skipped during detection:
+- `node_modules/`
+- `.git/`
+- `venv/`, `.venv/`
+- `__pycache__/`
+- `dist/`, `build/`
+- `target/` (Rust)
+
+### Workspace Root Detection
+
+Workspace roots are identified but not treated as projects:
+- `package.json` with `"workspaces"` field
+- Presence of `turbo.json`, `pnpm-workspace.yaml`, `lerna.json`
+
+---
+
 ## Future Considerations
 
 | Feature | Description |
