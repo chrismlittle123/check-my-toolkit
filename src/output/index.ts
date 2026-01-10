@@ -1,5 +1,6 @@
 import chalk from "chalk";
 
+import type { DetectionResult, FixResult } from "../projects/types.js";
 import {
   type DomainResult,
   type DomainStatus,
@@ -129,4 +130,98 @@ export function formatOutput(result: FullResult, format: OutputFormat): string {
     default:
       return formatText(result);
   }
+}
+
+// =============================================================================
+// Project Detection Formatters
+// =============================================================================
+
+function formatProjectLine(project: DetectionResult["projects"][number], maxPathLen: number, maxTypeLen: number): string {
+  const status =
+    project.configStatus === "present"
+      ? chalk.green("✓ has check.toml")
+      : chalk.red("✗ missing check.toml");
+  return `  ${project.path.padEnd(maxPathLen)}  ${project.type.padEnd(maxTypeLen)}  ${status}`;
+}
+
+function formatProjectsTable(projects: DetectionResult["projects"]): string[] {
+  const maxPathLen = Math.max(...projects.map((p) => p.path.length), 4);
+  const maxTypeLen = Math.max(...projects.map((p) => p.type.length), 4);
+  return [
+    `  ${"PATH".padEnd(maxPathLen)}  ${"TYPE".padEnd(maxTypeLen)}  STATUS`,
+    ...projects.map((p) => formatProjectLine(p, maxPathLen, maxTypeLen)),
+  ];
+}
+
+function formatWorkspaceRoots(roots: string[]): string[] {
+  if (roots.length === 0) {return [];}
+  return ["", chalk.dim("Workspace roots (skipped):"), ...roots.map((r) => chalk.dim(`  ${r}`))];
+}
+
+/**
+ * Format project detection result as text
+ */
+export function formatDetectionText(result: DetectionResult): string {
+  if (result.projects.length === 0) {return "No projects found.";}
+
+  const lines = [
+    `Detected ${result.projects.length} project(s):\n`,
+    ...formatProjectsTable(result.projects),
+    ...formatWorkspaceRoots(result.workspaceRoots),
+  ];
+
+  if (result.missingConfig > 0) {
+    lines.push("", `${result.missingConfig} project(s) missing check.toml. Run ${chalk.cyan("cm projects detect --fix")} to create them.`);
+  }
+
+  return lines.join("\n");
+}
+
+/**
+ * Format project detection result as JSON
+ */
+export function formatDetectionJson(result: DetectionResult): string {
+  return JSON.stringify(result, null, 2);
+}
+
+function formatRegistrySection(result: FixResult, prefix: string): string[] {
+  if (!result.registryPath || !result.rulesetsCreated?.length) {return [];}
+  return [
+    `${prefix} shared registry at ${chalk.cyan(result.registryPath)}:`,
+    ...result.rulesetsCreated.map((r) => `  ${chalk.green("+")} rulesets/${r}`),
+    "",
+  ];
+}
+
+function formatCreatedFiles(created: FixResult["created"], prefix: string): string[] {
+  return [
+    `${prefix} check.toml files:`,
+    ...created.map((p) => `  ${chalk.green("+")} ${p.path}/check.toml (${p.type})`),
+  ];
+}
+
+/**
+ * Format fix result as text
+ */
+export function formatFixText(result: FixResult, dryRun: boolean): string {
+  const prefix = dryRun ? "Would create" : "Created";
+  const registryLines = formatRegistrySection(result, prefix);
+
+  if (result.created.length === 0) {
+    return [...registryLines, "No check.toml files to create (all projects already have one)."].join("\n");
+  }
+
+  return [
+    ...registryLines,
+    ...formatCreatedFiles(result.created, prefix),
+    "",
+    `Done. ${result.created.length} file(s) ${dryRun ? "would be " : ""}created.`,
+  ].join("\n");
+}
+
+/**
+ * Format fix result as JSON
+ */
+export function formatFixJson(result: FixResult): string {
+  return JSON.stringify(result, null, 2);
 }

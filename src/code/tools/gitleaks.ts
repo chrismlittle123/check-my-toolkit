@@ -38,12 +38,13 @@ export class GitleaksRunner extends BaseToolRunner {
 
   /**
    * Find gitleaks config file if it exists
+   * Returns just the filename (relative to projectRoot) since gitleaks runs with cwd=projectRoot
    */
   private findGitleaksConfig(projectRoot: string): string | null {
     for (const configFile of this.configFiles) {
       const configPath = path.join(projectRoot, configFile);
       if (fs.existsSync(configPath)) {
-        return configPath;
+        return configFile; // Return just the filename, not the full path
       }
     }
     return null;

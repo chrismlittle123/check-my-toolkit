@@ -1,0 +1,7 @@
+# Custom gitleaks config for testing secret detection
+# Uses a custom rule that detects a test-specific pattern
+
+[[rules]]
+id = "test-secret-pattern"
+description = "Test pattern for e2e tests"
+regex = '''TEST_SECRET_[A-Z0-9]+'''
