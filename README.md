@@ -93,15 +93,33 @@ code: 1 violation found
 |------|---------|--------|
 | Tests | Verify test files exist | `[code.tests]` |
 | Naming | File/folder naming conventions | `[code.naming]` |
+| Disable Comments | Detect linter disable comments | `[code.quality.disable-comments]` |
+
+### Process (Workflow)
+
+| Tool | Purpose | Config |
+|------|---------|--------|
+| Hooks | Git hooks validation (husky) | `[process.hooks]` |
 
 ## Commands
 
 ```bash
-cm code check              # Run all enabled checks
-cm code check --format json  # JSON output for CI
+# Code checks
+cm code check              # Run all enabled code checks
 cm code audit              # Verify tool configs exist
+
+# Process checks
+cm process check           # Run workflow validation (hooks, etc.)
+cm process audit           # Verify workflow configs exist
+
+# All domains
+cm check                   # Run all checks (code + process)
+cm audit                   # Verify all configs exist
+
+# Utilities
 cm validate config         # Validate check.toml syntax
 cm validate registry       # Validate a registry structure
+cm check --format json     # JSON output for CI
 ```
 
 ## Configuration
@@ -213,12 +231,72 @@ cm code check --format json
 | 2 | Configuration error |
 | 3 | Runtime error |
 
+## Monorepo Usage
+
+`cm` works with npm workspaces, Turborepo, Nx, and pnpm workspaces. Each package has its own `check.toml`, and your task runner orchestrates execution.
+
+### Setup
+
+```
+my-monorepo/
+├── package.json              # "workspaces": ["packages/*"]
+├── check.toml                # Shared base config (optional)
+├── packages/
+│   ├── api/
+│   │   ├── package.json      # "scripts": { "check": "cm check" }
+│   │   └── check.toml        # Extends shared config
+│   └── web/
+│       ├── package.json
+│       └── check.toml
+```
+
+### Shared Config with Extends
+
+Create a base config at the root, then extend it in each package:
+
+```toml
+# packages/api/check.toml
+[extends]
+registry = "../.."
+rulesets = ["base"]
+
+# Package-specific overrides
+[code.linting.ruff]
+enabled = true
+```
+
+### Running Checks
+
+**npm workspaces:**
+```bash
+npm run check --workspaces --if-present
+```
+
+**Turborepo:**
+```bash
+turbo check
+```
+
+**pnpm:**
+```bash
+pnpm -r run check
+```
+
+### Why This Approach?
+
+`cm` follows the ecosystem convention: **tools check, task runners orchestrate**. This means:
+
+- Works with any task runner (npm, turbo, nx, pnpm)
+- Task runners handle parallelization and caching
+- Each package can have different tools enabled
+- Shared config via `extends` keeps things DRY
+
 ## Roadmap
 
 | Domain | Status | Description |
 |--------|--------|-------------|
 | **code** | Stable | Linting, types, formatting, security |
-| **process** | Planned | PR size limits, branch naming, repo settings |
+| **process** | In Progress | Git hooks (done), CI workflows, PR policies (planned) |
 
 See [docs/roadmap/](docs/roadmap/) for detailed plans.
 
