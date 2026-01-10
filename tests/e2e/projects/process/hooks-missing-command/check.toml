@@ -1,0 +1,9 @@
+# Test project: Process hooks with hook present but missing required command
+
+[process.hooks]
+enabled = true
+require_husky = true
+require_hooks = ["pre-commit"]
+
+[process.hooks.commands]
+pre-commit = ["lint-staged"]

@@ -51,6 +51,14 @@ export {
   VultureRunner,
 } from "./code/index.js";
 
+// Process domain
+export {
+  auditProcessConfig,
+  BaseProcessToolRunner,
+  HooksRunner,
+  runProcessChecks,
+} from "./process/index.js";
+
 // Output
 export {
   formatJson,

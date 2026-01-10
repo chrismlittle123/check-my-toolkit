@@ -1,0 +1,4 @@
+# Test project: Process hooks disabled
+
+[process.hooks]
+enabled = false

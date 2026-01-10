@@ -14,6 +14,7 @@ interface TestCase {
   name: string;
   config: string;
   command: "check" | "audit" | "validate";
+  domain?: "code" | "process"; // If not specified, uses "code" for backward compatibility
   format?: "text" | "json";
   expectedExitCode: number;
   expectedPatterns: string[];
@@ -767,14 +768,59 @@ const testCases: TestCase[] = [
     expectedPatterns: ["CODE"],
     notExpectedPatterns: ["Disable Comments"],
   },
+
+  // ============================================================
+  // Process: Git hooks validation
+  // ============================================================
+  {
+    name: "process/hooks-clean passes when husky and required hooks exist",
+    config: "tests/e2e/projects/process/hooks-clean/check.toml",
+    command: "check",
+    domain: "process",
+    expectedExitCode: 0,
+    expectedPatterns: ["✓ Hooks: passed", "All checks passed"],
+  },
+  {
+    name: "process/hooks-no-husky fails when husky not installed",
+    config: "tests/e2e/projects/process/hooks-no-husky/check.toml",
+    command: "check",
+    domain: "process",
+    expectedExitCode: 1,
+    expectedPatterns: ["✗ Hooks:", "Husky not installed"],
+  },
+  {
+    name: "process/hooks-missing-hook fails when required hook is missing",
+    config: "tests/e2e/projects/process/hooks-missing-hook/check.toml",
+    command: "check",
+    domain: "process",
+    expectedExitCode: 1,
+    expectedPatterns: ["✗ Hooks:", "Required hook 'pre-push' not found"],
+  },
+  {
+    name: "process/hooks-missing-command fails when required command is missing",
+    config: "tests/e2e/projects/process/hooks-missing-command/check.toml",
+    command: "check",
+    domain: "process",
+    expectedExitCode: 1,
+    expectedPatterns: ["✗ Hooks:", "does not contain required command", "lint-staged"],
+  },
+  {
+    name: "process/hooks-disabled skips hooks check when disabled",
+    config: "tests/e2e/projects/process/hooks-disabled/check.toml",
+    command: "check",
+    domain: "process",
+    expectedExitCode: 0,
+    expectedPatterns: ["PROCESS"],
+    notExpectedPatterns: ["Hooks"],
+  },
 ];
 
-function runCli(command: string, config: string, format = "text"): { stdout: string; exitCode: number } {
+function runCli(command: string, config: string, format = "text", domain = "code"): { stdout: string; exitCode: number } {
   const formatArg = format !== "text" ? ` -f ${format}` : "";
   const cmd =
     command === "validate"
       ? `node dist/cli.js validate config -c "${config}"${formatArg}`
-      : `node dist/cli.js code ${command} -c "${config}"${formatArg}`;
+      : `node dist/cli.js ${domain} ${command} -c "${config}"${formatArg}`;
 
   try {
     const stdout = execSync(cmd, {
@@ -792,7 +838,7 @@ function runCli(command: string, config: string, format = "text"): { stdout: str
 describe("E2E Tests", () => {
   for (const tc of testCases) {
     it.concurrent(tc.name, async () => {
-      const { stdout, exitCode } = runCli(tc.command, tc.config, tc.format);
+      const { stdout, exitCode } = runCli(tc.command, tc.config, tc.format, tc.domain);
 
       // Check exit code
       expect(exitCode, `Expected exit code ${tc.expectedExitCode}, got ${exitCode}\nOutput:\n${stdout}`).toBe(

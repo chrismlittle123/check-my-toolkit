@@ -235,7 +235,7 @@ export class TscRunner extends BaseToolRunner {
     try {
       const content = fs.readFileSync(configPath, "utf-8");
       const jsonContent = stripJsonComments(content);
-      return JSON.parse(jsonContent);
+      return JSON.parse(jsonContent) as { compilerOptions?: Record<string, unknown> };
     } catch {
       return null;
     }

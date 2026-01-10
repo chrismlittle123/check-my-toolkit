@@ -12,7 +12,8 @@ import { auditCodeConfig, runCodeChecks } from "./code/index.js";
 import { ConfigError, getProjectRoot, loadConfig, loadConfigAsync } from "./config/index.js";
 import { configSchema } from "./config/schema.js";
 import { formatOutput, type OutputFormat } from "./output/index.js";
-import { ExitCode, type FullResult } from "./types/index.js";
+import { auditProcessConfig, runProcessChecks } from "./process/index.js";
+import { type DomainResult, ExitCode, type FullResult } from "./types/index.js";
 
 // Read version from package.json to avoid hardcoding
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -31,65 +32,74 @@ program
 // Shared action handlers
 // =============================================================================
 
-async function runCheck(options: { config?: string; format: string }): Promise<void> {
+type DomainFilter = "code" | "process" | undefined;
+
+function shouldRunDomain(filter: DomainFilter, domain: "code" | "process"): boolean {
+  return !filter || filter === domain;
+}
+
+function buildResult(configPath: string, domains: Record<string, DomainResult>): FullResult {
+  const totalViolations = Object.values(domains).reduce((sum, d) => sum + d.violationCount, 0);
+  return {
+    version: VERSION,
+    configPath,
+    domains,
+    summary: {
+      totalViolations,
+      exitCode: totalViolations > 0 ? ExitCode.VIOLATIONS_FOUND : ExitCode.SUCCESS,
+    },
+  };
+}
+
+function handleError(error: unknown): never {
+  if (error instanceof ConfigError) {
+    console.error(chalk.red(`Config error: ${error.message}`));
+    process.exit(ExitCode.CONFIG_ERROR);
+  }
+  const message = error instanceof Error ? error.message : "Unknown error";
+  console.error(chalk.red(`Error: ${message}`));
+  process.exit(ExitCode.RUNTIME_ERROR);
+}
+
+async function runCheck(options: { config?: string; format: string }, domain?: DomainFilter): Promise<void> {
   try {
     const { config, configPath } = await loadConfigAsync(options.config);
     const projectRoot = getProjectRoot(configPath);
 
-    const domainResult = await runCodeChecks(projectRoot, config);
+    const domains: Record<string, DomainResult> = {};
+    if (shouldRunDomain(domain, "code")) {
+      domains.code = await runCodeChecks(projectRoot, config);
+    }
+    if (shouldRunDomain(domain, "process")) {
+      domains.process = await runProcessChecks(projectRoot, config);
+    }
 
-    const result: FullResult = {
-      version: VERSION,
-      configPath,
-      domains: {
-        code: domainResult,
-      },
-      summary: {
-        totalViolations: domainResult.violationCount,
-        exitCode: domainResult.violationCount > 0 ? ExitCode.VIOLATIONS_FOUND : ExitCode.SUCCESS,
-      },
-    };
-
+    const result = buildResult(configPath, domains);
     process.stdout.write(`${formatOutput(result, options.format as OutputFormat)}\n`);
     process.exit(result.summary.exitCode);
   } catch (error) {
-    if (error instanceof ConfigError) {
-      console.error(chalk.red(`Config error: ${error.message}`));
-      process.exit(ExitCode.CONFIG_ERROR);
-    }
-    console.error(chalk.red(`Error: ${error instanceof Error ? error.message : "Unknown error"}`));
-    process.exit(ExitCode.RUNTIME_ERROR);
+    handleError(error);
   }
 }
 
-async function runAudit(options: { config?: string; format: string }): Promise<void> {
+async function runAudit(options: { config?: string; format: string }, domain?: DomainFilter): Promise<void> {
   try {
     const { config, configPath } = await loadConfigAsync(options.config);
     const projectRoot = getProjectRoot(configPath);
 
-    const domainResult = await auditCodeConfig(projectRoot, config);
+    const domains: Record<string, DomainResult> = {};
+    if (shouldRunDomain(domain, "code")) {
+      domains.code = await auditCodeConfig(projectRoot, config);
+    }
+    if (shouldRunDomain(domain, "process")) {
+      domains.process = await auditProcessConfig(projectRoot, config);
+    }
 
-    const result: FullResult = {
-      version: VERSION,
-      configPath,
-      domains: {
-        code: domainResult,
-      },
-      summary: {
-        totalViolations: domainResult.violationCount,
-        exitCode: domainResult.violationCount > 0 ? ExitCode.VIOLATIONS_FOUND : ExitCode.SUCCESS,
-      },
-    };
-
+    const result = buildResult(configPath, domains);
     process.stdout.write(`${formatOutput(result, options.format as OutputFormat)}\n`);
     process.exit(result.summary.exitCode);
   } catch (error) {
-    if (error instanceof ConfigError) {
-      console.error(chalk.red(`Config error: ${error.message}`));
-      process.exit(ExitCode.CONFIG_ERROR);
-    }
-    console.error(chalk.red(`Error: ${error instanceof Error ? error.message : "Unknown error"}`));
-    process.exit(ExitCode.RUNTIME_ERROR);
+    handleError(error);
   }
 }
 
@@ -213,7 +223,7 @@ codeCommand
   .description("Run linting and type checking tools")
   .option("-c, --config <path>", "Path to check.toml config file")
   .addOption(new Option("-f, --format <format>", "Output format").choices(["text", "json"]).default("text"))
-  .action(runCheck);
+  .action((options) => runCheck(options, "code"));
 
 // cm code audit
 codeCommand
@@ -221,8 +231,52 @@ codeCommand
   .description("Verify linting and type checking configs exist")
   .option("-c, --config <path>", "Path to check.toml config file")
   .addOption(new Option("-f, --format <format>", "Output format").choices(["text", "json"]).default("text"))
-  .action(runAudit);
+  .action((options) => runAudit(options, "code"));
 
 program.addCommand(codeCommand);
+
+// =============================================================================
+// Process subcommand
+// =============================================================================
+
+const processCommand = new Command("process").description("Workflow and process checks");
+
+// cm process check
+processCommand
+  .command("check")
+  .description("Run workflow validation (hooks, CI, etc.)")
+  .option("-c, --config <path>", "Path to check.toml config file")
+  .addOption(new Option("-f, --format <format>", "Output format").choices(["text", "json"]).default("text"))
+  .action((options) => runCheck(options, "process"));
+
+// cm process audit
+processCommand
+  .command("audit")
+  .description("Verify workflow configs exist")
+  .option("-c, --config <path>", "Path to check.toml config file")
+  .addOption(new Option("-f, --format <format>", "Output format").choices(["text", "json"]).default("text"))
+  .action((options) => runAudit(options, "process"));
+
+program.addCommand(processCommand);
+
+// =============================================================================
+// Top-level aliases (run all domains)
+// =============================================================================
+
+// cm check - run all domain checks
+program
+  .command("check")
+  .description("Run all checks (code + process)")
+  .option("-c, --config <path>", "Path to check.toml config file")
+  .addOption(new Option("-f, --format <format>", "Output format").choices(["text", "json"]).default("text"))
+  .action((options) => runCheck(options));
+
+// cm audit - run all domain audits
+program
+  .command("audit")
+  .description("Verify all configs exist (code + process)")
+  .option("-c, --config <path>", "Path to check.toml config file")
+  .addOption(new Option("-f, --format <format>", "Output format").choices(["text", "json"]).default("text"))
+  .action((options) => runAudit(options));
 
 program.parse();

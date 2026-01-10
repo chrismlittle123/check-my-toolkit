@@ -105,8 +105,25 @@ describe("configSchema", () => {
       expect(result.success).toBe(false);
     });
 
-    it("rejects process config (not implemented)", () => {
-      // process domain is reserved for future use
+    it("accepts process config with hooks", () => {
+      const config = {
+        process: {
+          hooks: {
+            enabled: true,
+            require_husky: true,
+            require_hooks: ["pre-commit", "pre-push"],
+            commands: {
+              "pre-commit": ["lint-staged"],
+            },
+          },
+        },
+      };
+      const result = configSchema.safeParse(config);
+      expect(result.success).toBe(true);
+    });
+
+    it("rejects unknown process config keys", () => {
+      // Only hooks is implemented in process domain
       const config = {
         process: {
           pr: { max_files: 10 },
@@ -235,9 +252,14 @@ describe("defaultConfig", () => {
     expect(defaultConfig.code?.security?.pipaudit?.enabled).toBe(false);
   });
 
-  it("does not have process or stack sections (not implemented)", () => {
-    // process and stack domains are reserved for future use
-    expect((defaultConfig as Record<string, unknown>).process).toBeUndefined();
+  it("has process hooks disabled by default", () => {
+    expect(defaultConfig.process).toBeDefined();
+    expect(defaultConfig.process?.hooks?.enabled).toBe(false);
+    expect(defaultConfig.process?.hooks?.require_husky).toBe(true);
+  });
+
+  it("does not have stack section (not implemented)", () => {
+    // stack domain is reserved for future use
     expect((defaultConfig as Record<string, unknown>).stack).toBeUndefined();
   });
 

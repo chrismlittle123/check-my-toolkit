@@ -225,11 +225,39 @@ function mergeCodeSection(base: CodeConfig | undefined, override: CodeConfig): C
   };
 }
 
-export function mergeConfigs(base: Config, override: Config): Config {
-  if (!override.code) {
-    return { ...base };
+type ProcessConfig = NonNullable<Config["process"]>;
+
+function mergeHooksConfig(base: ProcessConfig["hooks"], override: ProcessConfig["hooks"]): ProcessConfig["hooks"] {
+  if (!override) {
+    return base;
   }
-  return { ...base, code: mergeCodeSection(base.code, override.code) };
+  // enabled and require_husky have schema defaults, so they're always defined
+  return {
+    enabled: override.enabled,
+    require_husky: override.require_husky,
+    require_hooks: override.require_hooks ?? base?.require_hooks,
+    commands: override.commands ?? base?.commands,
+  };
+}
+
+function mergeProcessSection(base: ProcessConfig | undefined, override: ProcessConfig): ProcessConfig {
+  return {
+    hooks: mergeHooksConfig(base?.hooks, override.hooks),
+  };
+}
+
+export function mergeConfigs(base: Config, override: Config): Config {
+  const merged: Config = { ...base };
+
+  if (override.code) {
+    merged.code = mergeCodeSection(base.code, override.code);
+  }
+
+  if (override.process) {
+    merged.process = mergeProcessSection(base.process, override.process);
+  }
+
+  return merged;
 }
 
 export async function resolveExtends(config: Config, configDir: string): Promise<Config> {
@@ -247,6 +275,10 @@ export async function resolveExtends(config: Config, configDir: string): Promise
     mergedConfig = mergeConfigs(mergedConfig, ruleset);
   }
 
-  const localConfig: Config = { code: config.code };
+  // Local config overrides registry config (include all domains)
+  const localConfig: Config = {
+    code: config.code,
+    process: config.process,
+  };
   return mergeConfigs(mergedConfig, localConfig);
 }
