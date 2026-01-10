@@ -215,6 +215,7 @@ const namingRuleSchema = z
     file_case: caseTypeSchema,
     folder_case: caseTypeSchema,
     exclude: z.array(z.string()).optional(), // Glob patterns to exclude, e.g., ["tests/**"]
+    allow_dynamic_routes: z.boolean().optional(), // Allow Next.js/Remix dynamic route folders: [id], [...slug], (group)
   })
   .strict();
 

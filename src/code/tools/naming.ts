@@ -14,6 +14,7 @@ interface NamingRule {
   file_case: CaseType;
   folder_case: CaseType;
   exclude?: string[];
+  allow_dynamic_routes?: boolean;
 }
 
 /** Configuration for naming validation */
@@ -127,6 +128,45 @@ function isSpecialFile(baseName: string): boolean {
 }
 
 /**
+ * Dynamic route patterns for Next.js/Remix folder names.
+ * Order matters: more specific patterns must come first.
+ */
+const DYNAMIC_ROUTE_PATTERNS = [
+  /^\[\[\.\.\.([^\]]+)\]\]$/, // [[...slug]] - optional catch-all
+  /^\[\.\.\.([^\]]+)\]$/,     // [...slug] - catch-all
+  /^\[([^\]]+)\]$/,           // [id] - dynamic segment
+  /^\(([^)]+)\)$/,            // (group) - route group
+];
+
+/**
+ * Extract the inner content from a dynamic route folder pattern.
+ * Handles Next.js/Remix patterns:
+ * - [id] → "id"
+ * - [...slug] → "slug"
+ * - [[...slug]] → "slug"
+ * - (group) → "group"
+ * - @parallel → "parallel"
+ *
+ * Returns null if the folder is not a dynamic route pattern.
+ */
+function extractDynamicRouteContent(folderName: string): string | null {
+  // @parallel - parallel route (prefix pattern, not regex)
+  if (folderName.startsWith("@")) {
+    return folderName.slice(1);
+  }
+
+  // Try each pattern in order
+  for (const pattern of DYNAMIC_ROUTE_PATTERNS) {
+    const match = pattern.exec(folderName);
+    if (match) {
+      return match[1];
+    }
+  }
+
+  return null;
+}
+
+/**
  * Naming conventions runner for checking file and folder names
  */
 export class NamingRunner extends BaseToolRunner {
@@ -192,7 +232,7 @@ export class NamingRunner extends BaseToolRunner {
     });
 
     const { violations: fileViolations, folders } = this.checkFiles(files, rule);
-    const folderViolations = this.checkFolders(folders, rule.folder_case);
+    const folderViolations = this.checkFolders(folders, rule.folder_case, rule.allow_dynamic_routes);
 
     return [...fileViolations, ...folderViolations];
   }
@@ -232,7 +272,8 @@ export class NamingRunner extends BaseToolRunner {
    */
   private checkFolders(
     foldersWithMatchingFiles: Set<string>,
-    expectedCase: CaseType
+    expectedCase: CaseType,
+    allowDynamicRoutes?: boolean
   ): Violation[] {
     const violations: Violation[] = [];
     const checkedFolders = new Set<string>();
@@ -241,7 +282,8 @@ export class NamingRunner extends BaseToolRunner {
       const folderViolations = this.checkFolderPath(
         folderPath,
         expectedCase,
-        checkedFolders
+        checkedFolders,
+        allowDynamicRoutes
       );
       violations.push(...folderViolations);
     }
@@ -250,12 +292,24 @@ export class NamingRunner extends BaseToolRunner {
   }
 
   /**
+   * Get the name to validate from a folder segment, handling dynamic routes
+   */
+  private getNameToValidate(segment: string, allowDynamicRoutes?: boolean): string {
+    if (!allowDynamicRoutes) {
+      return segment;
+    }
+    const innerContent = extractDynamicRouteContent(segment);
+    return innerContent ?? segment;
+  }
+
+  /**
    * Check all segments of a folder path
    */
   private checkFolderPath(
     folderPath: string,
     expectedCase: CaseType,
-    checkedFolders: Set<string>
+    checkedFolders: Set<string>,
+    allowDynamicRoutes?: boolean
   ): Violation[] {
     const violations: Violation[] = [];
     const segments = folderPath.split(path.sep);
@@ -269,7 +323,8 @@ export class NamingRunner extends BaseToolRunner {
       }
       checkedFolders.add(currentPath);
 
-      if (!matchesCase(segment, expectedCase)) {
+      const nameToValidate = this.getNameToValidate(segment, allowDynamicRoutes);
+      if (!matchesCase(nameToValidate, expectedCase)) {
         violations.push(this.createFolderViolation(currentPath, segment, expectedCase));
       }
     }
