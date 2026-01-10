@@ -344,6 +344,220 @@ describe("NamingRunner", () => {
       });
     });
 
+    describe("allow_dynamic_routes", () => {
+      it("fails for [id] folder when allow_dynamic_routes is not set", async () => {
+        runner.setConfig({
+          enabled: true,
+          rules: [
+            { extensions: ["tsx"], file_case: "kebab-case", folder_case: "kebab-case" },
+          ],
+        });
+
+        fs.mkdirSync(path.join(tempDir, "app", "[id]"), { recursive: true });
+        fs.writeFileSync(path.join(tempDir, "app", "[id]", "page.tsx"), "");
+
+        const result = await runner.run(tempDir);
+
+        expect(result.passed).toBe(false);
+        expect(result.violations.some((v) => v.message.includes("[id]"))).toBe(true);
+      });
+
+      it("passes for [id] folder when allow_dynamic_routes is true", async () => {
+        runner.setConfig({
+          enabled: true,
+          rules: [
+            { extensions: ["tsx"], file_case: "kebab-case", folder_case: "kebab-case", allow_dynamic_routes: true },
+          ],
+        });
+
+        fs.mkdirSync(path.join(tempDir, "app", "[id]"), { recursive: true });
+        fs.writeFileSync(path.join(tempDir, "app", "[id]", "page.tsx"), "");
+
+        const result = await runner.run(tempDir);
+
+        expect(result.passed).toBe(true);
+      });
+
+      it("passes for kebab-case inside brackets [my-slug]", async () => {
+        runner.setConfig({
+          enabled: true,
+          rules: [
+            { extensions: ["tsx"], file_case: "kebab-case", folder_case: "kebab-case", allow_dynamic_routes: true },
+          ],
+        });
+
+        fs.mkdirSync(path.join(tempDir, "app", "[my-slug]"), { recursive: true });
+        fs.writeFileSync(path.join(tempDir, "app", "[my-slug]", "page.tsx"), "");
+
+        const result = await runner.run(tempDir);
+
+        expect(result.passed).toBe(true);
+      });
+
+      it("fails for PascalCase inside brackets [MySlug]", async () => {
+        runner.setConfig({
+          enabled: true,
+          rules: [
+            { extensions: ["tsx"], file_case: "kebab-case", folder_case: "kebab-case", allow_dynamic_routes: true },
+          ],
+        });
+
+        fs.mkdirSync(path.join(tempDir, "app", "[MySlug]"), { recursive: true });
+        fs.writeFileSync(path.join(tempDir, "app", "[MySlug]", "page.tsx"), "");
+
+        const result = await runner.run(tempDir);
+
+        expect(result.passed).toBe(false);
+        expect(result.violations.some((v) => v.message.includes("[MySlug]"))).toBe(true);
+      });
+
+      it("passes for catch-all [...slug] folders", async () => {
+        runner.setConfig({
+          enabled: true,
+          rules: [
+            { extensions: ["tsx"], file_case: "kebab-case", folder_case: "kebab-case", allow_dynamic_routes: true },
+          ],
+        });
+
+        fs.mkdirSync(path.join(tempDir, "app", "[...slug]"), { recursive: true });
+        fs.writeFileSync(path.join(tempDir, "app", "[...slug]", "page.tsx"), "");
+
+        const result = await runner.run(tempDir);
+
+        expect(result.passed).toBe(true);
+      });
+
+      it("passes for optional catch-all [[...slug]] folders", async () => {
+        runner.setConfig({
+          enabled: true,
+          rules: [
+            { extensions: ["tsx"], file_case: "kebab-case", folder_case: "kebab-case", allow_dynamic_routes: true },
+          ],
+        });
+
+        fs.mkdirSync(path.join(tempDir, "app", "[[...slug]]"), { recursive: true });
+        fs.writeFileSync(path.join(tempDir, "app", "[[...slug]]", "page.tsx"), "");
+
+        const result = await runner.run(tempDir);
+
+        expect(result.passed).toBe(true);
+      });
+
+      it("passes for route group (auth) folders", async () => {
+        runner.setConfig({
+          enabled: true,
+          rules: [
+            { extensions: ["tsx"], file_case: "kebab-case", folder_case: "kebab-case", allow_dynamic_routes: true },
+          ],
+        });
+
+        fs.mkdirSync(path.join(tempDir, "app", "(auth)"), { recursive: true });
+        fs.writeFileSync(path.join(tempDir, "app", "(auth)", "page.tsx"), "");
+
+        const result = await runner.run(tempDir);
+
+        expect(result.passed).toBe(true);
+      });
+
+      it("passes for kebab-case inside route group (my-group)", async () => {
+        runner.setConfig({
+          enabled: true,
+          rules: [
+            { extensions: ["tsx"], file_case: "kebab-case", folder_case: "kebab-case", allow_dynamic_routes: true },
+          ],
+        });
+
+        fs.mkdirSync(path.join(tempDir, "app", "(my-group)"), { recursive: true });
+        fs.writeFileSync(path.join(tempDir, "app", "(my-group)", "page.tsx"), "");
+
+        const result = await runner.run(tempDir);
+
+        expect(result.passed).toBe(true);
+      });
+
+      it("passes for parallel routes @modal", async () => {
+        runner.setConfig({
+          enabled: true,
+          rules: [
+            { extensions: ["tsx"], file_case: "kebab-case", folder_case: "kebab-case", allow_dynamic_routes: true },
+          ],
+        });
+
+        fs.mkdirSync(path.join(tempDir, "app", "@modal"), { recursive: true });
+        fs.writeFileSync(path.join(tempDir, "app", "@modal", "page.tsx"), "");
+
+        const result = await runner.run(tempDir);
+
+        expect(result.passed).toBe(true);
+      });
+
+      it("validates inner content of parallel route @my-modal", async () => {
+        runner.setConfig({
+          enabled: true,
+          rules: [
+            { extensions: ["tsx"], file_case: "kebab-case", folder_case: "kebab-case", allow_dynamic_routes: true },
+          ],
+        });
+
+        fs.mkdirSync(path.join(tempDir, "app", "@my-modal"), { recursive: true });
+        fs.writeFileSync(path.join(tempDir, "app", "@my-modal", "page.tsx"), "");
+
+        const result = await runner.run(tempDir);
+
+        expect(result.passed).toBe(true);
+      });
+
+      it("fails for PascalCase inside parallel route @MyModal", async () => {
+        runner.setConfig({
+          enabled: true,
+          rules: [
+            { extensions: ["tsx"], file_case: "kebab-case", folder_case: "kebab-case", allow_dynamic_routes: true },
+          ],
+        });
+
+        fs.mkdirSync(path.join(tempDir, "app", "@MyModal"), { recursive: true });
+        fs.writeFileSync(path.join(tempDir, "app", "@MyModal", "page.tsx"), "");
+
+        const result = await runner.run(tempDir);
+
+        expect(result.passed).toBe(false);
+        expect(result.violations.some((v) => v.message.includes("@MyModal"))).toBe(true);
+      });
+
+      it("handles nested dynamic routes", async () => {
+        runner.setConfig({
+          enabled: true,
+          rules: [
+            { extensions: ["tsx"], file_case: "kebab-case", folder_case: "kebab-case", allow_dynamic_routes: true },
+          ],
+        });
+
+        fs.mkdirSync(path.join(tempDir, "app", "(dashboard)", "[team-id]", "settings"), { recursive: true });
+        fs.writeFileSync(path.join(tempDir, "app", "(dashboard)", "[team-id]", "settings", "page.tsx"), "");
+
+        const result = await runner.run(tempDir);
+
+        expect(result.passed).toBe(true);
+      });
+
+      it("still validates regular folders alongside dynamic routes", async () => {
+        runner.setConfig({
+          enabled: true,
+          rules: [
+            { extensions: ["tsx"], file_case: "kebab-case", folder_case: "kebab-case", allow_dynamic_routes: true },
+          ],
+        });
+
+        fs.mkdirSync(path.join(tempDir, "app", "BadFolder", "[id]"), { recursive: true });
+        fs.writeFileSync(path.join(tempDir, "app", "BadFolder", "[id]", "page.tsx"), "");
+
+        const result = await runner.run(tempDir);
+
+        expect(result.passed).toBe(false);
+        expect(result.violations.some((v) => v.message.includes("BadFolder"))).toBe(true);
+      });
+    });
+
     describe("edge cases", () => {
       it("handles single-word file names", async () => {
         runner.setConfig({

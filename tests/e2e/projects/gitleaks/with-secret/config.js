@@ -1,6 +1,6 @@
-// Config file with hardcoded secrets (for testing gitleaks detection)
+// Config file with test secret pattern (for testing gitleaks detection)
 module.exports = {
   apiUrl: "https://api.example.com",
-  // GitHub token pattern - looks like a real token
-  githubToken: "ghp_aB3cD4eF5gH6iJ7kL8mN9oP0qR1sT2uV3wX4",
+  // Custom test pattern - detected by local .gitleaks.toml custom rule
+  testSecret: "TEST_SECRET_ABCDEFGHIJKLMNOPQRSTUVWXYZ123456",
 };
