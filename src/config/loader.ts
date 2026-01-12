@@ -215,8 +215,10 @@ function mergeCode(c: Config, dc: Config): CodeConfig {
 
 type ProcessConfig = NonNullable<Config["process"]>;
 type HooksConfig = NonNullable<ProcessConfig["hooks"]>;
+type CiConfig = NonNullable<ProcessConfig["ci"]>;
 
 const defaultHooks: HooksConfig = { enabled: false, require_husky: true };
+const defaultCi: CiConfig = { enabled: false };
 
 function mergeProcess(c: Config, dc: Config): ProcessConfig {
   const hooks: HooksConfig = {
@@ -224,7 +226,12 @@ function mergeProcess(c: Config, dc: Config): ProcessConfig {
     ...dc.process?.hooks,
     ...c.process?.hooks,
   };
-  return { hooks };
+  const ci: CiConfig = {
+    ...defaultCi,
+    ...dc.process?.ci,
+    ...c.process?.ci,
+  };
+  return { hooks, ci };
 }
 
 /**

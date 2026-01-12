@@ -240,9 +240,22 @@ function mergeHooksConfig(base: ProcessConfig["hooks"], override: ProcessConfig[
   };
 }
 
+function mergeCiConfig(base: ProcessConfig["ci"], override: ProcessConfig["ci"]): ProcessConfig["ci"] {
+  if (!override) {
+    return base;
+  }
+  return {
+    enabled: override.enabled,
+    require_workflows: override.require_workflows ?? base?.require_workflows,
+    jobs: override.jobs ?? base?.jobs,
+    actions: override.actions ?? base?.actions,
+  };
+}
+
 function mergeProcessSection(base: ProcessConfig | undefined, override: ProcessConfig): ProcessConfig {
   return {
     hooks: mergeHooksConfig(base?.hooks, override.hooks),
+    ci: mergeCiConfig(base?.ci, override.ci),
   };
 }
 

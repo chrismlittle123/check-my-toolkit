@@ -1,0 +1,8 @@
+# Test project: CI fails when required action is missing
+
+[process.ci]
+enabled = true
+require_workflows = ["ci.yml"]
+
+[process.ci.actions]
+"ci.yml" = ["actions/checkout", "actions/setup-node"]

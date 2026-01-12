@@ -1,0 +1,5 @@
+# Test project: CI check is disabled
+
+[process.ci]
+enabled = false
+require_workflows = ["ci.yml"]

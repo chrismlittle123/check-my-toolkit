@@ -1,0 +1,5 @@
+# Test project: CI fails when .github/workflows directory doesn't exist
+
+[process.ci]
+enabled = true
+require_workflows = ["ci.yml"]
