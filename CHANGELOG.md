@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.24.0
+
+### Minor Changes
+
+- c82ca9e: Add `process.coverage` rule to enforce coverage thresholds are configured. Supports vitest, jest, and nyc/istanbul configs. Can check config files, CI workflows, or both.
+- 4d695e5: Add `cm projects detect` command for monorepo project discovery. Detects TypeScript, Python, Rust, and Go projects by marker files, shows which have check.toml configs, and can create missing configs with `--fix`.
+
+### Patch Changes
+
+- 3468342: Add INFRA domain roadmap documenting infrastructure as code validation and live infrastructure verification features.
+
 ## 0.23.0
 
 ### Minor Changes
