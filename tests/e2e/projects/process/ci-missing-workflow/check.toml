@@ -1,0 +1,5 @@
+# Test project: CI fails when required workflow is missing
+
+[process.ci]
+enabled = true
+require_workflows = ["ci.yml", "release.yml"]

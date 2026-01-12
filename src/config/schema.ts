@@ -323,10 +323,22 @@ const hooksConfigSchema = z
   .strict()
   .optional();
 
+/** CI/CD workflows configuration */
+const ciConfigSchema = z
+  .object({
+    enabled: z.boolean().optional().default(false),
+    require_workflows: z.array(z.string()).optional(), // e.g., ["ci.yml", "release.yml"]
+    jobs: z.record(z.string(), z.array(z.string())).optional(), // e.g., { "ci.yml": ["test", "lint"] }
+    actions: z.record(z.string(), z.array(z.string())).optional(), // e.g., { "ci.yml": ["actions/checkout"] }
+  })
+  .strict()
+  .optional();
+
 /** Process domain configuration */
 const processSchema = z
   .object({
     hooks: hooksConfigSchema,
+    ci: ciConfigSchema,
   })
   .strict()
   .optional();
@@ -400,6 +412,9 @@ export const defaultConfig: Config = {
     hooks: {
       enabled: false,
       require_husky: true,
+    },
+    ci: {
+      enabled: false,
     },
   },
 };

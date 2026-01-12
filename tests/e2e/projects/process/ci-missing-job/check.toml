@@ -1,0 +1,8 @@
+# Test project: CI fails when required job is missing
+
+[process.ci]
+enabled = true
+require_workflows = ["ci.yml"]
+
+[process.ci.jobs]
+"ci.yml" = ["test", "build"]

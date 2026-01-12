@@ -41,3 +41,13 @@ require_hooks = ["pre-commit", "pre-push"]
 [process.hooks.commands]
 pre-commit = ["lint-staged"]
 pre-push = ["npm run typecheck", "npm run lint", "npm run build", "npm test"]
+
+[process.ci]
+enabled = true
+require_workflows = ["ci.yml", "release.yml"]
+
+[process.ci.jobs]
+"ci.yml" = ["test"]
+
+[process.ci.actions]
+"ci.yml" = ["actions/checkout", "actions/setup-node"]

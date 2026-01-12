@@ -1,0 +1,11 @@
+# Test project: CI with all required workflows, jobs, and actions present
+
+[process.ci]
+enabled = true
+require_workflows = ["ci.yml"]
+
+[process.ci.jobs]
+"ci.yml" = ["test"]
+
+[process.ci.actions]
+"ci.yml" = ["actions/checkout"]

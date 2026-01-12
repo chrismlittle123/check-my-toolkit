@@ -815,6 +815,59 @@ const testCases: TestCase[] = [
   },
 
   // ============================================================
+  // Process: CI/CD workflow validation
+  // ============================================================
+  {
+    name: "process/ci-clean passes when all workflows, jobs, and actions exist",
+    config: "tests/e2e/projects/process/ci-clean/check.toml",
+    command: "check",
+    domain: "process",
+    expectedExitCode: 0,
+    expectedPatterns: ["✓ CI: passed", "All checks passed"],
+  },
+  {
+    name: "process/ci-no-workflows-dir fails when .github/workflows missing",
+    config: "tests/e2e/projects/process/ci-no-workflows-dir/check.toml",
+    command: "check",
+    domain: "process",
+    expectedExitCode: 1,
+    expectedPatterns: ["✗ CI:", "GitHub workflows directory not found"],
+  },
+  {
+    name: "process/ci-missing-workflow fails when required workflow is missing",
+    config: "tests/e2e/projects/process/ci-missing-workflow/check.toml",
+    command: "check",
+    domain: "process",
+    expectedExitCode: 1,
+    expectedPatterns: ["✗ CI:", "Required workflow 'release.yml' not found"],
+  },
+  {
+    name: "process/ci-missing-job fails when required job is missing",
+    config: "tests/e2e/projects/process/ci-missing-job/check.toml",
+    command: "check",
+    domain: "process",
+    expectedExitCode: 1,
+    expectedPatterns: ["✗ CI:", "missing required job: build"],
+  },
+  {
+    name: "process/ci-missing-action fails when required action is missing",
+    config: "tests/e2e/projects/process/ci-missing-action/check.toml",
+    command: "check",
+    domain: "process",
+    expectedExitCode: 1,
+    expectedPatterns: ["✗ CI:", "missing required action: actions/setup-node"],
+  },
+  {
+    name: "process/ci-disabled skips CI check when disabled",
+    config: "tests/e2e/projects/process/ci-disabled/check.toml",
+    command: "check",
+    domain: "process",
+    expectedExitCode: 0,
+    expectedPatterns: ["PROCESS"],
+    notExpectedPatterns: ["CI"],
+  },
+
+  // ============================================================
   // Gitleaks: Secret detection
   // ============================================================
   {
