@@ -993,6 +993,37 @@ const testCases: TestCase[] = [
   },
 
   // ============================================================
+  // Process: Repository settings
+  // ============================================================
+  {
+    name: "process/repo-codeowners-pass passes when CODEOWNERS exists",
+    config: "tests/e2e/projects/process/repo-codeowners-pass/check.toml",
+    command: "check",
+    domain: "process",
+    expectedExitCode: 0,
+    // Note: This test may skip if gh CLI is not available or not in a repo
+    expectedPatterns: ["PROCESS"],
+  },
+  {
+    name: "process/repo-codeowners-fail fails when CODEOWNERS missing",
+    config: "tests/e2e/projects/process/repo-codeowners-fail/check.toml",
+    command: "check",
+    domain: "process",
+    expectedExitCode: 1,
+    // This should fail because CODEOWNERS is required but missing
+    expectedPatterns: ["Repository:"],
+  },
+  {
+    name: "process/repo-disabled skips repo check when disabled",
+    config: "tests/e2e/projects/process/repo-disabled/check.toml",
+    command: "check",
+    domain: "process",
+    expectedExitCode: 0,
+    expectedPatterns: ["PROCESS"],
+    notExpectedPatterns: ["Repository:"],
+  },
+
+  // ============================================================
   // Gitleaks: Secret detection
   // ============================================================
   {

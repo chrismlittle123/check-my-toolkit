@@ -380,6 +380,32 @@ const coverageConfigSchema = z
   .strict()
   .optional();
 
+/** Branch protection settings configuration */
+const branchProtectionConfigSchema = z
+  .object({
+    branch: z.string().optional().default("main"), // Branch to check (default: main)
+    required_reviews: z.number().int().min(0).optional(), // Minimum required reviews
+    dismiss_stale_reviews: z.boolean().optional(), // Dismiss stale reviews on new commits
+    require_code_owner_reviews: z.boolean().optional(), // Require CODEOWNER review
+    require_status_checks: z.array(z.string()).optional(), // Required status checks
+    require_branches_up_to_date: z.boolean().optional(), // Require branch to be up to date
+    require_signed_commits: z.boolean().optional(), // Require signed commits
+    enforce_admins: z.boolean().optional(), // Enforce rules for admins too
+  })
+  .strict()
+  .optional();
+
+/** Repository settings configuration */
+const repoConfigSchema = z
+  .object({
+    enabled: z.boolean().optional().default(false),
+    require_branch_protection: z.boolean().optional().default(false), // Check branch protection exists
+    require_codeowners: z.boolean().optional().default(false), // Check CODEOWNERS file exists
+    branch_protection: branchProtectionConfigSchema, // Detailed branch protection requirements
+  })
+  .strict()
+  .optional();
+
 /** Process domain configuration */
 const processSchema = z
   .object({
@@ -389,6 +415,7 @@ const processSchema = z
     pr: prConfigSchema,
     tickets: ticketsConfigSchema,
     coverage: coverageConfigSchema,
+    repo: repoConfigSchema,
   })
   .strict()
   .optional();
@@ -480,6 +507,11 @@ export const defaultConfig: Config = {
     coverage: {
       enabled: false,
       enforce_in: "config",
+    },
+    repo: {
+      enabled: false,
+      require_branch_protection: false,
+      require_codeowners: false,
     },
   },
 };

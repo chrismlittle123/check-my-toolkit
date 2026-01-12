@@ -393,13 +393,13 @@ Ordered by complexity (start here):
 | 1 | `[process.hooks]` ✅ | Low | None (file checks) | Event |
 | 2 | `[process.ci]` ✅ | Low-Medium | YAML parser | Event |
 | 3 | `[process.branches]` ✅ | Low | Git CLI | Event |
-| 4 | `[process.pr]` | Medium | GitHub context | Event |
-| 5 | `[process.tickets]` | Medium | GitHub context | Event |
-| 6 | `[process.coverage]` | Medium | YAML + config parsing | Schedule |
-| 7 | `[process.repo]` | High | GitHub API | Schedule |
+| 4 | `[process.pr]` ✅ | Medium | GitHub context | Event |
+| 5 | `[process.tickets]` ✅ | Medium | GitHub context | Event |
+| 6 | `[process.coverage]` ✅ | Medium | YAML + config parsing | Schedule |
+| 7 | `[process.repo]` ✅ | High | GitHub API | Schedule |
 | 8 | `[process.backups]` | Medium-High | Cloud SDK / webhook | Schedule |
 | 9 | `cm process sync` | High | GitHub API + write access | Manual |
 
-**Implemented:** hooks, ci, branches
+**Implemented:** hooks, ci, branches, pr, tickets, coverage, repo
 
-**Next up:** pr, tickets (event-driven, GitHub context required)
+**Next up:** backups (cloud storage verification), `cm process sync` (push config to GitHub)

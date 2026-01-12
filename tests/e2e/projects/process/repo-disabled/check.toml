@@ -1,0 +1,3 @@
+[process.repo]
+enabled = false
+require_codeowners = true

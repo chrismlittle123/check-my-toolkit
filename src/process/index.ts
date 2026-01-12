@@ -4,10 +4,10 @@ import {
   DomainResult,
   type IToolRunner,
 } from "../types/index.js";
-import { BranchesRunner, CiRunner, CoverageRunner, HooksRunner, PrRunner, TicketsRunner } from "./tools/index.js";
+import { BranchesRunner, CiRunner, CoverageRunner, HooksRunner, PrRunner, RepoRunner, TicketsRunner } from "./tools/index.js";
 
 // Export tool runners for direct access
-export { BaseProcessToolRunner, BranchesRunner, CiRunner, CoverageRunner, HooksRunner, PrRunner, TicketsRunner } from "./tools/index.js";
+export { BaseProcessToolRunner, BranchesRunner, CiRunner, CoverageRunner, HooksRunner, PrRunner, RepoRunner, TicketsRunner } from "./tools/index.js";
 
 /** Tool configuration entry mapping config getter to runner or runner factory */
 interface ToolEntry {
@@ -109,6 +109,21 @@ function createCoverageRunner(config: Config): CoverageRunner {
   return runner;
 }
 
+/** Create a configured RepoRunner */
+function createRepoRunner(config: Config): RepoRunner {
+  const runner = new RepoRunner();
+  const repoConfig = config.process?.repo;
+  if (repoConfig) {
+    runner.setConfig({
+      enabled: repoConfig.enabled,
+      require_branch_protection: repoConfig.require_branch_protection,
+      require_codeowners: repoConfig.require_codeowners,
+      branch_protection: repoConfig.branch_protection,
+    });
+  }
+  return runner;
+}
+
 /** All available process tools with their config predicates */
 const toolRegistry: ToolEntry[] = [
   { isEnabled: (c) => isEnabled(c.process?.hooks), runner: createHooksRunner },
@@ -117,6 +132,7 @@ const toolRegistry: ToolEntry[] = [
   { isEnabled: (c) => isEnabled(c.process?.pr), runner: createPrRunner },
   { isEnabled: (c) => isEnabled(c.process?.tickets), runner: createTicketsRunner },
   { isEnabled: (c) => isEnabled(c.process?.coverage), runner: createCoverageRunner },
+  { isEnabled: (c) => isEnabled(c.process?.repo), runner: createRepoRunner },
 ];
 
 /**

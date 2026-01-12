@@ -206,7 +206,7 @@ folder_case = "snake_case"
 
 ---
 
-## Planned: Project Detection
+## Project Detection ✅
 
 Detect and initialize check.toml files across monorepos and multi-project repositories.
 
