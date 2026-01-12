@@ -334,11 +334,22 @@ const ciConfigSchema = z
   .strict()
   .optional();
 
+/** Branch naming configuration */
+const branchesConfigSchema = z
+  .object({
+    enabled: z.boolean().optional().default(false),
+    pattern: z.string().optional(), // Regex pattern for branch names
+    exclude: z.array(z.string()).optional(), // Branches to skip (e.g., ["main", "master"])
+  })
+  .strict()
+  .optional();
+
 /** Process domain configuration */
 const processSchema = z
   .object({
     hooks: hooksConfigSchema,
     ci: ciConfigSchema,
+    branches: branchesConfigSchema,
   })
   .strict()
   .optional();
@@ -414,6 +425,9 @@ export const defaultConfig: Config = {
       require_husky: true,
     },
     ci: {
+      enabled: false,
+    },
+    branches: {
       enabled: false,
     },
   },
