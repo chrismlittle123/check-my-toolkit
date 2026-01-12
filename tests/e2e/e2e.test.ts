@@ -1,4 +1,6 @@
 import { execSync } from "node:child_process";
+import * as fs from "node:fs";
+import * as path from "node:path";
 
 import { describe, expect, it } from "vitest";
 
@@ -1119,4 +1121,80 @@ describe("E2E Tests", () => {
       }
     });
   }
+});
+
+// =============================================================================
+// Projects Detect E2E Tests
+// =============================================================================
+
+function runProjectsDetect(
+  cwd: string,
+  args = "",
+  format = "text"
+): { stdout: string; exitCode: number } {
+  const formatArg = format !== "text" ? ` -f ${format}` : "";
+  const cmd = `node ${path.resolve("dist/cli.js")} projects detect${args}${formatArg}`;
+
+  try {
+    const stdout = execSync(cmd, {
+      encoding: "utf-8",
+      cwd,
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+    return { stdout, exitCode: 0 };
+  } catch (error: unknown) {
+    const execError = error as { stdout?: string; stderr?: string; status?: number };
+    const stdout = (execError.stdout || "") + (execError.stderr || "");
+    return { stdout, exitCode: execError.status ?? 1 };
+  }
+}
+
+describe("Projects Detect E2E Tests", () => {
+  const fixtureDir = path.resolve("tests/e2e/projects/monorepo-detect");
+
+  it("detects projects and shows status", () => {
+    const { stdout, exitCode } = runProjectsDetect(fixtureDir);
+
+    expect(exitCode).toBe(0);
+    expect(stdout).toContain("Detected");
+    expect(stdout).toContain("apps/web");
+    expect(stdout).toContain("apps/api");
+    expect(stdout).toContain("lambdas/processor");
+    expect(stdout).toContain("typescript");
+    expect(stdout).toContain("python");
+    expect(stdout).toContain("has check.toml");
+    expect(stdout).toContain("missing check.toml");
+  });
+
+  it("outputs JSON format", () => {
+    const { stdout, exitCode } = runProjectsDetect(fixtureDir, "", "json");
+
+    expect(exitCode).toBe(0);
+    const output = JSON.parse(stdout);
+    expect(output.projects).toHaveLength(3);
+    expect(output.summary.withConfig).toBe(1);
+    expect(output.summary.missingConfig).toBe(2);
+    expect(output.workspaceRoots).toContain(".");
+  });
+
+  it("--dry-run shows what would be created without creating", () => {
+    const { stdout, exitCode } = runProjectsDetect(fixtureDir, " --dry-run");
+
+    expect(exitCode).toBe(0);
+    expect(stdout).toContain("Would create");
+    expect(stdout).toContain("apps/api/check.toml");
+    expect(stdout).toContain("lambdas/processor/check.toml");
+
+    // Verify files were NOT created
+    expect(fs.existsSync(path.join(fixtureDir, "apps/api/check.toml"))).toBe(false);
+    expect(fs.existsSync(path.join(fixtureDir, "lambdas/processor/check.toml"))).toBe(false);
+  });
+
+  it("skips workspace root", () => {
+    const { stdout, exitCode } = runProjectsDetect(fixtureDir);
+
+    expect(exitCode).toBe(0);
+    expect(stdout).toContain("Skipped");
+    expect(stdout).toContain("workspace root");
+  });
 });
