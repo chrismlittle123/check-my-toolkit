@@ -13,6 +13,7 @@ import { ConfigError, getProjectRoot, loadConfig, loadConfigAsync } from "./conf
 import { configSchema } from "./config/schema.js";
 import { formatOutput, type OutputFormat } from "./output/index.js";
 import { auditProcessConfig, runProcessChecks } from "./process/index.js";
+import { type DetectOptions,runDetect } from "./projects/index.js";
 import { type DomainResult, ExitCode, type FullResult } from "./types/index.js";
 
 // Read version from package.json to avoid hardcoding
@@ -258,6 +259,31 @@ processCommand
   .action((options) => runAudit(options, "process"));
 
 program.addCommand(processCommand);
+
+// =============================================================================
+// Projects subcommand
+// =============================================================================
+
+const projectsCommand = new Command("projects").description("Project management utilities");
+
+// cm projects detect
+projectsCommand
+  .command("detect")
+  .description("Discover projects and show which have/don't have check.toml")
+  .option("--fix", "Create missing check.toml files")
+  .option("--dry-run", "Show what would be created without creating")
+  .option("--registry <path>", "Create shared registry and extend from it")
+  .addOption(new Option("-f, --format <format>", "Output format").choices(["text", "json"]).default("text"))
+  .action(async (options: { fix?: boolean; dryRun?: boolean; registry?: string; format: string }) => {
+    try {
+      await runDetect(options as DetectOptions);
+      process.exit(ExitCode.SUCCESS);
+    } catch (error) {
+      handleError(error);
+    }
+  });
+
+program.addCommand(projectsCommand);
 
 // =============================================================================
 // Top-level aliases (run all domains)
