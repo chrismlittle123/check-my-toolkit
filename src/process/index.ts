@@ -4,10 +4,10 @@ import {
   DomainResult,
   type IToolRunner,
 } from "../types/index.js";
-import { BranchesRunner, CiRunner, HooksRunner } from "./tools/index.js";
+import { BranchesRunner, CiRunner, HooksRunner, PrRunner } from "./tools/index.js";
 
 // Export tool runners for direct access
-export { BaseProcessToolRunner, BranchesRunner, CiRunner, HooksRunner } from "./tools/index.js";
+export { BaseProcessToolRunner, BranchesRunner, CiRunner, HooksRunner, PrRunner } from "./tools/index.js";
 
 /** Tool configuration entry mapping config getter to runner or runner factory */
 interface ToolEntry {
@@ -64,11 +64,26 @@ function createBranchesRunner(config: Config): BranchesRunner {
   return runner;
 }
 
+/** Create a configured PrRunner */
+function createPrRunner(config: Config): PrRunner {
+  const runner = new PrRunner();
+  const prConfig = config.process?.pr;
+  if (prConfig) {
+    runner.setConfig({
+      enabled: prConfig.enabled,
+      max_files: prConfig.max_files,
+      max_lines: prConfig.max_lines,
+    });
+  }
+  return runner;
+}
+
 /** All available process tools with their config predicates */
 const toolRegistry: ToolEntry[] = [
   { isEnabled: (c) => isEnabled(c.process?.hooks), runner: createHooksRunner },
   { isEnabled: (c) => isEnabled(c.process?.ci), runner: createCiRunner },
   { isEnabled: (c) => isEnabled(c.process?.branches), runner: createBranchesRunner },
+  { isEnabled: (c) => isEnabled(c.process?.pr), runner: createPrRunner },
 ];
 
 /**

@@ -122,11 +122,21 @@ describe("configSchema", () => {
       expect(result.success).toBe(true);
     });
 
-    it("rejects unknown process config keys", () => {
-      // Only hooks is implemented in process domain
+    it("accepts valid process.pr config", () => {
       const config = {
         process: {
-          pr: { max_files: 10 },
+          pr: { enabled: true, max_files: 10, max_lines: 400 },
+        },
+      };
+      const result = configSchema.safeParse(config);
+      expect(result.success).toBe(true);
+    });
+
+    it("rejects unknown process config keys", () => {
+      // tickets is not yet implemented in process domain
+      const config = {
+        process: {
+          tickets: { pattern: "ABC-123" },
         },
       };
       const result = configSchema.safeParse(config);

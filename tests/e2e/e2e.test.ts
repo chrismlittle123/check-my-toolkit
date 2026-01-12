@@ -16,6 +16,7 @@ interface TestCase {
   command: "check" | "audit" | "validate";
   domain?: "code" | "process"; // If not specified, uses "code" for backward compatibility
   format?: "text" | "json";
+  env?: Record<string, string>; // Optional environment variables to set
   expectedExitCode: number;
   expectedPatterns: string[];
   notExpectedPatterns?: string[];
@@ -889,6 +890,54 @@ const testCases: TestCase[] = [
   },
 
   // ============================================================
+  // Process: PR size validation
+  // ============================================================
+  {
+    name: "process/pr-pass passes when PR is within size limits",
+    config: "tests/e2e/projects/process/pr-pass/check.toml",
+    command: "check",
+    domain: "process",
+    env: { GITHUB_EVENT_PATH: "tests/e2e/projects/process/pr-pass/event.json" },
+    expectedExitCode: 0,
+    expectedPatterns: ["✓ PR: passed", "All checks passed"],
+  },
+  {
+    name: "process/pr-exceed-files fails when PR has too many files",
+    config: "tests/e2e/projects/process/pr-exceed-files/check.toml",
+    command: "check",
+    domain: "process",
+    env: { GITHUB_EVENT_PATH: "tests/e2e/projects/process/pr-exceed-files/event.json" },
+    expectedExitCode: 1,
+    expectedPatterns: ["✗ PR:", "35 files changed", "max: 20"],
+  },
+  {
+    name: "process/pr-exceed-lines fails when PR has too many lines",
+    config: "tests/e2e/projects/process/pr-exceed-lines/check.toml",
+    command: "check",
+    domain: "process",
+    env: { GITHUB_EVENT_PATH: "tests/e2e/projects/process/pr-exceed-lines/event.json" },
+    expectedExitCode: 1,
+    expectedPatterns: ["✗ PR:", "550 lines changed", "max: 400"],
+  },
+  {
+    name: "process/pr-no-context skips when not in PR context",
+    config: "tests/e2e/projects/process/pr-no-context/check.toml",
+    command: "check",
+    domain: "process",
+    expectedExitCode: 0,
+    expectedPatterns: ["PR: skipped", "Not in a PR context"],
+  },
+  {
+    name: "process/pr-disabled skips PR check when disabled",
+    config: "tests/e2e/projects/process/pr-disabled/check.toml",
+    command: "check",
+    domain: "process",
+    expectedExitCode: 0,
+    expectedPatterns: ["PROCESS"],
+    notExpectedPatterns: ["PR:"],
+  },
+
+  // ============================================================
   // Gitleaks: Secret detection
   // ============================================================
   {
@@ -967,7 +1016,13 @@ const testCases: TestCase[] = [
   },
 ];
 
-function runCli(command: string, config: string, format = "text", domain = "code"): { stdout: string; exitCode: number } {
+function runCli(
+  command: string,
+  config: string,
+  format = "text",
+  domain = "code",
+  env?: Record<string, string>
+): { stdout: string; exitCode: number } {
   const formatArg = format !== "text" ? ` -f ${format}` : "";
   const cmd =
     command === "validate"
@@ -978,6 +1033,7 @@ function runCli(command: string, config: string, format = "text", domain = "code
     const stdout = execSync(cmd, {
       encoding: "utf-8",
       stdio: ["pipe", "pipe", "pipe"],
+      env: env ? { ...process.env, ...env } : process.env,
     });
     return { stdout, exitCode: 0 };
   } catch (error: unknown) {
@@ -990,7 +1046,7 @@ function runCli(command: string, config: string, format = "text", domain = "code
 describe("E2E Tests", () => {
   for (const tc of testCases) {
     it.concurrent(tc.name, async () => {
-      const { stdout, exitCode } = runCli(tc.command, tc.config, tc.format, tc.domain);
+      const { stdout, exitCode } = runCli(tc.command, tc.config, tc.format, tc.domain, tc.env);
 
       // Check exit code
       expect(exitCode, `Expected exit code ${tc.expectedExitCode}, got ${exitCode}\nOutput:\n${stdout}`).toBe(

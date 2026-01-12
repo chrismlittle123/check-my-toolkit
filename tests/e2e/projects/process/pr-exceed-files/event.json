@@ -1,0 +1,9 @@
+{
+  "action": "opened",
+  "number": 42,
+  "pull_request": {
+    "changed_files": 35,
+    "additions": 150,
+    "deletions": 100
+  }
+}

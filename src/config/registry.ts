@@ -263,11 +263,23 @@ function mergeBranchesConfig(base: ProcessConfig["branches"], override: ProcessC
   };
 }
 
+function mergePrConfig(base: ProcessConfig["pr"], override: ProcessConfig["pr"]): ProcessConfig["pr"] {
+  if (!override) {
+    return base;
+  }
+  return {
+    enabled: override.enabled,
+    max_files: override.max_files ?? base?.max_files,
+    max_lines: override.max_lines ?? base?.max_lines,
+  };
+}
+
 function mergeProcessSection(base: ProcessConfig | undefined, override: ProcessConfig): ProcessConfig {
   return {
     hooks: mergeHooksConfig(base?.hooks, override.hooks),
     ci: mergeCiConfig(base?.ci, override.ci),
     branches: mergeBranchesConfig(base?.branches, override.branches),
+    pr: mergePrConfig(base?.pr, override.pr),
   };
 }
 

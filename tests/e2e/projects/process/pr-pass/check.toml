@@ -1,0 +1,10 @@
+[code.linting.eslint]
+enabled = false
+
+[code.linting.ruff]
+enabled = false
+
+[process.pr]
+enabled = true
+max_files = 20
+max_lines = 400

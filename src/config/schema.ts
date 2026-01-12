@@ -344,12 +344,23 @@ const branchesConfigSchema = z
   .strict()
   .optional();
 
+/** PR size limits configuration */
+const prConfigSchema = z
+  .object({
+    enabled: z.boolean().optional().default(false),
+    max_files: z.number().int().positive().optional(), // Max files changed in PR
+    max_lines: z.number().int().positive().optional(), // Max lines changed (additions + deletions)
+  })
+  .strict()
+  .optional();
+
 /** Process domain configuration */
 const processSchema = z
   .object({
     hooks: hooksConfigSchema,
     ci: ciConfigSchema,
     branches: branchesConfigSchema,
+    pr: prConfigSchema,
   })
   .strict()
   .optional();
@@ -428,6 +439,9 @@ export const defaultConfig: Config = {
       enabled: false,
     },
     branches: {
+      enabled: false,
+    },
+    pr: {
       enabled: false,
     },
   },
