@@ -1,10 +1,10 @@
 # PROCESS Domain Roadmap
 
-Workflow and policy enforcement for git hooks, CI/CD, PRs, branches, and repository settings.
+Workflow and policy enforcement for git hooks, CI/CD, PRs, branches, repository settings, and operational compliance.
 
 ## Overview
 
-The PROCESS domain validates development workflow compliance. It checks local tooling (git hooks), CI/CD configuration, PR policies, and repository settings.
+The PROCESS domain validates development workflow compliance. It checks local tooling (git hooks), CI/CD configuration, PR policies, repository settings, and operational health.
 
 ```toml
 [process]
@@ -14,10 +14,58 @@ The PROCESS domain validates development workflow compliance. It checks local to
 ├── [process.pr]        # Size limits
 ├── [process.tickets]   # Linear/Jira references
 ├── [process.coverage]  # Coverage enforcement
-└── [process.repo]      # Branch protection, CODEOWNERS
+├── [process.repo]      # Branch protection, CODEOWNERS
+└── [process.backups]   # Repository backup verification
 ```
 
 **Implementation order:** Start with local file checks (no API), then add GitHub API features.
+
+---
+
+## Trigger Cadence
+
+Process checks can run on two cadences:
+
+### Event-Driven (Gate/Block)
+These checks run on specific events and can block merges:
+
+| Check | Trigger Event | Purpose |
+|-------|--------------|---------|
+| `process.hooks` | pre-commit, pre-push | Enforce local tooling |
+| `process.ci` | push, PR | Verify CI config exists |
+| `process.branches` | push, PR | Enforce naming conventions |
+| `process.pr` | PR open/update | Limit PR size |
+| `process.tickets` | PR open/update | Require ticket references |
+
+### Schedule-Driven (Audit/Monitor)
+These checks run on a schedule (cron) to detect drift or verify operational health:
+
+| Check | Suggested Schedule | Purpose |
+|-------|-------------------|---------|
+| `process.repo` | Daily | Detect branch protection drift |
+| `process.coverage` | Nightly | Monitor coverage thresholds |
+| `process.backups` | Daily | Verify backup recency |
+
+**CI/CD Integration:**
+```yaml
+# Event-driven (on PR)
+on: [pull_request]
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - run: npx cm process check
+
+# Schedule-driven (daily audit)
+on:
+  schedule:
+    - cron: '0 6 * * *'  # 6am daily
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - run: npx cm process check --audit
+```
 
 ---
 
@@ -251,7 +299,75 @@ require_status_checks = ["ci"]
 
 ---
 
-## v1.3 — Sync to GitHub
+## v1.3 — Backup Verification
+
+### Repository Backups: `[process.backups]`
+
+**Complexity: Medium-High** — Requires integration with backup service APIs.
+
+| Check | Description | Data Source |
+|-------|-------------|-------------|
+| Backup exists | Repository has been backed up | Backup service API |
+| Backup recency | Last backup within threshold | Backup service API |
+| Backup completeness | All required repos backed up | Backup service API |
+
+```toml
+[process.backups]
+enabled = true
+
+# Backup service configuration
+provider = "s3"  # "s3" | "gcs" | "azure" | "custom"
+
+# For S3/cloud storage
+bucket = "my-org-repo-backups"
+prefix = "github/"  # Optional path prefix
+
+# Recency requirements
+max_age_hours = 24  # Fail if last backup older than this
+
+# Custom webhook (alternative to cloud storage)
+# webhook_url = "https://backup-service.example.com/api/status"
+```
+
+**Implementation Options:**
+
+1. **Cloud Storage Check** (S3/GCS/Azure):
+   - List objects in bucket with repo name prefix
+   - Check most recent object timestamp
+   - Verify backup file exists and is recent
+
+2. **Custom Webhook**:
+   - Call organization's backup service API
+   - Service returns backup status for repo
+   - Flexible integration with any backup solution
+
+3. **Git Bundle Verification**:
+   - Check for `.git-bundle` files in backup location
+   - Verify bundle is valid and recent
+
+**Output:**
+```
+[process.backups]
+  ✓ Backup found: s3://backups/github/myorg/myrepo/2024-01-15.tar.gz
+  ✓ Backup age: 6 hours (max: 24 hours)
+
+process: passed
+```
+
+**Failure Example:**
+```
+[process.backups]
+  ✗ No backup found for repository 'myorg/myrepo'
+  ✗ Last backup: 3 days ago (max: 24 hours)
+
+process: 2 violation(s) found
+```
+
+**Schedule:** Run daily via cron to catch backup failures early.
+
+---
+
+## v1.4 — Sync to GitHub
 
 `cm process sync` pushes config to GitHub API:
 
@@ -272,15 +388,18 @@ This is the killer feature: declaratively define repo settings in `check.toml` a
 
 Ordered by complexity (start here):
 
-| Priority | Feature | Complexity | Dependencies |
-|----------|---------|------------|--------------|
-| 1 | `[process.hooks]` | Low | None (file checks) |
-| 2 | `[process.ci]` | Low-Medium | YAML parser |
-| 3 | `[process.branches]` | Low | Git CLI |
-| 4 | `[process.pr]` | Medium | GitHub context |
-| 5 | `[process.tickets]` | Medium | GitHub context |
-| 6 | `[process.coverage]` | Medium | YAML + config parsing |
-| 7 | `[process.repo]` | High | GitHub API |
-| 8 | `cm process sync` | High | GitHub API + write access |
+| Priority | Feature | Complexity | Dependencies | Cadence |
+|----------|---------|------------|--------------|---------|
+| 1 | `[process.hooks]` ✅ | Low | None (file checks) | Event |
+| 2 | `[process.ci]` ✅ | Low-Medium | YAML parser | Event |
+| 3 | `[process.branches]` ✅ | Low | Git CLI | Event |
+| 4 | `[process.pr]` | Medium | GitHub context | Event |
+| 5 | `[process.tickets]` | Medium | GitHub context | Event |
+| 6 | `[process.coverage]` | Medium | YAML + config parsing | Schedule |
+| 7 | `[process.repo]` | High | GitHub API | Schedule |
+| 8 | `[process.backups]` | Medium-High | Cloud SDK / webhook | Schedule |
+| 9 | `cm process sync` | High | GitHub API + write access | Manual |
 
-**Recommended starting point:** `[process.hooks]` — simplest implementation, immediate value, no external dependencies.
+**Implemented:** hooks, ci, branches
+
+**Next up:** pr, tickets (event-driven, GitHub context required)
