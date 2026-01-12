@@ -199,13 +199,33 @@ max_lines = 400
     expect(result.config.process?.pr?.max_lines).toBe(400);
   });
 
-  it("rejects process.tickets config (not implemented)", () => {
+  it("loads valid process.tickets config", () => {
     const configPath = path.join(tempDir, "check.toml");
     fs.writeFileSync(
       configPath,
       `
 [process.tickets]
-pattern = "ABC-123"
+enabled = true
+pattern = "ABC-[0-9]+"
+require_in_commits = true
+require_in_branch = false
+`
+    );
+
+    const result = loadConfig(configPath);
+    expect(result.config.process?.tickets?.enabled).toBe(true);
+    expect(result.config.process?.tickets?.pattern).toBe("ABC-[0-9]+");
+    expect(result.config.process?.tickets?.require_in_commits).toBe(true);
+    expect(result.config.process?.tickets?.require_in_branch).toBe(false);
+  });
+
+  it("rejects process.backups config (not implemented)", () => {
+    const configPath = path.join(tempDir, "check.toml");
+    fs.writeFileSync(
+      configPath,
+      `
+[process.backups]
+enabled = true
 `
     );
 

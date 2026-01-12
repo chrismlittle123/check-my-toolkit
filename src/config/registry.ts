@@ -274,12 +274,26 @@ function mergePrConfig(base: ProcessConfig["pr"], override: ProcessConfig["pr"])
   };
 }
 
+function mergeTicketsConfig(base: ProcessConfig["tickets"], override: ProcessConfig["tickets"]): ProcessConfig["tickets"] {
+  if (!override) {
+    return base;
+  }
+  // require_in_commits and require_in_branch have schema defaults, so they're always defined after parsing
+  return {
+    enabled: override.enabled,
+    pattern: override.pattern ?? base?.pattern,
+    require_in_commits: override.require_in_commits,
+    require_in_branch: override.require_in_branch,
+  };
+}
+
 function mergeProcessSection(base: ProcessConfig | undefined, override: ProcessConfig): ProcessConfig {
   return {
     hooks: mergeHooksConfig(base?.hooks, override.hooks),
     ci: mergeCiConfig(base?.ci, override.ci),
     branches: mergeBranchesConfig(base?.branches, override.branches),
     pr: mergePrConfig(base?.pr, override.pr),
+    tickets: mergeTicketsConfig(base?.tickets, override.tickets),
   };
 }
 

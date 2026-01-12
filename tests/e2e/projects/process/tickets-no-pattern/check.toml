@@ -1,0 +1,9 @@
+[code.linting.eslint]
+enabled = false
+
+[code.linting.ruff]
+enabled = false
+
+[process.tickets]
+enabled = true
+require_in_commits = true

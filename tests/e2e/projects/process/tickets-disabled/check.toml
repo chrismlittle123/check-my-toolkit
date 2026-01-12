@@ -1,0 +1,9 @@
+[code.linting.eslint]
+enabled = false
+
+[code.linting.ruff]
+enabled = false
+
+[process.tickets]
+enabled = false
+pattern = "ABC-[0-9]+"

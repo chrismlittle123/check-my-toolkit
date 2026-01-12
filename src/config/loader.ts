@@ -218,34 +218,47 @@ type HooksConfig = NonNullable<ProcessConfig["hooks"]>;
 type CiConfig = NonNullable<ProcessConfig["ci"]>;
 type BranchesConfig = NonNullable<ProcessConfig["branches"]>;
 type PrConfig = NonNullable<ProcessConfig["pr"]>;
+type TicketsConfig = NonNullable<ProcessConfig["tickets"]>;
 
 const defaultHooks: HooksConfig = { enabled: false, require_husky: true };
 const defaultCi: CiConfig = { enabled: false };
 const defaultBranches: BranchesConfig = { enabled: false };
 const defaultPr: PrConfig = { enabled: false };
+const defaultTickets: TicketsConfig = { enabled: false, require_in_commits: true, require_in_branch: false };
+
+/** Merge a single process config section with defaults */
+function mergeProcessSection<T>(defaultVal: T, dcVal: T | undefined, cVal: T | undefined): T {
+  return { ...defaultVal, ...dcVal, ...cVal };
+}
+
+function mergeProcessHooks(cp: ProcessConfig | undefined, dcp: ProcessConfig | undefined): HooksConfig {
+  return mergeProcessSection(defaultHooks, dcp?.hooks, cp?.hooks);
+}
+
+function mergeProcessCi(cp: ProcessConfig | undefined, dcp: ProcessConfig | undefined): CiConfig {
+  return mergeProcessSection(defaultCi, dcp?.ci, cp?.ci);
+}
+
+function mergeProcessBranches(cp: ProcessConfig | undefined, dcp: ProcessConfig | undefined): BranchesConfig {
+  return mergeProcessSection(defaultBranches, dcp?.branches, cp?.branches);
+}
+
+function mergeProcessPr(cp: ProcessConfig | undefined, dcp: ProcessConfig | undefined): PrConfig {
+  return mergeProcessSection(defaultPr, dcp?.pr, cp?.pr);
+}
+
+function mergeProcessTickets(cp: ProcessConfig | undefined, dcp: ProcessConfig | undefined): TicketsConfig {
+  return mergeProcessSection(defaultTickets, dcp?.tickets, cp?.tickets);
+}
 
 function mergeProcess(c: Config, dc: Config): ProcessConfig {
-  const hooks: HooksConfig = {
-    ...defaultHooks,
-    ...dc.process?.hooks,
-    ...c.process?.hooks,
+  return {
+    hooks: mergeProcessHooks(c.process, dc.process),
+    ci: mergeProcessCi(c.process, dc.process),
+    branches: mergeProcessBranches(c.process, dc.process),
+    pr: mergeProcessPr(c.process, dc.process),
+    tickets: mergeProcessTickets(c.process, dc.process),
   };
-  const ci: CiConfig = {
-    ...defaultCi,
-    ...dc.process?.ci,
-    ...c.process?.ci,
-  };
-  const branches: BranchesConfig = {
-    ...defaultBranches,
-    ...dc.process?.branches,
-    ...c.process?.branches,
-  };
-  const pr: PrConfig = {
-    ...defaultPr,
-    ...dc.process?.pr,
-    ...c.process?.pr,
-  };
-  return { hooks, ci, branches, pr };
 }
 
 /**
