@@ -217,10 +217,12 @@ type ProcessConfig = NonNullable<Config["process"]>;
 type HooksConfig = NonNullable<ProcessConfig["hooks"]>;
 type CiConfig = NonNullable<ProcessConfig["ci"]>;
 type BranchesConfig = NonNullable<ProcessConfig["branches"]>;
+type PrConfig = NonNullable<ProcessConfig["pr"]>;
 
 const defaultHooks: HooksConfig = { enabled: false, require_husky: true };
 const defaultCi: CiConfig = { enabled: false };
 const defaultBranches: BranchesConfig = { enabled: false };
+const defaultPr: PrConfig = { enabled: false };
 
 function mergeProcess(c: Config, dc: Config): ProcessConfig {
   const hooks: HooksConfig = {
@@ -238,7 +240,12 @@ function mergeProcess(c: Config, dc: Config): ProcessConfig {
     ...dc.process?.branches,
     ...c.process?.branches,
   };
-  return { hooks, ci, branches };
+  const pr: PrConfig = {
+    ...defaultPr,
+    ...dc.process?.pr,
+    ...c.process?.pr,
+  };
+  return { hooks, ci, branches, pr };
 }
 
 /**

@@ -181,13 +181,31 @@ enabled = true
     expect(result.config.code?.security?.pipaudit?.enabled).toBe(true);
   });
 
-  it("rejects process config (not implemented)", () => {
+  it("accepts valid process.pr config", () => {
     const configPath = path.join(tempDir, "check.toml");
     fs.writeFileSync(
       configPath,
       `
 [process.pr]
+enabled = true
 max_files = 10
+max_lines = 400
+`
+    );
+
+    const result = loadConfig(configPath);
+    expect(result.config.process?.pr?.enabled).toBe(true);
+    expect(result.config.process?.pr?.max_files).toBe(10);
+    expect(result.config.process?.pr?.max_lines).toBe(400);
+  });
+
+  it("rejects process.tickets config (not implemented)", () => {
+    const configPath = path.join(tempDir, "check.toml");
+    fs.writeFileSync(
+      configPath,
+      `
+[process.tickets]
+pattern = "ABC-123"
 `
     );
 
