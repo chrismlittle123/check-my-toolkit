@@ -365,6 +365,21 @@ const ticketsConfigSchema = z
   .strict()
   .optional();
 
+/** Coverage enforcement mode */
+const coverageEnforceInSchema = z.enum(["ci", "config", "both"]);
+
+/** Coverage enforcement configuration */
+const coverageConfigSchema = z
+  .object({
+    enabled: z.boolean().optional().default(false),
+    min_threshold: z.number().int().min(0).max(100).optional(), // Minimum coverage percentage
+    enforce_in: coverageEnforceInSchema.optional().default("config"), // Where to verify coverage
+    ci_workflow: z.string().optional(), // Workflow file to check (e.g., "ci.yml")
+    ci_job: z.string().optional(), // Job name to check (e.g., "test")
+  })
+  .strict()
+  .optional();
+
 /** Process domain configuration */
 const processSchema = z
   .object({
@@ -373,6 +388,7 @@ const processSchema = z
     branches: branchesConfigSchema,
     pr: prConfigSchema,
     tickets: ticketsConfigSchema,
+    coverage: coverageConfigSchema,
   })
   .strict()
   .optional();
@@ -460,6 +476,10 @@ export const defaultConfig: Config = {
       enabled: false,
       require_in_commits: true,
       require_in_branch: false,
+    },
+    coverage: {
+      enabled: false,
+      enforce_in: "config",
     },
   },
 };

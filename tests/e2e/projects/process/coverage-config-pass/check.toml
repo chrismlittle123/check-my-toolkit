@@ -1,0 +1,9 @@
+[code.linting.eslint]
+enabled = false
+
+[code.linting.ruff]
+enabled = false
+
+[process.coverage]
+enabled = true
+enforce_in = "config"

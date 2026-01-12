@@ -287,6 +287,20 @@ function mergeTicketsConfig(base: ProcessConfig["tickets"], override: ProcessCon
   };
 }
 
+function mergeCoverageConfig(base: ProcessConfig["coverage"], override: ProcessConfig["coverage"]): ProcessConfig["coverage"] {
+  if (!override) {
+    return base;
+  }
+  // enforce_in has schema default, so it's always defined after parsing
+  return {
+    enabled: override.enabled,
+    min_threshold: override.min_threshold ?? base?.min_threshold,
+    enforce_in: override.enforce_in,
+    ci_workflow: override.ci_workflow ?? base?.ci_workflow,
+    ci_job: override.ci_job ?? base?.ci_job,
+  };
+}
+
 function mergeProcessSection(base: ProcessConfig | undefined, override: ProcessConfig): ProcessConfig {
   return {
     hooks: mergeHooksConfig(base?.hooks, override.hooks),
@@ -294,6 +308,7 @@ function mergeProcessSection(base: ProcessConfig | undefined, override: ProcessC
     branches: mergeBranchesConfig(base?.branches, override.branches),
     pr: mergePrConfig(base?.pr, override.pr),
     tickets: mergeTicketsConfig(base?.tickets, override.tickets),
+    coverage: mergeCoverageConfig(base?.coverage, override.coverage),
   };
 }
 

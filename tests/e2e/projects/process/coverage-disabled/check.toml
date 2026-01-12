@@ -1,0 +1,8 @@
+[code.linting.eslint]
+enabled = false
+
+[code.linting.ruff]
+enabled = false
+
+[process.coverage]
+enabled = false

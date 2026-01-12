@@ -962,6 +962,35 @@ const testCases: TestCase[] = [
   },
 
   // ============================================================
+  // Process: Coverage enforcement
+  // ============================================================
+  {
+    name: "process/coverage-config-pass passes when vitest config has thresholds",
+    config: "tests/e2e/projects/process/coverage-config-pass/check.toml",
+    command: "check",
+    domain: "process",
+    expectedExitCode: 0,
+    expectedPatterns: ["✓ Coverage: passed"],
+  },
+  {
+    name: "process/coverage-config-fail fails when no coverage config found",
+    config: "tests/e2e/projects/process/coverage-config-fail/check.toml",
+    command: "check",
+    domain: "process",
+    expectedExitCode: 1,
+    expectedPatterns: ["✗ Coverage:", "No coverage threshold config found"],
+  },
+  {
+    name: "process/coverage-disabled skips coverage check when disabled",
+    config: "tests/e2e/projects/process/coverage-disabled/check.toml",
+    command: "check",
+    domain: "process",
+    expectedExitCode: 0,
+    expectedPatterns: ["PROCESS"],
+    notExpectedPatterns: ["Coverage:"],
+  },
+
+  // ============================================================
   // Gitleaks: Secret detection
   // ============================================================
   {

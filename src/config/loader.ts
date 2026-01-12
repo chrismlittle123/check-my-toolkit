@@ -219,12 +219,14 @@ type CiConfig = NonNullable<ProcessConfig["ci"]>;
 type BranchesConfig = NonNullable<ProcessConfig["branches"]>;
 type PrConfig = NonNullable<ProcessConfig["pr"]>;
 type TicketsConfig = NonNullable<ProcessConfig["tickets"]>;
+type CoverageConfig = NonNullable<ProcessConfig["coverage"]>;
 
 const defaultHooks: HooksConfig = { enabled: false, require_husky: true };
 const defaultCi: CiConfig = { enabled: false };
 const defaultBranches: BranchesConfig = { enabled: false };
 const defaultPr: PrConfig = { enabled: false };
 const defaultTickets: TicketsConfig = { enabled: false, require_in_commits: true, require_in_branch: false };
+const defaultCoverage: CoverageConfig = { enabled: false, enforce_in: "config" };
 
 /** Merge a single process config section with defaults */
 function mergeProcessSection<T>(defaultVal: T, dcVal: T | undefined, cVal: T | undefined): T {
@@ -251,6 +253,10 @@ function mergeProcessTickets(cp: ProcessConfig | undefined, dcp: ProcessConfig |
   return mergeProcessSection(defaultTickets, dcp?.tickets, cp?.tickets);
 }
 
+function mergeProcessCoverage(cp: ProcessConfig | undefined, dcp: ProcessConfig | undefined): CoverageConfig {
+  return mergeProcessSection(defaultCoverage, dcp?.coverage, cp?.coverage);
+}
+
 function mergeProcess(c: Config, dc: Config): ProcessConfig {
   return {
     hooks: mergeProcessHooks(c.process, dc.process),
@@ -258,6 +264,7 @@ function mergeProcess(c: Config, dc: Config): ProcessConfig {
     branches: mergeProcessBranches(c.process, dc.process),
     pr: mergeProcessPr(c.process, dc.process),
     tickets: mergeProcessTickets(c.process, dc.process),
+    coverage: mergeProcessCoverage(c.process, dc.process),
   };
 }
 
