@@ -354,6 +354,17 @@ const prConfigSchema = z
   .strict()
   .optional();
 
+/** Ticket reference validation configuration */
+const ticketsConfigSchema = z
+  .object({
+    enabled: z.boolean().optional().default(false),
+    pattern: z.string().optional(), // Regex pattern for ticket IDs (e.g., "^(ABC|XYZ)-[0-9]+")
+    require_in_commits: z.boolean().optional().default(true), // Require ticket in commit messages
+    require_in_branch: z.boolean().optional().default(false), // Require ticket in branch name
+  })
+  .strict()
+  .optional();
+
 /** Process domain configuration */
 const processSchema = z
   .object({
@@ -361,6 +372,7 @@ const processSchema = z
     ci: ciConfigSchema,
     branches: branchesConfigSchema,
     pr: prConfigSchema,
+    tickets: ticketsConfigSchema,
   })
   .strict()
   .optional();
@@ -443,6 +455,11 @@ export const defaultConfig: Config = {
     },
     pr: {
       enabled: false,
+    },
+    tickets: {
+      enabled: false,
+      require_in_commits: true,
+      require_in_branch: false,
     },
   },
 };

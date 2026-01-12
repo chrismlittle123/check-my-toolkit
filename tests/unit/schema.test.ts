@@ -132,11 +132,26 @@ describe("configSchema", () => {
       expect(result.success).toBe(true);
     });
 
-    it("rejects unknown process config keys", () => {
-      // tickets is not yet implemented in process domain
+    it("accepts valid process.tickets config", () => {
       const config = {
         process: {
-          tickets: { pattern: "ABC-123" },
+          tickets: {
+            enabled: true,
+            pattern: "^(ABC|XYZ)-[0-9]+",
+            require_in_commits: true,
+            require_in_branch: false,
+          },
+        },
+      };
+      const result = configSchema.safeParse(config);
+      expect(result.success).toBe(true);
+    });
+
+    it("rejects unknown process config keys", () => {
+      // backups is not yet implemented in process domain
+      const config = {
+        process: {
+          backups: { enabled: true },
         },
       };
       const result = configSchema.safeParse(config);

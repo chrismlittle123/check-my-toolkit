@@ -938,6 +938,27 @@ const testCases: TestCase[] = [
   },
 
   // ============================================================
+  // Process: Ticket reference validation
+  // ============================================================
+  {
+    name: "process/tickets-disabled skips tickets check when disabled",
+    config: "tests/e2e/projects/process/tickets-disabled/check.toml",
+    command: "check",
+    domain: "process",
+    expectedExitCode: 0,
+    expectedPatterns: ["PROCESS"],
+    notExpectedPatterns: ["Tickets:"],
+  },
+  {
+    name: "process/tickets-no-pattern skips when no pattern configured",
+    config: "tests/e2e/projects/process/tickets-no-pattern/check.toml",
+    command: "check",
+    domain: "process",
+    expectedExitCode: 0,
+    expectedPatterns: ["Tickets: skipped", "No ticket pattern configured"],
+  },
+
+  // ============================================================
   // Gitleaks: Secret detection
   // ============================================================
   {
