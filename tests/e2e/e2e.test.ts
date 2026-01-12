@@ -868,6 +868,27 @@ const testCases: TestCase[] = [
   },
 
   // ============================================================
+  // Process: Branch naming validation
+  // ============================================================
+  {
+    name: "process/branches-excluded passes when on excluded branch (main)",
+    config: "tests/e2e/projects/process/branches-excluded/check.toml",
+    command: "check",
+    domain: "process",
+    expectedExitCode: 0,
+    expectedPatterns: ["✓ Branches: passed", "All checks passed"],
+  },
+  {
+    name: "process/branches-disabled skips branch check when disabled",
+    config: "tests/e2e/projects/process/branches-disabled/check.toml",
+    command: "check",
+    domain: "process",
+    expectedExitCode: 0,
+    expectedPatterns: ["PROCESS"],
+    notExpectedPatterns: ["Branches"],
+  },
+
+  // ============================================================
   // Gitleaks: Secret detection
   // ============================================================
   {

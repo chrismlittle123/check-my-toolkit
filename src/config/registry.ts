@@ -252,10 +252,22 @@ function mergeCiConfig(base: ProcessConfig["ci"], override: ProcessConfig["ci"])
   };
 }
 
+function mergeBranchesConfig(base: ProcessConfig["branches"], override: ProcessConfig["branches"]): ProcessConfig["branches"] {
+  if (!override) {
+    return base;
+  }
+  return {
+    enabled: override.enabled,
+    pattern: override.pattern ?? base?.pattern,
+    exclude: override.exclude ?? base?.exclude,
+  };
+}
+
 function mergeProcessSection(base: ProcessConfig | undefined, override: ProcessConfig): ProcessConfig {
   return {
     hooks: mergeHooksConfig(base?.hooks, override.hooks),
     ci: mergeCiConfig(base?.ci, override.ci),
+    branches: mergeBranchesConfig(base?.branches, override.branches),
   };
 }
 

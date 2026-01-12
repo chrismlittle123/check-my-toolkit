@@ -4,10 +4,10 @@ import {
   DomainResult,
   type IToolRunner,
 } from "../types/index.js";
-import { CiRunner, HooksRunner } from "./tools/index.js";
+import { BranchesRunner, CiRunner, HooksRunner } from "./tools/index.js";
 
 // Export tool runners for direct access
-export { BaseProcessToolRunner, CiRunner, HooksRunner } from "./tools/index.js";
+export { BaseProcessToolRunner, BranchesRunner, CiRunner, HooksRunner } from "./tools/index.js";
 
 /** Tool configuration entry mapping config getter to runner or runner factory */
 interface ToolEntry {
@@ -50,10 +50,25 @@ function createCiRunner(config: Config): CiRunner {
   return runner;
 }
 
+/** Create a configured BranchesRunner */
+function createBranchesRunner(config: Config): BranchesRunner {
+  const runner = new BranchesRunner();
+  const branchesConfig = config.process?.branches;
+  if (branchesConfig) {
+    runner.setConfig({
+      enabled: branchesConfig.enabled,
+      pattern: branchesConfig.pattern,
+      exclude: branchesConfig.exclude,
+    });
+  }
+  return runner;
+}
+
 /** All available process tools with their config predicates */
 const toolRegistry: ToolEntry[] = [
   { isEnabled: (c) => isEnabled(c.process?.hooks), runner: createHooksRunner },
   { isEnabled: (c) => isEnabled(c.process?.ci), runner: createCiRunner },
+  { isEnabled: (c) => isEnabled(c.process?.branches), runner: createBranchesRunner },
 ];
 
 /**
