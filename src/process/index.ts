@@ -4,10 +4,10 @@ import {
   DomainResult,
   type IToolRunner,
 } from "../types/index.js";
-import { BranchesRunner, CiRunner, HooksRunner, PrRunner, TicketsRunner } from "./tools/index.js";
+import { BranchesRunner, CiRunner, CoverageRunner, HooksRunner, PrRunner, TicketsRunner } from "./tools/index.js";
 
 // Export tool runners for direct access
-export { BaseProcessToolRunner, BranchesRunner, CiRunner, HooksRunner, PrRunner, TicketsRunner } from "./tools/index.js";
+export { BaseProcessToolRunner, BranchesRunner, CiRunner, CoverageRunner, HooksRunner, PrRunner, TicketsRunner } from "./tools/index.js";
 
 /** Tool configuration entry mapping config getter to runner or runner factory */
 interface ToolEntry {
@@ -93,6 +93,22 @@ function createTicketsRunner(config: Config): TicketsRunner {
   return runner;
 }
 
+/** Create a configured CoverageRunner */
+function createCoverageRunner(config: Config): CoverageRunner {
+  const runner = new CoverageRunner();
+  const coverageConfig = config.process?.coverage;
+  if (coverageConfig) {
+    runner.setConfig({
+      enabled: coverageConfig.enabled,
+      min_threshold: coverageConfig.min_threshold,
+      enforce_in: coverageConfig.enforce_in,
+      ci_workflow: coverageConfig.ci_workflow,
+      ci_job: coverageConfig.ci_job,
+    });
+  }
+  return runner;
+}
+
 /** All available process tools with their config predicates */
 const toolRegistry: ToolEntry[] = [
   { isEnabled: (c) => isEnabled(c.process?.hooks), runner: createHooksRunner },
@@ -100,6 +116,7 @@ const toolRegistry: ToolEntry[] = [
   { isEnabled: (c) => isEnabled(c.process?.branches), runner: createBranchesRunner },
   { isEnabled: (c) => isEnabled(c.process?.pr), runner: createPrRunner },
   { isEnabled: (c) => isEnabled(c.process?.tickets), runner: createTicketsRunner },
+  { isEnabled: (c) => isEnabled(c.process?.coverage), runner: createCoverageRunner },
 ];
 
 /**
