@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.25.0
+
+### Minor Changes
+
+- 8554c96: Add `[process.repo]` for repository settings validation. Checks branch protection rules and CODEOWNERS file via GitHub API.
+
 ## 0.24.0
 
 ### Minor Changes
