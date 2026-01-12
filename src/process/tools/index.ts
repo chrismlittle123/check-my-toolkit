@@ -4,4 +4,5 @@ export { CiRunner } from "./ci.js";
 export { CoverageRunner } from "./coverage.js";
 export { HooksRunner } from "./hooks.js";
 export { PrRunner } from "./pr.js";
+export { RepoRunner } from "./repo.js";
 export { TicketsRunner } from "./tickets.js";
