@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.21.0
+
+### Minor Changes
+
+- 0359fd5: Add process.branches validation for branch naming conventions
+
+  - Validate current branch name against a regex pattern
+  - Support exclude list for branches like main/master/develop
+  - Uses git CLI for universal compatibility (works with any git host)
+
 ## 0.20.0
 
 ### Minor Changes
