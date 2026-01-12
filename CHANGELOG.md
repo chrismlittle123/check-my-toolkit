@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.23.0
+
+### Minor Changes
+
+- 2cb2fc2: Add process.tickets feature for commit message ticket reference validation
+
+  - Validates commit messages contain ticket references matching a pattern
+  - Optionally validates branch names contain ticket references
+  - Configuration: `[process.tickets]` with `pattern`, `require_in_commits`, `require_in_branch`
+
 ## 0.22.0
 
 ### Minor Changes
