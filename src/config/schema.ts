@@ -434,6 +434,29 @@ const processSchema = z
   .optional();
 
 // =============================================================================
+// Infra Domain Configuration
+// =============================================================================
+
+/** Tagging configuration */
+const taggingConfigSchema = z
+  .object({
+    enabled: z.boolean().optional().default(false),
+    region: z.string().optional(),
+    required: z.array(z.string()).optional(),
+    values: z.record(z.string(), z.array(z.string())).optional(),
+  })
+  .strict()
+  .optional();
+
+/** Infra domain configuration */
+const infraSchema = z
+  .object({
+    tagging: taggingConfigSchema,
+  })
+  .strict()
+  .optional();
+
+// =============================================================================
 // Extends Configuration
 // =============================================================================
 
@@ -459,6 +482,7 @@ export const configSchema = z
     extends: extendsSchema,
     code: codeSchema,
     process: processSchema,
+    infra: infraSchema,
   })
   .strict();
 
@@ -529,6 +553,11 @@ export const defaultConfig: Config = {
     backups: {
       enabled: false,
       max_age_hours: 24,
+    },
+  },
+  infra: {
+    tagging: {
+      enabled: false,
     },
   },
 };

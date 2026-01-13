@@ -11,6 +11,7 @@ import { zodToJsonSchema } from "zod-to-json-schema";
 import { auditCodeConfig, runCodeChecks } from "./code/index.js";
 import { ConfigError, getProjectRoot, loadConfig, loadConfigAsync } from "./config/index.js";
 import { configSchema } from "./config/schema.js";
+import { auditInfraConfig, runInfraChecks } from "./infra/index.js";
 import { formatOutput, type OutputFormat } from "./output/index.js";
 import { auditProcessConfig, runProcessChecks } from "./process/index.js";
 import { type DetectOptions,runDetect } from "./projects/index.js";
@@ -33,9 +34,9 @@ program
 // Shared action handlers
 // =============================================================================
 
-type DomainFilter = "code" | "process" | undefined;
+type DomainFilter = "code" | "process" | "infra" | undefined;
 
-function shouldRunDomain(filter: DomainFilter, domain: "code" | "process"): boolean {
+function shouldRunDomain(filter: DomainFilter, domain: "code" | "process" | "infra"): boolean {
   return !filter || filter === domain;
 }
 
@@ -74,6 +75,9 @@ async function runCheck(options: { config?: string; format: string }, domain?: D
     if (shouldRunDomain(domain, "process")) {
       domains.process = await runProcessChecks(projectRoot, config);
     }
+    if (shouldRunDomain(domain, "infra")) {
+      domains.infra = await runInfraChecks(projectRoot, config);
+    }
 
     const result = buildResult(configPath, domains);
     process.stdout.write(`${formatOutput(result, options.format as OutputFormat)}\n`);
@@ -94,6 +98,9 @@ async function runAudit(options: { config?: string; format: string }, domain?: D
     }
     if (shouldRunDomain(domain, "process")) {
       domains.process = await auditProcessConfig(projectRoot, config);
+    }
+    if (shouldRunDomain(domain, "infra")) {
+      domains.infra = await auditInfraConfig(projectRoot, config);
     }
 
     const result = buildResult(configPath, domains);
@@ -284,6 +291,30 @@ processCommand
 program.addCommand(processCommand);
 
 // =============================================================================
+// Infra subcommand
+// =============================================================================
+
+const infraCommand = new Command("infra").description("Infrastructure validation checks");
+
+// cm infra check
+infraCommand
+  .command("check")
+  .description("Run infrastructure checks (tagging, etc.)")
+  .option("-c, --config <path>", "Path to check.toml config file")
+  .addOption(new Option("-f, --format <format>", "Output format").choices(["text", "json"]).default("text"))
+  .action((options) => runCheck(options, "infra"));
+
+// cm infra audit
+infraCommand
+  .command("audit")
+  .description("Verify infrastructure configs exist")
+  .option("-c, --config <path>", "Path to check.toml config file")
+  .addOption(new Option("-f, --format <format>", "Output format").choices(["text", "json"]).default("text"))
+  .action((options) => runAudit(options, "infra"));
+
+program.addCommand(infraCommand);
+
+// =============================================================================
 // Projects subcommand
 // =============================================================================
 
@@ -315,7 +346,7 @@ program.addCommand(projectsCommand);
 // cm check - run all domain checks
 program
   .command("check")
-  .description("Run all checks (code + process)")
+  .description("Run all checks (code + process + infra)")
   .option("-c, --config <path>", "Path to check.toml config file")
   .addOption(new Option("-f, --format <format>", "Output format").choices(["text", "json"]).default("text"))
   .action((options) => runCheck(options));
@@ -323,7 +354,7 @@ program
 // cm audit - run all domain audits
 program
   .command("audit")
-  .description("Verify all configs exist (code + process)")
+  .description("Verify all configs exist (code + process + infra)")
   .option("-c, --config <path>", "Path to check.toml config file")
   .addOption(new Option("-f, --format <format>", "Output format").choices(["text", "json"]).default("text"))
   .action((options) => runAudit(options));
