@@ -147,15 +147,20 @@ describe("configSchema", () => {
       expect(result.success).toBe(true);
     });
 
-    it("rejects unknown process config keys", () => {
-      // backups is not yet implemented in process domain
+    it("accepts process.backups config", () => {
       const config = {
         process: {
-          backups: { enabled: true },
+          backups: {
+            enabled: true,
+            bucket: "test-bucket",
+            prefix: "backups/",
+            max_age_hours: 48,
+            region: "us-west-2",
+          },
         },
       };
       const result = configSchema.safeParse(config);
-      expect(result.success).toBe(false);
+      expect(result.success).toBe(true);
     });
 
     it("rejects stack config (not implemented)", () => {

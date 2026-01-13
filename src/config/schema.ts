@@ -406,6 +406,18 @@ const repoConfigSchema = z
   .strict()
   .optional();
 
+/** S3 backup verification configuration */
+const backupsConfigSchema = z
+  .object({
+    enabled: z.boolean().optional().default(false),
+    bucket: z.string().optional(), // S3 bucket name
+    prefix: z.string().optional(), // S3 key prefix
+    max_age_hours: z.number().int().positive().optional().default(24), // Max age of most recent backup
+    region: z.string().optional(), // AWS region (defaults to AWS_REGION env)
+  })
+  .strict()
+  .optional();
+
 /** Process domain configuration */
 const processSchema = z
   .object({
@@ -416,6 +428,7 @@ const processSchema = z
     tickets: ticketsConfigSchema,
     coverage: coverageConfigSchema,
     repo: repoConfigSchema,
+    backups: backupsConfigSchema,
   })
   .strict()
   .optional();
@@ -512,6 +525,10 @@ export const defaultConfig: Config = {
       enabled: false,
       require_branch_protection: false,
       require_codeowners: false,
+    },
+    backups: {
+      enabled: false,
+      max_age_hours: 24,
     },
   },
 };
