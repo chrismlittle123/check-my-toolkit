@@ -299,6 +299,5 @@ Workspace roots are identified but not treated as projects:
 
 | Feature | Description |
 |---------|-------------|
-| `cm code fix` | Auto-fix violations where possible (eslint --fix, ruff --fix) |
 | CI integration | GitHub Action, GitLab CI template |
 | Caching | Cache registry fetches, tool results |
