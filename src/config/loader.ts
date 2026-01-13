@@ -221,6 +221,7 @@ type PrConfig = NonNullable<ProcessConfig["pr"]>;
 type TicketsConfig = NonNullable<ProcessConfig["tickets"]>;
 type CoverageConfig = NonNullable<ProcessConfig["coverage"]>;
 type RepoConfig = NonNullable<ProcessConfig["repo"]>;
+type BackupsConfig = NonNullable<ProcessConfig["backups"]>;
 
 const defaultHooks: HooksConfig = { enabled: false, require_husky: true };
 const defaultCi: CiConfig = { enabled: false };
@@ -229,6 +230,7 @@ const defaultPr: PrConfig = { enabled: false };
 const defaultTickets: TicketsConfig = { enabled: false, require_in_commits: true, require_in_branch: false };
 const defaultCoverage: CoverageConfig = { enabled: false, enforce_in: "config" };
 const defaultRepo: RepoConfig = { enabled: false, require_branch_protection: false, require_codeowners: false };
+const defaultBackups: BackupsConfig = { enabled: false, max_age_hours: 24 };
 
 /** Merge a single process config section with defaults */
 function mergeProcessSection<T>(defaultVal: T, dcVal: T | undefined, cVal: T | undefined): T {
@@ -263,6 +265,10 @@ function mergeProcessRepo(cp: ProcessConfig | undefined, dcp: ProcessConfig | un
   return mergeProcessSection(defaultRepo, dcp?.repo, cp?.repo);
 }
 
+function mergeProcessBackups(cp: ProcessConfig | undefined, dcp: ProcessConfig | undefined): BackupsConfig {
+  return mergeProcessSection(defaultBackups, dcp?.backups, cp?.backups);
+}
+
 function mergeProcess(c: Config, dc: Config): ProcessConfig {
   return {
     hooks: mergeProcessHooks(c.process, dc.process),
@@ -272,6 +278,7 @@ function mergeProcess(c: Config, dc: Config): ProcessConfig {
     tickets: mergeProcessTickets(c.process, dc.process),
     coverage: mergeProcessCoverage(c.process, dc.process),
     repo: mergeProcessRepo(c.process, dc.process),
+    backups: mergeProcessBackups(c.process, dc.process),
   };
 }
 

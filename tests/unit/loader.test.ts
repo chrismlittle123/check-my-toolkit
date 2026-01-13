@@ -219,18 +219,24 @@ require_in_branch = false
     expect(result.config.process?.tickets?.require_in_branch).toBe(false);
   });
 
-  it("rejects process.backups config (not implemented)", () => {
+  it("accepts process.backups config", () => {
     const configPath = path.join(tempDir, "check.toml");
     fs.writeFileSync(
       configPath,
       `
 [process.backups]
 enabled = true
+bucket = "my-bucket"
+prefix = "backups/"
+max_age_hours = 48
 `
     );
 
-    expect(() => loadConfig(configPath)).toThrow(ConfigError);
-    expect(() => loadConfig(configPath)).toThrow("Unrecognized key(s)");
+    const { config } = loadConfig(configPath);
+    expect(config.process?.backups?.enabled).toBe(true);
+    expect(config.process?.backups?.bucket).toBe("my-bucket");
+    expect(config.process?.backups?.prefix).toBe("backups/");
+    expect(config.process?.backups?.max_age_hours).toBe(48);
   });
 
   it("rejects stack config (not implemented)", () => {
