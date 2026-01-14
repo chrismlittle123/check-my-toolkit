@@ -1,6 +1,6 @@
 # check-my-toolkit
 
-A unified CLI for enforcing code quality standards across projects. One config file, multiple tools, consistent output.
+A unified CLI for enforcing code quality, workflow compliance, and infrastructure standards. One config file, multiple tools, consistent output.
 
 ```bash
 npm install -g check-my-toolkit
@@ -11,7 +11,8 @@ npm install -g check-my-toolkit
 Most projects cobble together ESLint, Prettier, Ruff, tsc, and various other tools with inconsistent configs. `cm` unifies them:
 
 - **Single config** — `check.toml` controls all tools
-- **Consistent output** — Same format whether it's ESLint or Ruff
+- **Three domains** — Code quality, process compliance, infrastructure validation
+- **Consistent output** — Same format whether it's ESLint, Ruff, or AWS tagging
 - **Org standards** — Extend from a shared registry to enforce team conventions
 - **CI-ready** — Exit codes and JSON output for automation
 
@@ -23,120 +24,100 @@ cat > check.toml << 'EOF'
 [code.linting.eslint]
 enabled = true
 
-[code.linting.ruff]
-enabled = true
-
 [code.types.tsc]
 enabled = true
+
+[process.hooks]
+enabled = true
+require_husky = true
 EOF
 
-# Run checks
-cm code check
+# Run all checks
+cm check
 ```
 
-Output:
+## Domains
 
-```
-[code.linting] ESLint
-  ✗ src/index.ts:10:5 - 'foo' is assigned but never used
+### CODE — 14 Tools
 
-[code.linting] Ruff
-  ✓ No violations
+Static analysis, formatting, type checking, and security.
 
-[code.types] tsc
-  ✓ No type errors
+| Category | Tools |
+|----------|-------|
+| Linting | ESLint, Ruff |
+| Formatting | Prettier, Ruff Format |
+| Type Checking | tsc, ty |
+| Unused Code | Knip, Vulture |
+| Security | Gitleaks, npm-audit, pip-audit |
+| Other | Tests, Naming, Disable Comments |
 
-code: 1 violation found
-```
+### PROCESS — 8 Checks
 
-## Supported Tools
+Workflow and policy enforcement.
 
-### Linting
+| Check | Purpose |
+|-------|---------|
+| Hooks | Git hooks (Husky) validation |
+| CI | GitHub workflow requirements |
+| Branches | Branch naming patterns |
+| PR | Size limits (files, lines) |
+| Tickets | Jira/Linear references |
+| Coverage | Threshold enforcement |
+| Repo | Branch protection, CODEOWNERS |
+| Backups | S3 backup verification |
 
-| Tool | Language | Config |
-|------|----------|--------|
-| ESLint | TypeScript/JavaScript | `[code.linting.eslint]` |
-| Ruff | Python | `[code.linting.ruff]` |
+### INFRA — 1 Check
 
-### Formatting
+Infrastructure validation.
 
-| Tool | Language | Config |
-|------|----------|--------|
-| Prettier | TypeScript/JavaScript | `[code.formatting.prettier]` |
-| Ruff Format | Python | `[code.linting.ruff] format = true` |
-
-### Type Checking
-
-| Tool | Language | Config |
-|------|----------|--------|
-| tsc | TypeScript | `[code.types.tsc]` |
-| ty | Python | `[code.types.ty]` |
-
-### Dead Code Detection
-
-| Tool | Language | Config |
-|------|----------|--------|
-| Knip | TypeScript/JavaScript | `[code.unused.knip]` |
-| Vulture | Python | `[code.unused.vulture]` |
-
-### Security
-
-| Tool | Purpose | Config |
-|------|---------|--------|
-| Gitleaks | Secret detection | `[code.security.secrets]` |
-| npm audit | JS dependency vulnerabilities | `[code.security.npmaudit]` |
-| pip-audit | Python dependency vulnerabilities | `[code.security.pipaudit]` |
-
-### Other
-
-| Tool | Purpose | Config |
-|------|---------|--------|
-| Tests | Verify test files exist | `[code.tests]` |
-| Naming | File/folder naming conventions | `[code.naming]` |
-| Disable Comments | Detect linter disable comments | `[code.quality.disable-comments]` |
-
-### Process (Workflow)
-
-| Tool | Purpose | Config |
-|------|---------|--------|
-| Hooks | Git hooks validation (husky) | `[process.hooks]` |
+| Check | Purpose |
+|-------|---------|
+| Tagging | AWS resource tag requirements |
 
 ## Commands
 
 ```bash
-# Code checks
-cm code check              # Run all enabled code checks
-cm code audit              # Verify tool configs exist
+# Run all checks
+cm check                       # All domains (code + process + infra)
+cm audit                       # Verify all configs exist
 
-# Process checks
-cm process check           # Run workflow validation (hooks, etc.)
-cm process audit           # Verify workflow configs exist
+# Domain-specific
+cm code check                  # Code quality checks
+cm process check               # Workflow validation
+cm infra check                 # Infrastructure checks
 
-# All domains
-cm check                   # Run all checks (code + process)
-cm audit                   # Verify all configs exist
+# Process utilities
+cm process diff                # Show branch protection differences
+cm process sync --apply        # Sync branch protection to GitHub
 
-# Utilities
-cm validate config         # Validate check.toml syntax
-cm validate registry       # Validate a registry structure
-cm check --format json     # JSON output for CI
+# Project management
+cm projects detect             # Discover projects in monorepo
+cm projects detect --fix       # Create missing check.toml files
+
+# Configuration
+cm validate config             # Validate check.toml
+cm schema config               # Output JSON schema
 ```
 
 ## Configuration
 
-### Basic
+### CODE Domain
 
 ```toml
 [code.linting.eslint]
 enabled = true
+max-warnings = 0
 
 [code.linting.ruff]
 enabled = true
-line-length = 100
-lint.select = ["E", "F", "I"]
+format = true
+line-length = 88
 
 [code.types.tsc]
 enabled = true
+
+[code.types.tsc.require]
+strict = true
 
 [code.formatting.prettier]
 enabled = true
@@ -146,23 +127,7 @@ enabled = true
 
 [code.security.secrets]
 enabled = true
-```
 
-### Extending from a Registry
-
-Share standards across repos by extending from a registry:
-
-```toml
-[extends]
-registry = "github:myorg/standards"
-rulesets = ["typescript", "security"]
-```
-
-The registry contains reusable rulesets in `rulesets/*.toml` that get merged into your config.
-
-### File Naming Conventions
-
-```toml
 [code.naming]
 enabled = true
 
@@ -170,20 +135,78 @@ enabled = true
 extensions = ["ts", "tsx"]
 file_case = "kebab-case"
 folder_case = "kebab-case"
-exclude = ["**/*.test.ts", "**/*.spec.ts"]
-
-[[code.naming.rules]]
-extensions = ["py"]
-file_case = "snake_case"
-folder_case = "snake_case"
 ```
 
-### Test File Validation
+### PROCESS Domain
 
 ```toml
-[code.tests]
+[process.hooks]
 enabled = true
-pattern = "**/*.test.ts"  # Glob pattern for test files
+require_husky = true
+require_hooks = ["pre-commit", "pre-push"]
+
+[process.ci]
+enabled = true
+require_workflows = ["ci.yml"]
+
+[process.ci.jobs]
+"ci.yml" = ["test", "lint", "build"]
+
+[process.branches]
+enabled = true
+pattern = "^(feature|fix|hotfix)/v[0-9]+\\.[0-9]+\\.[0-9]+/.+"
+exclude = ["main", "develop"]
+
+[process.pr]
+enabled = true
+max_files = 20
+max_lines = 500
+
+[process.tickets]
+enabled = true
+pattern = "^(PROJ)-[0-9]+"
+require_in_commits = true
+
+[process.coverage]
+enabled = true
+min_threshold = 80
+
+[process.repo]
+enabled = true
+require_branch_protection = true
+require_codeowners = true
+
+[process.repo.branch_protection]
+branch = "main"
+required_reviews = 1
+
+[process.backups]
+enabled = true
+bucket = "my-backups"
+prefix = "github/myorg/myrepo"
+max_age_hours = 24
+```
+
+### INFRA Domain
+
+```toml
+[infra.tagging]
+enabled = true
+region = "us-east-1"
+required = ["Environment", "Owner", "CostCenter"]
+
+[infra.tagging.values]
+Environment = ["dev", "stag", "prod"]
+```
+
+### Extending from a Registry
+
+Share standards across repos:
+
+```toml
+[extends]
+registry = "github:myorg/standards"
+rulesets = ["typescript", "security"]
 ```
 
 ## CI Integration
@@ -194,32 +217,14 @@ pattern = "**/*.test.ts"  # Glob pattern for test files
 - name: Install check-my-toolkit
   run: npm install -g check-my-toolkit
 
-- name: Run code checks
-  run: cm code check
+- name: Run checks
+  run: cm check
 ```
 
 ### JSON Output
 
 ```bash
-cm code check --format json
-```
-
-```json
-{
-  "version": "0.10.4",
-  "configPath": "/path/to/check.toml",
-  "domains": {
-    "code": {
-      "status": "fail",
-      "violationCount": 1,
-      "tools": { ... }
-    }
-  },
-  "summary": {
-    "totalViolations": 1,
-    "exitCode": 1
-  }
-}
+cm check --format json
 ```
 
 ### Exit Codes
@@ -233,91 +238,33 @@ cm code check --format json
 
 ## Monorepo Usage
 
-`cm` works with npm workspaces, Turborepo, Nx, and pnpm workspaces. Each package has its own `check.toml`, and your task runner orchestrates execution.
+Works with npm workspaces, Turborepo, Nx, and pnpm workspaces.
 
-### Setup
-
-```
-my-monorepo/
-├── package.json              # "workspaces": ["packages/*"]
-├── check.toml                # Shared base config (optional)
-├── packages/
-│   ├── api/
-│   │   ├── package.json      # "scripts": { "check": "cm check" }
-│   │   └── check.toml        # Extends shared config
-│   └── web/
-│       ├── package.json
-│       └── check.toml
-```
-
-### Shared Config with Extends
-
-Create a base config at the root, then extend it in each package:
-
-```toml
-# packages/api/check.toml
-[extends]
-registry = "../.."
-rulesets = ["base"]
-
-# Package-specific overrides
-[code.linting.ruff]
-enabled = true
-```
-
-### Running Checks
-
-**npm workspaces:**
 ```bash
-npm run check --workspaces --if-present
+# Detect and initialize projects
+cm projects detect --fix
+
+# Run with task runners
+npm run check --workspaces --if-present  # npm
+turbo check                               # Turborepo
+pnpm -r run check                         # pnpm
 ```
 
-**Turborepo:**
-```bash
-turbo check
-```
+## Documentation
 
-**pnpm:**
-```bash
-pnpm -r run check
-```
-
-### Why This Approach?
-
-`cm` follows the ecosystem convention: **tools check, task runners orchestrate**. This means:
-
-- Works with any task runner (npm, turbo, nx, pnpm)
-- Task runners handle parallelization and caching
-- Each package can have different tools enabled
-- Shared config via `extends` keeps things DRY
-
-## Roadmap
-
-| Domain | Status | Description |
-|--------|--------|-------------|
-| **code** | Stable | Linting, types, formatting, security |
-| **process** | In Progress | Git hooks (done), CI workflows, PR policies (planned) |
-
-See [docs/roadmap/](docs/roadmap/) for detailed plans.
+- [Full Feature Documentation](docs/FEATURES.md) — Detailed configuration for all 23 checks
+- [Roadmap](docs/roadmap/) — Domain-specific documentation
 
 ## Development
 
-### Prerequisites
-
 ```bash
-# macOS
+# Prerequisites (macOS)
 brew bundle
 
-# This installs Python 3.13, Ruff, Vulture for tests
-```
-
-### Commands
-
-```bash
+# Commands
 npm install        # Install dependencies
 npm run build      # Compile TypeScript
 npm test           # Run tests
-npm run typecheck  # Type check
 npm run lint       # Lint
 ```
 
