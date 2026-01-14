@@ -293,11 +293,3 @@ Workspace roots are identified but not treated as projects:
 - `package.json` with `"workspaces"` field
 - Presence of `turbo.json`, `pnpm-workspace.yaml`, `lerna.json`
 
----
-
-## Future Considerations
-
-| Feature | Description |
-|---------|-------------|
-| CI integration | GitHub Action, GitLab CI template |
-| Caching | Cache registry fetches, tool results |

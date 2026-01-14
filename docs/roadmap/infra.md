@@ -120,12 +120,3 @@ cm infra check
 cm infra audit
 ```
 
----
-
-## Future Considerations
-
-| Feature | Description |
-|---------|-------------|
-| Resource type filtering | Only check specific resource types |
-| Tag key patterns | Validate tag keys match patterns |
-| Multi-region | Scan multiple regions |
