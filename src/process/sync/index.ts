@@ -4,8 +4,6 @@ import { computeDiff, formatValue } from "./differ.js";
 import { fetchBranchProtection, FetcherError, getRepoInfo, isGhAvailable } from "./fetcher.js";
 import { type SyncDiffResult, type SyncOptions, type SyncResult } from "./types.js";
 
-export type { SettingDiff, SyncDiffResult, SyncOptions, SyncResult } from "./types.js";
-
 /** Helper to write to stdout */
 function writeLine(text: string): void {
   process.stdout.write(`${text}\n`);

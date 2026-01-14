@@ -1,7 +1,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 
-import yaml from "yaml";
+import * as yaml from "js-yaml";
 
 import { type CheckResult, type Violation } from "../../types/index.js";
 import { BaseProcessToolRunner } from "./base.js";
@@ -56,7 +56,7 @@ function parseNycConfigContent(
   try {
     const config =
       configFile.endsWith(".yaml") || configFile.endsWith(".yml")
-        ? (yaml.parse(content) as Record<string, unknown>)
+        ? (yaml.load(content) as Record<string, unknown>)
         : (JSON.parse(content) as Record<string, unknown>);
     return { config };
   } catch {
@@ -316,7 +316,7 @@ export class CoverageRunner extends BaseProcessToolRunner {
 
     let workflow: Record<string, unknown>;
     try {
-      workflow = yaml.parse(content) as Record<string, unknown>;
+      workflow = yaml.load(content) as Record<string, unknown>;
     } catch {
       return { found: false, file: workflowFile, error: "Failed to parse workflow file" };
     }

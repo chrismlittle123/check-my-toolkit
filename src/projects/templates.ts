@@ -77,7 +77,7 @@ rulesets = ["${projectType}"]
 }
 
 /** Get the registry ruleset content for a project type */
-export function getRegistryRuleset(type: ProjectType): string {
+function getRegistryRuleset(type: ProjectType): string {
   return REGISTRY_RULESETS[type];
 }
 

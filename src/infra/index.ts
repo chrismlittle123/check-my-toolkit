@@ -6,9 +6,6 @@ import {
 } from "../types/index.js";
 import { TaggingRunner } from "./tools/index.js";
 
-// Export tool runners for direct access
-export { BaseInfraToolRunner, TaggingRunner } from "./tools/index.js";
-
 /** Tool configuration entry mapping config getter to runner or runner factory */
 interface ToolEntry {
   isEnabled: (config: Config) => boolean;

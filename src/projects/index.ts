@@ -6,8 +6,6 @@ import { detectProjects, getProjectTypes } from "./detector.js";
 import { createCheckToml, createRegistry } from "./templates.js";
 import type { DetectionResult, DetectJsonOutput, DetectOptions, ProjectType } from "./types.js";
 
-export { detectProjects } from "./detector.js";
-export { createCheckToml, createRegistry, getExtendsTemplate,getTemplate } from "./templates.js";
 export type { DetectOptions } from "./types.js";
 
 /** Action taken during fix */

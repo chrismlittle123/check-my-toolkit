@@ -1,6 +1,6 @@
 {
   "$schema": "https://unpkg.com/knip@5/schema.json",
-  "entry": ["src/index.ts", "src/cli.ts", "src/process/index.ts"],
+  "entry": ["src/index.ts", "src/cli.ts", "src/process/index.ts", "src/projects/templates.ts"],
   "project": ["src/**/*.ts"],
   "ignore": ["tests/**", "dist/**"],
   "ignoreBinaries": ["ruff", "gitleaks", "uvx", "pip-audit", "prettier", "vulture"]
