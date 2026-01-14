@@ -1,45 +1,59 @@
-# Features - check-my-toolkit v0.18.0
+# Features - check-my-toolkit v0.28.0
 
-Unified project health checks for code quality, process compliance, and stack validation.
+Unified project health checks for code quality, process compliance, and infrastructure validation.
 
 ## Overview
 
-check-my-toolkit (`cm`) provides a single CLI to run multiple code quality tools with unified configuration via `check.toml`. Currently focused on the **CODE** domain with 14 integrated tools.
+check-my-toolkit (`cm`) provides a single CLI to run multiple code quality, process, and infrastructure tools with unified configuration via `check.toml`. Three domains are fully implemented:
+
+- **CODE** - 14 integrated tools for linting, formatting, type checking, security, and more
+- **PROCESS** - 8 workflow checks for git hooks, CI, PRs, branches, and repository settings
+- **INFRA** - AWS resource tagging validation
+
+---
+
+## Quick Reference
+
+| Domain | Tools | Config |
+|--------|-------|--------|
+| CODE | ESLint, Ruff, Prettier, tsc, ty, Knip, Vulture, Gitleaks, npm-audit, pip-audit | `[code.*]` |
+| PROCESS | Hooks, CI, Branches, PR, Tickets, Coverage, Repo, Backups | `[process.*]` |
+| INFRA | AWS Tagging | `[infra.*]` |
 
 ---
 
 ## Commands
 
+### Core Commands
+
 | Command | Description |
 |---------|-------------|
-| `cm code check` | Run all enabled code checks |
-| `cm code audit` | Verify tool configs exist and match requirements |
-| `cm validate config` | Validate check.toml configuration (uses Zod schema) |
-| `cm validate registry` | Validate registry structure (rulesets/*.toml) |
-| `cm schema config` | Output JSON schema for check.toml configuration |
-| `cm init` | Create check.toml with default configuration |
-| `cm check` | Alias for `cm code check` |
-| `cm audit` | Alias for `cm code audit` |
+| `cm check` | Run all checks (code + process + infra) |
+| `cm audit` | Verify all configs exist |
+| `cm code check` | Run code quality checks |
+| `cm code audit` | Verify code tool configs |
+| `cm process check` | Run workflow validation |
+| `cm process audit` | Verify workflow configs |
+| `cm process diff` | Show branch protection differences |
+| `cm process sync --apply` | Sync branch protection to GitHub |
+| `cm infra check` | Run infrastructure checks |
+| `cm infra audit` | Verify infrastructure configs |
 
-### How `cm validate config` Works
+### Utility Commands
 
-Validates your `check.toml` in two steps:
-1. **TOML parsing** - Checks syntax via `@iarna/toml`
-2. **Schema validation** - Validates structure via Zod schema (`configSchema.safeParse()`)
-
-```bash
-$ cm validate config
-✓ Valid: /path/to/check.toml
-
-$ cm validate config -f json
-{"valid": true, "configPath": "/path/to/check.toml"}
-```
+| Command | Description |
+|---------|-------------|
+| `cm validate config` | Validate check.toml syntax and schema |
+| `cm validate registry` | Validate registry structure |
+| `cm schema config` | Output JSON schema for check.toml |
+| `cm projects detect` | Discover projects in monorepo |
+| `cm projects detect --fix` | Create missing check.toml files |
 
 ### Output Formats
 
 ```bash
-cm code check              # Text output (default)
-cm code check -f json      # JSON output
+cm check              # Text output (default)
+cm check -f json      # JSON output for CI
 ```
 
 ### Exit Codes
@@ -53,67 +67,45 @@ cm code check -f json      # JSON output
 
 ---
 
+# CODE Domain
+
+Static analysis, security, and code quality enforcement.
+
 ## Linting
 
 ### ESLint (`[code.linting.eslint]`)
 
-JavaScript/TypeScript linting using ESLint.
+JavaScript/TypeScript linting.
 
-**Config:**
 ```toml
 [code.linting.eslint]
 enabled = true
-```
-
-**Advanced Config:**
-```toml
-[code.linting.eslint]
-enabled = true
-files = ["src/**/*.ts", "src/**/*.tsx"]
+files = ["src/**/*.ts"]
 ignore = ["**/*.test.ts"]
 max-warnings = 0
 
 [code.linting.eslint.rules]
 "no-unused-vars" = "error"
-"no-console" = "warn"
 "complexity" = { severity = "error", max = 10 }
-"max-lines" = { severity = "error", max = 300, skipBlankLines = true, skipComments = true }
 ```
 
-**Details:**
 | Property | Value |
 |----------|-------|
 | Tool | ESLint |
 | Languages | JavaScript, TypeScript |
-| Config Files | `eslint.config.js`, `eslint.config.mjs`, `.eslintrc.*` |
-| Command | `npx eslint . --format json` |
-
-**Features:**
-- Parses ESLint JSON output for violations
-- Extracts file, line, column, rule, message, severity
-- Skips gracefully when ESLint not installed
-- Skips when no ESLint config found
-- **Audit mode**: Verifies ESLint rules match check.toml requirements
-- **Rules with options**: Supports TOML-friendly object format for rule configuration
+| Config Files | `eslint.config.js`, `.eslintrc.*` |
+| Audit | Verifies rules match check.toml requirements |
 
 ---
 
 ### Ruff (`[code.linting.ruff]`)
 
-Python linting using Ruff (extremely fast Python linter written in Rust).
+Python linting (extremely fast, written in Rust).
 
-**Config:**
 ```toml
 [code.linting.ruff]
 enabled = true
-format = false  # Also check formatting (see Ruff Format below)
-```
-
-**Advanced Config:**
-```toml
-[code.linting.ruff]
-enabled = true
-format = true
+format = true  # Also check formatting
 line-length = 88
 
 [code.linting.ruff.lint]
@@ -121,19 +113,11 @@ select = ["E", "F", "W"]
 ignore = ["E501"]
 ```
 
-**Details:**
 | Property | Value |
 |----------|-------|
 | Tool | Ruff |
 | Languages | Python |
 | Config Files | `ruff.toml`, `pyproject.toml` |
-| Command | `ruff check . --output-format json` |
-
-**Features:**
-- Parses Ruff JSON output for violations
-- Supports `select` and `ignore` rule configuration
-- Configurable line length
-- Skips gracefully when Ruff not installed
 
 ---
 
@@ -141,52 +125,30 @@ ignore = ["E501"]
 
 ### Prettier (`[code.formatting.prettier]`)
 
-JavaScript/TypeScript formatting check using Prettier.
+JavaScript/TypeScript/CSS/JSON formatting.
 
-**Config:**
 ```toml
 [code.formatting.prettier]
 enabled = true
 ```
 
-**Details:**
 | Property | Value |
 |----------|-------|
 | Tool | Prettier |
-| Languages | JavaScript, TypeScript, JSON, CSS, etc. |
-| Config Files | `.prettierrc`, `.prettierrc.json`, `prettier.config.js` |
-| Command | `npx prettier --check .` |
-
-**Features:**
-- Reports unformatted files as violations
-- Parses Prettier's file list output
-- Skips gracefully when Prettier not installed
+| Languages | JS, TS, JSON, CSS, etc. |
+| Config Files | `.prettierrc`, `prettier.config.js` |
 
 ---
 
-### Ruff Format (`[code.linting.ruff] format = true`)
+### Ruff Format
 
-Python formatting check using Ruff's built-in formatter (drop-in Black replacement, ~100x faster).
+Python formatting (via `format = true` in Ruff config).
 
-**Config:**
 ```toml
 [code.linting.ruff]
 enabled = true
-format = true  # Enable formatting check
+format = true
 ```
-
-**Details:**
-| Property | Value |
-|----------|-------|
-| Tool | Ruff Format |
-| Languages | Python |
-| Config Files | `ruff.toml`, `pyproject.toml` |
-| Command | `ruff format --check .` |
-
-**Features:**
-- Reports unformatted Python files
-- Uses exit code 1 when files need formatting
-- Shares config with Ruff linting
 
 ---
 
@@ -194,15 +156,8 @@ format = true  # Enable formatting check
 
 ### TypeScript (`[code.types.tsc]`)
 
-TypeScript type checking using the TypeScript compiler.
+TypeScript type checking with config auditing.
 
-**Config:**
-```toml
-[code.types.tsc]
-enabled = true
-```
-
-**Advanced Config (Audit Mode):**
 ```toml
 [code.types.tsc]
 enabled = true
@@ -211,64 +166,33 @@ enabled = true
 strict = true
 noImplicitAny = true
 strictNullChecks = true
-noUnusedLocals = true
-noUnusedParameters = true
-esModuleInterop = true
 ```
 
-**Details:**
 | Property | Value |
 |----------|-------|
-| Tool | tsc (TypeScript Compiler) |
+| Tool | tsc |
 | Languages | TypeScript |
 | Config Files | `tsconfig.json` |
-| Command | `npx tsc --noEmit` |
+| Audit | Verifies compiler options match requirements |
 
-**Features:**
-- Parses tsc output format: `file(line,col): error TSxxxx: message`
-- Extracts TypeScript error codes (TS2322, TS7006, etc.)
-- Skips when no tsconfig.json found
-- **Audit mode**: Verifies tsconfig.json compiler options match required values
-
-**Auditable Options:**
-| Option | Description |
-|--------|-------------|
-| `strict` | Enable all strict type checking options |
-| `noImplicitAny` | Error on expressions with implied 'any' type |
-| `strictNullChecks` | Enable strict null checks |
-| `noUnusedLocals` | Report errors on unused locals |
-| `noUnusedParameters` | Report errors on unused parameters |
-| `noImplicitReturns` | Report error when not all code paths return |
-| `noFallthroughCasesInSwitch` | Report errors for fallthrough cases in switch |
-| `esModuleInterop` | Enable ES module interop |
-| `skipLibCheck` | Skip type checking of declaration files |
-| `forceConsistentCasingInFileNames` | Ensure consistent casing in imports |
+**Auditable Options:** `strict`, `noImplicitAny`, `strictNullChecks`, `noUnusedLocals`, `noUnusedParameters`, `noImplicitReturns`, `esModuleInterop`, `skipLibCheck`, `forceConsistentCasingInFileNames`
 
 ---
 
 ### ty (`[code.types.ty]`)
 
-Python type checking using ty (Astral's extremely fast Python type checker written in Rust).
+Python type checking (Astral's fast type checker).
 
-**Config:**
 ```toml
 [code.types.ty]
 enabled = true
 ```
 
-**Details:**
 | Property | Value |
 |----------|-------|
-| Tool | ty (Astral) |
+| Tool | ty |
 | Languages | Python |
-| Config Files | `ty.toml`, `pyproject.toml` (requires `[tool.ty]` section) |
-| Command | `uvx ty check --output-format concise .` |
-
-**Features:**
-- Parses concise output format: `file:line:column: severity[rule-code] message`
-- Supports both `error` and `warning` severities
-- Handles exit codes: 0=pass, 1=errors, 2=config error, 101=internal
-- Runs via uvx for easy installation
+| Command | `uvx ty check` |
 
 ---
 
@@ -276,59 +200,27 @@ enabled = true
 
 ### Knip (`[code.unused.knip]`)
 
-Unused code detection for JavaScript/TypeScript projects.
+Unused code detection for JavaScript/TypeScript.
 
-**Config:**
 ```toml
 [code.unused.knip]
 enabled = true
 ```
 
-**Details:**
-| Property | Value |
-|----------|-------|
-| Tool | Knip |
-| Languages | JavaScript, TypeScript |
-| Config Files | `package.json` (required) |
-| Command | `npx knip --reporter json` |
-
-**Detects:**
-- Unused files (orphaned)
-- Unused dependencies
-- Unused devDependencies
-- Unused exports
-- Unused types/interfaces
-- Unlisted dependencies
-- Duplicate exports
+**Detects:** Unused files, dependencies, exports, types, unlisted dependencies, duplicate exports.
 
 ---
 
 ### Vulture (`[code.unused.vulture]`)
 
-Dead code detection for Python projects.
+Dead code detection for Python.
 
-**Config:**
 ```toml
 [code.unused.vulture]
 enabled = true
 ```
 
-**Details:**
-| Property | Value |
-|----------|-------|
-| Tool | Vulture |
-| Languages | Python |
-| Config Files | `pyproject.toml` |
-| Command | `vulture .` |
-
-**Detects:**
-- Unused functions
-- Unused classes
-- Unused variables
-- Unused imports
-- Unused methods
-- Unused attributes
-- Unreachable code
+**Detects:** Unused functions, classes, variables, imports, methods, unreachable code.
 
 ---
 
@@ -336,9 +228,8 @@ enabled = true
 
 ### Tests (`[code.tests]`)
 
-Validates that test files exist in the project.
+Validates test files exist.
 
-**Config:**
 ```toml
 [code.tests]
 enabled = true
@@ -346,114 +237,44 @@ pattern = "**/*.{test,spec}.{ts,tsx,js,jsx,py}"
 min_test_files = 1
 ```
 
-**Details:**
-| Property | Value |
-|----------|-------|
-| Tool | Built-in (glob) |
-| Languages | Any |
-| Config Files | None |
-
-**Options:**
-| Option | Default | Description |
-|--------|---------|-------------|
-| `enabled` | `false` | Enable test file validation |
-| `pattern` | `**/*.{test,spec}.{ts,tsx,js,jsx,py}` | Glob pattern for test files |
-| `min_test_files` | `1` | Minimum number of test files required (0 = just verify pattern works) |
-
-**Features:**
-- Configurable glob patterns (supports Go, Rust, etc.)
-- Ignores `node_modules` and `.git` directories
-- Reports count of found vs required test files
-
 ---
 
 ## Security
 
-### Gitleaks / Secrets (`[code.security.secrets]`)
+### Gitleaks (`[code.security.secrets]`)
 
-Hardcoded secrets detection using Gitleaks.
+Hardcoded secrets detection.
 
-**Config:**
 ```toml
 [code.security.secrets]
 enabled = true
 ```
 
-**Details:**
-| Property | Value |
-|----------|-------|
-| Tool | Gitleaks |
-| Languages | Any |
-| Config Files | `.gitleaks.toml`, `gitleaks.toml` |
-| Command | `gitleaks detect --no-git --report-format json` |
-
-**Detects:**
-- API keys
-- AWS credentials
-- Database connection strings
-- Private keys
-- Tokens and secrets
-- Passwords in code
-
-**Features:**
-- Parses Gitleaks JSON output
-- Reports file, line, and secret type
-- Skips gracefully when Gitleaks not installed
-- Supports custom Gitleaks config files
+**Detects:** API keys, AWS credentials, database strings, private keys, tokens, passwords.
 
 ---
 
-### npm audit / pnpm audit (`[code.security.npmaudit]`)
+### npm audit (`[code.security.npmaudit]`)
 
-Dependency vulnerability scanning for JavaScript/TypeScript projects.
+JavaScript dependency vulnerability scanning.
 
-**Config:**
 ```toml
 [code.security.npmaudit]
 enabled = true
 ```
 
-**Details:**
-| Property | Value |
-|----------|-------|
-| Tool | npm audit / pnpm audit |
-| Languages | JavaScript, TypeScript |
-| Config Files | `package-lock.json` or `pnpm-lock.yaml` |
-| Command | `npm audit --json` or `pnpm audit --json` |
-
-**Features:**
-- Auto-detects package manager (pnpm or npm) based on lock file
-- Parses audit JSON output for vulnerabilities
-- Severity mapping: critical/high → error, moderate/low/info → warning
-- Reports fix availability and breaking changes
-- Skips gracefully when npm/pnpm not installed
+Auto-detects pnpm or npm based on lock file.
 
 ---
 
 ### pip-audit (`[code.security.pipaudit]`)
 
-Dependency vulnerability scanning for Python projects.
+Python dependency vulnerability scanning.
 
-**Config:**
 ```toml
 [code.security.pipaudit]
 enabled = true
 ```
-
-**Details:**
-| Property | Value |
-|----------|-------|
-| Tool | pip-audit |
-| Languages | Python |
-| Config Files | `requirements.txt`, `pyproject.toml`, `setup.py` |
-| Command | `uvx pip-audit -r requirements.txt --format json` |
-
-**Features:**
-- Parses pip-audit JSON output for vulnerabilities
-- Severity mapping: fix available → error, no fix → warning
-- Reports CVE identifiers and fix versions
-- Skips gracefully when pip-audit not installed
-- Uses `-r requirements.txt` to audit project dependencies
 
 ---
 
@@ -461,9 +282,8 @@ enabled = true
 
 ### Naming (`[code.naming]`)
 
-Validates file and folder naming conventions.
+File and folder naming validation.
 
-**Config:**
 ```toml
 [code.naming]
 enabled = true
@@ -472,42 +292,16 @@ enabled = true
 extensions = ["ts", "tsx"]
 file_case = "kebab-case"
 folder_case = "kebab-case"
+exclude = ["tests/**"]
+allow_dynamic_routes = true  # For Next.js [id], [...slug], (group)
 
 [[code.naming.rules]]
 extensions = ["py"]
 file_case = "snake_case"
 folder_case = "snake_case"
-exclude = ["tests/**"]
 ```
 
-**Details:**
-| Property | Value |
-|----------|-------|
-| Tool | Built-in |
-| Languages | Any |
-| Config Files | None |
-
-**Supported Case Types:**
-| Case | Example |
-|------|---------|
-| `kebab-case` | `my-component.ts` |
-| `snake_case` | `my_module.py` |
-| `camelCase` | `myFunction.ts` |
-| `PascalCase` | `MyComponent.tsx` |
-
-**Options per Rule:**
-| Option | Required | Description |
-|--------|----------|-------------|
-| `extensions` | Yes | File extensions to validate (e.g., `["ts", "tsx"]`) |
-| `file_case` | Yes | Required case for file names |
-| `folder_case` | Yes | Required case for folder names |
-| `exclude` | No | Glob patterns to exclude from validation |
-
-**Features:**
-- Validates both file names and containing folder names
-- Skips special files like `__init__.py` and `_internal.py`
-- Handles numeric filenames (e.g., `404.tsx`, `500.tsx` for Next.js error pages)
-- Supports multiple rules for different file types
+**Supported Cases:** `kebab-case`, `snake_case`, `camelCase`, `PascalCase`
 
 ---
 
@@ -515,59 +309,206 @@ exclude = ["tests/**"]
 
 ### Disable Comments (`[code.quality.disable-comments]`)
 
-Detects and reports linter disable comments in code.
+Detects linter disable comments.
 
-**Config:**
-```toml
-[code.quality.disable-comments]
-enabled = true
-```
-
-**Advanced Config:**
 ```toml
 [code.quality.disable-comments]
 enabled = true
 extensions = ["ts", "tsx", "js", "jsx", "py"]
-exclude = ["tests/**", "**/*.test.ts"]
-patterns = [
-  "eslint-disable",
-  "@ts-ignore",
-  "# noqa"
-]
+exclude = ["tests/**"]
 ```
 
-**Details:**
-| Property | Value |
-|----------|-------|
-| Tool | Built-in |
-| Languages | JavaScript, TypeScript, Python |
-| Config Files | None |
+**Default Patterns:** `eslint-disable`, `@ts-ignore`, `@ts-expect-error`, `# noqa`, `# type: ignore`, `prettier-ignore`
 
-**Default Patterns Detected:**
-| Language | Patterns |
-|----------|----------|
-| ESLint | `eslint-disable`, `eslint-disable-line`, `eslint-disable-next-line` |
-| TypeScript | `@ts-ignore`, `@ts-expect-error`, `@ts-nocheck` |
-| Python | `# noqa`, `# type: ignore`, `# pylint: disable`, `# pragma: no cover` |
-| Prettier | `prettier-ignore` |
+---
 
-**Options:**
-| Option | Default | Description |
-|--------|---------|-------------|
-| `enabled` | `false` | Enable disable comments detection |
-| `patterns` | (see above) | Override default patterns to detect |
-| `extensions` | `["ts", "tsx", "js", "jsx", "py"]` | File extensions to scan |
-| `exclude` | `[]` | Glob patterns to exclude from scanning |
+# PROCESS Domain
+
+Workflow and policy enforcement.
+
+## Git Hooks (`[process.hooks]`)
+
+Verify Husky git hooks are installed.
+
+```toml
+[process.hooks]
+enabled = true
+require_husky = true
+require_hooks = ["pre-commit", "pre-push"]
+
+[process.hooks.commands]
+pre-commit = ["lint-staged"]
+pre-push = ["npm test"]
+```
+
+---
+
+## CI Workflows (`[process.ci]`)
+
+Verify GitHub workflows exist with required jobs/actions.
+
+```toml
+[process.ci]
+enabled = true
+require_workflows = ["ci.yml", "release.yml"]
+
+[process.ci.jobs]
+"ci.yml" = ["test", "lint", "build"]
+
+[process.ci.actions]
+"ci.yml" = ["actions/checkout", "actions/setup-node"]
+```
+
+---
+
+## Branch Naming (`[process.branches]`)
+
+Enforce branch naming conventions.
+
+```toml
+[process.branches]
+enabled = true
+pattern = "^(feature|fix|hotfix|docs)/v[0-9]+\\.[0-9]+\\.[0-9]+/.+"
+exclude = ["main", "master", "develop"]
+```
+
+---
+
+## PR Size Limits (`[process.pr]`)
+
+Enforce PR size limits.
+
+```toml
+[process.pr]
+enabled = true
+max_files = 20
+max_lines = 500
+```
+
+---
+
+## Ticket References (`[process.tickets]`)
+
+Require ticket references in commits/branches.
+
+```toml
+[process.tickets]
+enabled = true
+pattern = "^(ABC|XYZ)-[0-9]+"
+require_in_commits = true
+require_in_branch = false
+```
+
+---
+
+## Coverage Enforcement (`[process.coverage]`)
+
+Verify coverage thresholds are configured.
+
+```toml
+[process.coverage]
+enabled = true
+min_threshold = 80
+enforce_in = "config"  # or "ci" or "both"
+```
+
+---
+
+## Repository Settings (`[process.repo]`)
+
+Verify branch protection and CODEOWNERS.
+
+```toml
+[process.repo]
+enabled = true
+require_branch_protection = true
+require_codeowners = true
+
+[process.repo.branch_protection]
+branch = "main"
+required_reviews = 1
+dismiss_stale_reviews = true
+require_code_owner_reviews = true
+require_status_checks = ["ci"]
+require_branches_up_to_date = true
+enforce_admins = true
+```
+
+### Sync Branch Protection
+
+```bash
+cm process diff              # Show what would change
+cm process sync --apply      # Apply changes to GitHub
+```
+
+---
+
+## S3 Backups (`[process.backups]`)
+
+Verify repository backups exist in S3.
+
+```toml
+[process.backups]
+enabled = true
+bucket = "my-org-backups"
+prefix = "github/myorg/myrepo"
+max_age_hours = 24
+region = "us-east-1"
+```
+
+**AWS Permissions:** `s3:ListBucket`
+
+---
+
+# INFRA Domain
+
+Infrastructure validation.
+
+## AWS Tagging (`[infra.tagging]`)
+
+Verify AWS resources have required tags.
+
+```toml
+[infra.tagging]
+enabled = true
+region = "us-east-1"
+required = ["Environment", "Owner", "CostCenter"]
+
+[infra.tagging.values]
+Environment = ["dev", "stag", "prod"]
+```
+
+**AWS Permissions:** `tag:GetResources`
+
+---
+
+# Utilities
+
+## Project Detection (`cm projects detect`)
+
+Discover projects in monorepos.
+
+```bash
+cm projects detect              # List all projects
+cm projects detect --fix        # Create missing check.toml
+cm projects detect --dry-run    # Preview without creating
+cm projects detect --registry .cm  # Create shared registry
+```
+
+**Detected Project Types:**
+| Marker File | Type |
+|-------------|------|
+| `package.json` | typescript |
+| `pyproject.toml` | python |
+| `Cargo.toml` | rust |
+| `go.mod` | go |
 
 ---
 
 ## Registry & Extends
 
-### Configuration Inheritance
+Inherit configuration from registries.
 
-Extend configuration from remote registries or local paths.
-
-**Config:**
 ```toml
 [extends]
 registry = "github:myorg/standards"
@@ -579,17 +520,8 @@ enabled = true
 ```
 
 **Registry Formats:**
-| Format | Example |
-|--------|---------|
-| GitHub | `github:owner/repo` |
-| GitHub with ref | `github:owner/repo@v1.0.0` |
-| Local path | `/path/to/registry` |
-
-**Features:**
-- Merge multiple rulesets in order
-- Local configuration overrides inherited settings
-- GitHub repositories cached in `/tmp/cm-registry-cache/`
-- Registry validation via `cm validate registry`
+- GitHub: `github:owner/repo` or `github:owner/repo@v1.0.0`
+- Local: `/path/to/registry`
 
 **Registry Structure:**
 ```
@@ -602,20 +534,21 @@ registry/
 
 ---
 
-## Configuration Reference
-
-### Full Example
+# Full Configuration Example
 
 ```toml
-# Extend from a registry
+# Extend from registry
 [extends]
 registry = "github:myorg/standards"
 rulesets = ["typescript-internal"]
 
+# =============================================================================
+# CODE DOMAIN
+# =============================================================================
+
 # Linting
 [code.linting.eslint]
 enabled = true
-files = ["src/**/*.ts"]
 max-warnings = 0
 
 [code.linting.eslint.rules]
@@ -628,7 +561,7 @@ format = true
 line-length = 88
 
 [code.linting.ruff.lint]
-select = ["E", "F", "W"]
+select = ["E", "F", "W", "I"]
 
 # Formatting
 [code.formatting.prettier]
@@ -645,14 +578,14 @@ noImplicitAny = true
 [code.types.ty]
 enabled = true
 
-# Unused Code Detection
+# Unused Code
 [code.unused.knip]
 enabled = true
 
 [code.unused.vulture]
 enabled = true
 
-# Test Validation
+# Tests
 [code.tests]
 enabled = true
 pattern = "**/*.{test,spec}.{ts,tsx,js,jsx}"
@@ -668,7 +601,7 @@ enabled = true
 [code.security.pipaudit]
 enabled = true
 
-# Naming Conventions
+# Naming
 [code.naming]
 enabled = true
 
@@ -682,107 +615,142 @@ extensions = ["py"]
 file_case = "snake_case"
 folder_case = "snake_case"
 
-# Code Quality
+# Quality
 [code.quality.disable-comments]
 enabled = true
 exclude = ["tests/**"]
-```
 
-### Config Discovery
+# =============================================================================
+# PROCESS DOMAIN
+# =============================================================================
 
-The CLI automatically discovers `check.toml` by walking up the directory tree from the current working directory. You can also specify a path:
+[process.hooks]
+enabled = true
+require_husky = true
+require_hooks = ["pre-commit", "pre-push"]
 
-```bash
-cm code check -c path/to/check.toml
+[process.ci]
+enabled = true
+require_workflows = ["ci.yml"]
+
+[process.ci.jobs]
+"ci.yml" = ["test", "lint", "build"]
+
+[process.branches]
+enabled = true
+pattern = "^(feature|fix|hotfix)/v[0-9]+\\.[0-9]+\\.[0-9]+/.+"
+exclude = ["main", "develop"]
+
+[process.pr]
+enabled = true
+max_files = 20
+max_lines = 500
+
+[process.tickets]
+enabled = true
+pattern = "^(PROJ)-[0-9]+"
+require_in_commits = true
+
+[process.coverage]
+enabled = true
+min_threshold = 80
+
+[process.repo]
+enabled = true
+require_branch_protection = true
+require_codeowners = true
+
+[process.repo.branch_protection]
+branch = "main"
+required_reviews = 1
+dismiss_stale_reviews = true
+
+[process.backups]
+enabled = true
+bucket = "my-backups"
+prefix = "github/myorg/myrepo"
+max_age_hours = 24
+
+# =============================================================================
+# INFRA DOMAIN
+# =============================================================================
+
+[infra.tagging]
+enabled = true
+region = "us-east-1"
+required = ["Environment", "Owner", "CostCenter"]
+
+[infra.tagging.values]
+Environment = ["dev", "stag", "prod"]
 ```
 
 ---
 
-## Architecture
+# Tool Summary
+
+## CODE Domain (14 tools)
+
+| Category | Tool | Languages | Config |
+|----------|------|-----------|--------|
+| Linting | ESLint | JS/TS | `[code.linting.eslint]` |
+| Linting | Ruff | Python | `[code.linting.ruff]` |
+| Formatting | Prettier | JS/TS/CSS/JSON | `[code.formatting.prettier]` |
+| Formatting | Ruff Format | Python | `[code.linting.ruff] format = true` |
+| Types | tsc | TypeScript | `[code.types.tsc]` |
+| Types | ty | Python | `[code.types.ty]` |
+| Unused | Knip | JS/TS | `[code.unused.knip]` |
+| Unused | Vulture | Python | `[code.unused.vulture]` |
+| Tests | Built-in | Any | `[code.tests]` |
+| Security | Gitleaks | Any | `[code.security.secrets]` |
+| Security | npm audit | JS/TS | `[code.security.npmaudit]` |
+| Security | pip-audit | Python | `[code.security.pipaudit]` |
+| Naming | Built-in | Any | `[code.naming]` |
+| Quality | Disable Comments | JS/TS/Python | `[code.quality.disable-comments]` |
+
+## PROCESS Domain (8 checks)
+
+| Check | Purpose | Config |
+|-------|---------|--------|
+| Hooks | Git hooks (Husky) | `[process.hooks]` |
+| CI | GitHub workflows | `[process.ci]` |
+| Branches | Naming patterns | `[process.branches]` |
+| PR | Size limits | `[process.pr]` |
+| Tickets | Reference validation | `[process.tickets]` |
+| Coverage | Threshold enforcement | `[process.coverage]` |
+| Repo | Branch protection, CODEOWNERS | `[process.repo]` |
+| Backups | S3 backup verification | `[process.backups]` |
+
+## INFRA Domain (1 check)
+
+| Check | Purpose | Config |
+|-------|---------|--------|
+| Tagging | AWS resource tags | `[infra.tagging]` |
+
+---
+
+# Architecture
 
 ```
 src/
 ├── cli.ts              # Commander.js CLI entry point
-├── index.ts            # Library exports
 ├── code/
-│   ├── index.ts        # CODE domain runner, tool registry
-│   └── tools/
-│       ├── base.ts     # BaseToolRunner abstract class
-│       ├── eslint.ts   # ESLint integration
-│       ├── ruff.ts     # Ruff linting integration
-│       ├── ruff-format.ts  # Ruff formatting integration
-│       ├── prettier.ts # Prettier integration
-│       ├── tsc.ts      # TypeScript integration
-│       ├── ty.ts       # ty integration
-│       ├── knip.ts     # Knip integration
-│       ├── vulture.ts  # Vulture integration
-│       ├── tests.ts    # Test file validation
-│       ├── npmaudit.ts # npm/pnpm audit integration
-│       ├── pipaudit.ts # pip-audit integration
-│       ├── gitleaks.ts # Gitleaks secrets detection
-│       ├── naming.ts   # Naming conventions validation
-│       └── disable-comments.ts # Disable comments detection
+│   ├── index.ts        # CODE domain runner
+│   └── tools/          # 14 tool integrations
+├── process/
+│   ├── index.ts        # PROCESS domain runner
+│   ├── tools/          # 8 check implementations
+│   └── sync/           # Branch protection sync
+├── infra/
+│   ├── index.ts        # INFRA domain runner
+│   └── tools/          # Tagging runner
 ├── config/
 │   ├── loader.ts       # Config loading and merging
-│   └── schema.ts       # Zod schemas
+│   ├── schema.ts       # Zod schemas
+│   └── registry.ts     # Registry resolution
+├── projects/
+│   └── index.ts        # Project detection
 ├── output/
 │   └── index.ts        # Text and JSON formatters
 └── types/
     └── index.ts        # Shared TypeScript types
 ```
-
----
-
-## Tool Summary
-
-| Category | Tool | Languages | Config Key |
-|----------|------|-----------|------------|
-| **Linting** | ESLint | JS/TS | `[code.linting.eslint]` |
-| **Linting** | Ruff | Python | `[code.linting.ruff]` |
-| **Formatting** | Prettier | JS/TS/CSS/JSON | `[code.formatting.prettier]` |
-| **Formatting** | Ruff Format | Python | `[code.linting.ruff] format = true` |
-| **Types** | tsc | TypeScript | `[code.types.tsc]` |
-| **Types** | ty | Python | `[code.types.ty]` |
-| **Unused** | Knip | JS/TS | `[code.unused.knip]` |
-| **Unused** | Vulture | Python | `[code.unused.vulture]` |
-| **Tests** | Built-in | Any | `[code.tests]` |
-| **Security** | Gitleaks | Any | `[code.security.secrets]` |
-| **Security** | npm/pnpm audit | JS/TS | `[code.security.npmaudit]` |
-| **Security** | pip-audit | Python | `[code.security.pipaudit]` |
-| **Naming** | Built-in | Any | `[code.naming]` |
-| **Quality** | Disable Comments | JS/TS/Python | `[code.quality.disable-comments]` |
-
----
-
-## Roadmap Status
-
-### v0.1 - MVP (Complete)
-- [x] ESLint
-- [x] Ruff
-- [x] tsc
-
-### v0.2 - Formatting & Structure (Complete)
-- [x] Prettier
-- [x] Ruff Format
-- [x] Knip
-- [x] Vulture
-- [x] Tests Validation
-
-### v0.3 - Security & Python Types (Complete)
-- [x] ty (Python type checker)
-- [x] npm audit (JS/TS dependency vulnerabilities)
-- [x] pip-audit (Python dependency vulnerabilities)
-
-### v0.4+ - Advanced Features (Complete)
-- [x] Gitleaks (secrets detection)
-- [x] Registry extends functionality
-- [x] Config value auditing (tsconfig.json)
-- [x] Naming conventions validation
-- [x] ESLint rules auditing
-- [x] pnpm support
-- [x] Disable comments detection
-
-### Future
-- [ ] PROCESS domain (PR checks, branch naming, commit conventions)
-- [ ] STACK domain (tool versions, environment variables)
-- [ ] Config inheritance improvements
