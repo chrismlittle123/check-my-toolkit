@@ -44,7 +44,7 @@ pre-push = ["npm run typecheck", "npm run lint", "npm run build", "npm test"]
 
 [process.ci]
 enabled = true
-require_workflows = ["ci.yml", "release.yml"]
+require_workflows = ["ci.yml", "release.yml", "pr-checks.yml"]
 
 [process.ci.jobs]
 "ci.yml" = ["test"]
