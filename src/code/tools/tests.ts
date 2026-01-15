@@ -9,6 +9,39 @@ const DEFAULT_PATTERN = "**/*.{test,spec}.{ts,tsx,js,jsx,py}";
 /** Default minimum number of test files required */
 const DEFAULT_MIN_TEST_FILES = 1;
 
+/**
+ * Split a pattern string on top-level commas, preserving braces.
+ * e.g., "**\/*.{test,spec}.ts,**\/test_*.py" becomes:
+ *       ["**\/*.{test,spec}.ts", "**\/test_*.py"]
+ */
+function splitPatterns(pattern: string): string[] {
+  const patterns: string[] = [];
+  let current = "";
+  let braceDepth = 0;
+
+  for (const char of pattern) {
+    if (char === "{") {
+      braceDepth++;
+    } else if (char === "}") {
+      braceDepth--;
+    }
+
+    if (char === "," && braceDepth === 0) {
+      if (current.trim()) {
+        patterns.push(current.trim());
+      }
+      current = "";
+    } else {
+      current += char;
+    }
+  }
+
+  if (current.trim()) {
+    patterns.push(current.trim());
+  }
+  return patterns;
+}
+
 /** Configuration for tests validation */
 interface TestsConfig {
   enabled?: boolean;
@@ -52,11 +85,13 @@ export class TestsRunner extends BaseToolRunner {
   async run(projectRoot: string): Promise<CheckResult> {
     const startTime = Date.now();
     const pattern = this.getPattern();
+    const patterns = splitPatterns(pattern);
     const minTestFiles = this.getMinTestFiles();
 
     try {
-      // Find all test files matching the pattern
-      const testFiles = await glob(pattern, {
+      // Find all test files matching the pattern(s)
+      // glob accepts an array of patterns
+      const testFiles = await glob(patterns, {
         cwd: projectRoot,
         ignore: ["**/node_modules/**", "**/.git/**"],
         nodir: true,
@@ -120,11 +155,12 @@ export class TestsRunner extends BaseToolRunner {
     // Tests validation doesn't require external config files
     // Just verify the pattern is valid by attempting to use it
     const pattern = this.getPattern();
+    const patterns = splitPatterns(pattern);
 
     try {
       // Validate pattern by attempting a glob with early termination
       // Use iterator to avoid scanning all files - we just need to check pattern is valid
-      const iterator = glob.iterate(pattern, {
+      const iterator = glob.iterate(patterns, {
         cwd: projectRoot,
         ignore: ["**/node_modules/**"],
         nodir: true,

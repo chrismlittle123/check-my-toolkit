@@ -92,21 +92,16 @@ Add `.venv` to Vulture's exclude paths in check.toml or vulture configuration.
 ### ISSUE-005: Test pattern not matching test files
 
 **Severity:** High
-**Status:** Open
+**Status:** Fixed in v0.28.2
 **Test ID:** TST-MIX-003, MIX-007
 **Date Found:** 2026-01-15
+**Date Fixed:** 2026-01-15
 
 **Description:**
 The test file pattern `**/*.{test,spec}.ts,**/test_*.py` is not matching existing test files.
 
-**Actual Behavior:**
-```
-error [min-test-files] No test files found matching pattern "/*.{test,spec}.ts,/test_*.py".
-Expected at least 1.
-```
-
-**Possible Solution:**
-Adjust the pattern syntax or glob implementation for combined patterns.
+**Resolution:**
+Added `splitPatterns()` helper function that splits comma-separated patterns at top-level commas while preserving brace syntax. See BUG-RESOLVED-002 in BUGS.md for details.
 
 ---
 
@@ -245,10 +240,10 @@ Fix was already in main (commit 233b7fc). Patch release v0.28.1 published with c
 | Severity | Open | Resolved | Won't Fix |
 |----------|------|----------|-----------|
 | Critical | 0    | 1        | 0         |
-| High     | 1    | 0        | 0         |
+| High     | 0    | 1        | 0         |
 | Medium   | 4    | 0        | 0         |
 | Low      | 2    | 0        | 1         |
-| **Total**| **7**| **1**    | **1**     |
+| **Total**| **6**| **2**    | **1**     |
 
 ---
 

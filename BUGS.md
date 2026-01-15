@@ -8,52 +8,7 @@ Confirmed bugs that need fixing in check-my-toolkit.
 
 ## Open Bugs
 
-### BUG-001: Test file pattern does not support comma-separated patterns
-
-**Severity:** High
-**Status:** Open
-**Date Found:** 2026-01-15
-**Source:** ISSUE-005 in ISSUES.md
-
-**Description:**
-The test file validation feature (`code.quality.tests`) does not support comma-separated glob patterns. When users specify a pattern like `**/*.{test,spec}.ts,**/test_*.py`, it fails to match any files.
-
-**Steps to Reproduce:**
-1. Add to check.toml:
-   ```toml
-   [code.quality.tests]
-   enabled = true
-   pattern = "**/*.{test,spec}.ts,**/test_*.py"
-   min_test_files = 1
-   ```
-2. Run `cm code check`
-3. Observe error: `No test files found matching pattern`
-
-**Expected Behavior:**
-The pattern should match both:
-- `tests/ts/index.test.ts`
-- `tests/py/test_main.py`
-
-**Actual Behavior:**
-```
-error [min-test-files] No test files found matching pattern "**/*.{test,spec}.ts,**/test_*.py".
-```
-
-**Root Cause:**
-The glob library accepts either:
-1. A single pattern string with proper glob syntax: `**/*.{test,spec}.ts`
-2. An array of patterns: `["**/*.test.ts", "**/test_*.py"]`
-
-But NOT comma-separated patterns in a single string. The comma is not treated as an OR operator at the top level.
-
-**Relevant Code:**
-- `src/code/tools/tests.ts:52-62` - Pattern is passed as single string to glob
-
-**Proposed Fix:**
-Either:
-1. Support array patterns in config schema: `pattern = ["**/*.test.ts", "**/test_*.py"]`
-2. Auto-split comma-separated patterns before passing to glob
-3. Provide better error message explaining valid pattern syntax
+*No open bugs at this time.*
 
 ---
 
@@ -91,6 +46,28 @@ Users can create a `.vultureignore` file or configure exclusions in `pyproject.t
 
 ## Resolved Bugs
 
+### BUG-RESOLVED-002: Test file pattern does not support comma-separated patterns
+
+**Severity:** High
+**Status:** Fixed in v0.28.2
+**Date Found:** 2026-01-15
+**Date Fixed:** 2026-01-15
+**Source:** ISSUE-005 in ISSUES.md
+
+**Description:**
+The test file validation feature (`code.quality.tests`) did not support comma-separated glob patterns. When users specified a pattern like `**/*.{test,spec}.ts,**/test_*.py`, it failed to match any files.
+
+**Root Cause:**
+The glob library accepts either a single pattern string or an array of patterns, but the code passed comma-separated patterns as a single string. Commas inside braces (like `{test,spec}`) are valid glob syntax, but top-level commas were incorrectly treated as part of the pattern.
+
+**Resolution:**
+Added a `splitPatterns()` helper function that splits pattern strings on top-level commas while preserving brace syntax. The split patterns are then passed as an array to glob.
+
+**Relevant Code:**
+- `src/code/tools/tests.ts:17-43` - New `splitPatterns()` function
+
+---
+
 ### BUG-RESOLVED-001: yaml dependency error in v0.28.0
 
 **Severity:** Critical
@@ -111,7 +88,7 @@ Fix was already in main (commit 233b7fc). Patch release v0.28.1 published with c
 | Severity | Open | Fixed |
 |----------|------|-------|
 | Critical | 0    | 1     |
-| High     | 1    | 0     |
+| High     | 0    | 1     |
 | Medium   | 0    | 0     |
 | Low      | 0    | 0     |
-| **Total**| **1**| **1** |
+| **Total**| **0**| **2** |

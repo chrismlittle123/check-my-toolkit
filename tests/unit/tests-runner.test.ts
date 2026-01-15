@@ -112,6 +112,76 @@ describe("TestsRunner", () => {
     });
   });
 
+  describe("run with comma-separated patterns (BUG-001)", () => {
+    it("supports comma-separated patterns for different file types", async () => {
+      runner.setConfig({ pattern: "**/*.test.ts,**/test_*.py" });
+      fs.writeFileSync(path.join(tempDir, "example.test.ts"), "");
+
+      const result = await runner.run(tempDir);
+
+      expect(result.passed).toBe(true);
+    });
+
+    it("matches files from any comma-separated pattern", async () => {
+      runner.setConfig({ pattern: "**/*.test.ts,**/test_*.py" });
+      fs.writeFileSync(path.join(tempDir, "test_main.py"), "");
+
+      const result = await runner.run(tempDir);
+
+      expect(result.passed).toBe(true);
+    });
+
+    it("counts files from all comma-separated patterns", async () => {
+      runner.setConfig({ pattern: "**/*.test.ts,**/test_*.py", min_test_files: 2 });
+      fs.writeFileSync(path.join(tempDir, "example.test.ts"), "");
+      fs.writeFileSync(path.join(tempDir, "test_main.py"), "");
+
+      const result = await runner.run(tempDir);
+
+      expect(result.passed).toBe(true);
+    });
+
+    it("preserves commas inside braces (glob syntax)", async () => {
+      runner.setConfig({ pattern: "**/*.{test,spec}.ts" });
+      fs.writeFileSync(path.join(tempDir, "example.test.ts"), "");
+      fs.writeFileSync(path.join(tempDir, "example.spec.ts"), "");
+
+      const result = await runner.run(tempDir);
+
+      expect(result.passed).toBe(true);
+    });
+
+    it("combines brace syntax with comma-separated patterns", async () => {
+      // This is the pattern from BUG-001
+      runner.setConfig({ pattern: "**/*.{test,spec}.ts,**/test_*.py" });
+      fs.writeFileSync(path.join(tempDir, "example.test.ts"), "");
+      fs.writeFileSync(path.join(tempDir, "test_main.py"), "");
+
+      const result = await runner.run(tempDir);
+
+      expect(result.passed).toBe(true);
+    });
+
+    it("handles spaces around comma separators", async () => {
+      runner.setConfig({ pattern: "**/*.test.ts , **/test_*.py" });
+      fs.writeFileSync(path.join(tempDir, "example.test.ts"), "");
+
+      const result = await runner.run(tempDir);
+
+      expect(result.passed).toBe(true);
+    });
+
+    it("fails when no files match any comma-separated pattern", async () => {
+      runner.setConfig({ pattern: "**/*.test.ts,**/test_*.py" });
+      fs.writeFileSync(path.join(tempDir, "index.ts"), "");
+
+      const result = await runner.run(tempDir);
+
+      expect(result.passed).toBe(false);
+      expect(result.violations[0].message).toContain("No test files found");
+    });
+  });
+
   describe("run with custom config", () => {
     it("uses custom pattern", async () => {
       runner.setConfig({ pattern: "**/*_test.go" });
