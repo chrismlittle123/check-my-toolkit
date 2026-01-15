@@ -40,7 +40,7 @@ require_hooks = ["pre-commit", "pre-push"]
 
 [process.hooks.commands]
 pre-commit = ["lint-staged"]
-pre-push = ["npm run typecheck", "npm run lint", "npm run build", "npm test"]
+pre-push = ["npm run typecheck", "npm run lint", "npm run build", "npm run test:unit"]
 
 [process.ci]
 enabled = true
