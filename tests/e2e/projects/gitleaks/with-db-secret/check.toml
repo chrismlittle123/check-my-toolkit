@@ -1,0 +1,4 @@
+# Test project: Gitleaks detecting database connection string secrets (ISSUE-002)
+
+[code.security.secrets]
+enabled = true

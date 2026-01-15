@@ -1042,6 +1042,13 @@ const testCases: TestCase[] = [
   //   expectedExitCode: 1,
   //   expectedPatterns: ["✗ gitleaks:", "test-secret-pattern"],
   // },
+  // {
+  //   name: "gitleaks/with-db-secret detects database connection strings (ISSUE-002)",
+  //   config: "tests/e2e/projects/gitleaks/with-db-secret/check.toml",
+  //   command: "check",
+  //   expectedExitCode: 1,
+  //   expectedPatterns: ["✗ gitleaks:", "postgres-connection-string"],
+  // },
   {
     name: "gitleaks/disabled skips when secrets check is disabled",
     config: "tests/e2e/projects/gitleaks/disabled/check.toml",
