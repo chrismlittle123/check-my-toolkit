@@ -24,12 +24,25 @@ check-my-toolkit (`cm`) provides a single CLI to run multiple code quality, proc
 
 ## Commands
 
-### Core Commands
+### Aggregate Commands
+
+Run all domains at once:
 
 | Command | Description |
 |---------|-------------|
 | `cm check` | Run all checks (code + process + infra) |
-| `cm audit` | Verify all configs exist |
+| `cm audit` | Verify all configs exist (code + process + infra) |
+
+These are equivalent to running each domain command separately:
+- `cm check` = `cm code check` + `cm process check` + `cm infra check`
+- `cm audit` = `cm code audit` + `cm process audit` + `cm infra audit`
+
+### Domain Commands
+
+Run checks for a specific domain:
+
+| Command | Description |
+|---------|-------------|
 | `cm code check` | Run code quality checks |
 | `cm code audit` | Verify code tool configs |
 | `cm process check` | Run workflow validation |
