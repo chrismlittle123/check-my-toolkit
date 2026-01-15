@@ -249,3 +249,83 @@ Fix was already in main (commit 233b7fc). Patch release v0.28.1 published with c
 | Medium   | 4    | 0        | 0         |
 | Low      | 2    | 0        | 1         |
 | **Total**| **7**| **1**    | **1**     |
+
+---
+
+## Test Execution Summary (2026-01-15)
+
+First full `cm code check` execution completed with the following results:
+
+| Tool | Violations | Status | Notes |
+|------|------------|--------|-------|
+| ESLint | 3 | Working | Console statements in index.ts |
+| Ruff | 43 | Working | Import sorting, deprecated typing |
+| Ruff Format | 1 | Issue | Symlink parse error |
+| Prettier | 9 | Working | Formatting violations |
+| TypeScript | 0 | Passed | No type errors |
+| ty | 43 | Working | Type errors + symlink issue |
+| Knip | 18 | Working | Unused test fixture files |
+| Vulture | 64 | Issue | Scanning .venv directory |
+| gitleaks | 5 | Working | Detected all test secrets |
+| npmaudit | 4 | Working | Vitest vulnerabilities |
+| pipaudit | 0 | Passed | No Python vulnerabilities |
+| Tests | 1 | Issue | Pattern not matching |
+| Naming | 10 | Working | Detecting naming violations |
+| Disable Comments | 32 | Working | Detecting all comment types |
+| **TOTAL** | **233** | - | - |
+
+### Key Observations
+
+1. **Gitleaks is working correctly** - Detected all 5 test secrets in TS, Python, and config files
+2. **Disable Comments detection is working** - Found all 32 disable comments across both languages
+3. **Naming rules are working** - Detecting case violations but needs exclusion config
+4. **Tool isolation partially working** - Most tools ignore wrong language files, but symlinks cause issues
+5. **Vulture needs configuration** - Should exclude .venv from scanning
+
+---
+
+## Additional Test Results (2026-01-15 - Second Run)
+
+### OUT-MIX-002: JSON Output Test
+**Status:** PASSED
+
+JSON output (`cm code check -f json`) produces well-structured output:
+- Includes version, configPath, domains
+- Each check has: name, rule, passed, violations[], skipped, duration
+- Violations include: rule, tool, file, line, column, message, code, severity
+
+### MONO-001 to MONO-003: Monorepo Tests
+**Status:** PASSED (with notes)
+
+Running `cm code check` in test-scenarios/monorepo/:
+- MONO-001: Separate packages work - TypeScript, Ruff, ty, gitleaks all ran correctly
+- MONO-002: Root-level package.json and pyproject.toml are used
+- MONO-003: Root-level check.toml is correctly detected and used
+
+**Note:** ESLint requires TypeScript parser to be installed (`npm install`) for full functionality.
+
+### AUD-MIX-002: Missing TypeScript Config
+**Status:** PASSED
+
+When tsconfig.json is removed:
+```
+✗ TypeScript: 1 violation(s)
+    error  Config not found. Expected one of: tsconfig.json
+```
+All other tools continue to run normally.
+
+### AUD-MIX-003: Missing Python Config
+**Status:** PASSED (Expected Behavior)
+
+When pyproject.toml is removed:
+- Ruff still runs with default settings
+- Violations reduced from 43 to 24 (stricter rules from config not applied)
+- This is expected - Ruff works without configuration
+
+### AUD-MIX-004: Partial Configuration
+**Status:** PASSED
+
+When eslint.config.js is removed:
+- ESLint reports config not found
+- All other tools (Ruff, Prettier, TypeScript, ty, etc.) continue running
+- Graceful degradation confirmed
