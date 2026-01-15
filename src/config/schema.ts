@@ -1,3 +1,4 @@
+/* eslint-disable max-lines -- schema file contains all domain schemas and grows with features */
 import { z } from "zod";
 
 /**
@@ -344,6 +345,35 @@ const branchesConfigSchema = z
   .strict()
   .optional();
 
+/** Commit message format configuration */
+const commitsConfigSchema = z
+  .object({
+    enabled: z.boolean().optional().default(false),
+    pattern: z.string().optional(), // Regex pattern for commit messages (e.g., conventional commits)
+    types: z.array(z.string()).optional(), // Allowed commit types (e.g., ["feat", "fix", "chore"])
+    require_scope: z.boolean().optional().default(false), // Require scope like feat(api): ...
+    max_subject_length: z.number().int().positive().optional(), // Max length of subject line
+  })
+  .strict()
+  .optional();
+
+/** Changeset bump type */
+const changesetBumpTypeSchema = z.enum(["patch", "minor", "major"]);
+
+/** Changeset validation configuration */
+const changesetsConfigSchema = z
+  .object({
+    enabled: z.boolean().optional().default(false),
+    require_for_paths: z.array(z.string()).optional(), // Glob patterns that require changesets (e.g., ["src/**"])
+    exclude_paths: z.array(z.string()).optional(), // Paths that don't require changesets (e.g., ["**/*.test.ts"])
+    validate_format: z.boolean().optional().default(true), // Validate changeset file format (frontmatter, description)
+    allowed_bump_types: z.array(changesetBumpTypeSchema).optional(), // Restrict allowed bump types (e.g., ["patch", "minor"])
+    require_description: z.boolean().optional().default(true), // Require non-empty description
+    min_description_length: z.number().int().positive().optional(), // Minimum description length
+  })
+  .strict()
+  .optional();
+
 /** PR size limits configuration */
 const prConfigSchema = z
   .object({
@@ -424,6 +454,8 @@ const processSchema = z
     hooks: hooksConfigSchema,
     ci: ciConfigSchema,
     branches: branchesConfigSchema,
+    commits: commitsConfigSchema,
+    changesets: changesetsConfigSchema,
     pr: prConfigSchema,
     tickets: ticketsConfigSchema,
     coverage: coverageConfigSchema,
@@ -532,6 +564,15 @@ export const defaultConfig: Config = {
     },
     branches: {
       enabled: false,
+    },
+    commits: {
+      enabled: false,
+      require_scope: false,
+    },
+    changesets: {
+      enabled: false,
+      validate_format: true,
+      require_description: true,
     },
     pr: {
       enabled: false,
