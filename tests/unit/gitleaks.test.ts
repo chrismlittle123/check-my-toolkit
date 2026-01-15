@@ -147,6 +147,51 @@ describe("GitleaksRunner", () => {
       expect(result.violations[1].file).toBe("env.js");
     });
 
+    it("parses database connection string secrets (ISSUE-002)", async () => {
+      const gitleaksOutput = JSON.stringify([
+        {
+          Description: "Generic Database Connection String",
+          StartLine: 5,
+          EndLine: 5,
+          StartColumn: 15,
+          EndColumn: 70,
+          Match: "postgres://admin:secretpassword123@db.example.com:5432/myapp",
+          Secret: "secretpassword123",
+          File: "config.py",
+          Commit: "def456",
+          Entropy: 3.8,
+          Author: "test",
+          Email: "test@example.com",
+          Date: "2024-01-01",
+          Message: "Add database config",
+          Tags: ["database"],
+          RuleID: "generic-database-url",
+          Fingerprint: "def456:config.py:generic-database-url:5",
+        },
+      ]);
+
+      mockedExeca.mockResolvedValueOnce({
+        stdout: gitleaksOutput,
+        stderr: "",
+        exitCode: 1,
+      } as never);
+
+      const result = await runner.run(tempDir);
+
+      expect(result.passed).toBe(false);
+      expect(result.violations).toHaveLength(1);
+      expect(result.violations[0]).toMatchObject({
+        rule: "code.security.secrets",
+        tool: "secrets",
+        file: "config.py",
+        line: 5,
+        column: 15,
+        message: "generic-database-url: Generic Database Connection String",
+        code: "generic-database-url",
+        severity: "error",
+      });
+    });
+
     it("handles empty JSON array output", async () => {
       mockedExeca.mockResolvedValueOnce({
         stdout: "[]",

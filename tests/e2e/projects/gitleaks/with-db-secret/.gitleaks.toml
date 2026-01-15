@@ -1,0 +1,6 @@
+# Custom gitleaks config for testing database connection string detection (ISSUE-002)
+
+[[rules]]
+id = "postgres-connection-string"
+description = "PostgreSQL Connection String with Password"
+regex = '''postgres(?:ql)?://[^:]+:[^@]+@[^/]+'''
