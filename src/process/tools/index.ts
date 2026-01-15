@@ -1,7 +1,9 @@
 export { BackupsRunner } from "./backups.js";
 export { BaseProcessToolRunner } from "./base.js";
 export { BranchesRunner } from "./branches.js";
+export { ChangesetsRunner } from "./changesets.js";
 export { CiRunner } from "./ci.js";
+export { CommitsRunner } from "./commits.js";
 export { CoverageRunner } from "./coverage.js";
 export { HooksRunner } from "./hooks.js";
 export { PrRunner } from "./pr.js";

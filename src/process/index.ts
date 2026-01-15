@@ -4,10 +4,10 @@ import {
   DomainResult,
   type IToolRunner,
 } from "../types/index.js";
-import { BackupsRunner, BranchesRunner, CiRunner, CoverageRunner, HooksRunner, PrRunner, RepoRunner, TicketsRunner } from "./tools/index.js";
+import { BackupsRunner, BranchesRunner, ChangesetsRunner, CiRunner, CommitsRunner, CoverageRunner, HooksRunner, PrRunner, RepoRunner, TicketsRunner } from "./tools/index.js";
 
 // Export tool runners for direct access
-export { BackupsRunner, BaseProcessToolRunner, BranchesRunner, CiRunner, CoverageRunner, HooksRunner, PrRunner, RepoRunner, TicketsRunner } from "./tools/index.js";
+export { BackupsRunner, BaseProcessToolRunner, BranchesRunner, ChangesetsRunner, CiRunner, CommitsRunner, CoverageRunner, HooksRunner, PrRunner, RepoRunner, TicketsRunner } from "./tools/index.js";
 
 /** Tool configuration entry mapping config getter to runner or runner factory */
 interface ToolEntry {
@@ -59,6 +59,40 @@ function createBranchesRunner(config: Config): BranchesRunner {
       enabled: branchesConfig.enabled,
       pattern: branchesConfig.pattern,
       exclude: branchesConfig.exclude,
+    });
+  }
+  return runner;
+}
+
+/** Create a configured CommitsRunner */
+function createCommitsRunner(config: Config): CommitsRunner {
+  const runner = new CommitsRunner();
+  const commitsConfig = config.process?.commits;
+  if (commitsConfig) {
+    runner.setConfig({
+      enabled: commitsConfig.enabled,
+      pattern: commitsConfig.pattern,
+      types: commitsConfig.types,
+      require_scope: commitsConfig.require_scope,
+      max_subject_length: commitsConfig.max_subject_length,
+    });
+  }
+  return runner;
+}
+
+/** Create a configured ChangesetsRunner */
+function createChangesetsRunner(config: Config): ChangesetsRunner {
+  const runner = new ChangesetsRunner();
+  const changesetsConfig = config.process?.changesets;
+  if (changesetsConfig) {
+    runner.setConfig({
+      enabled: changesetsConfig.enabled,
+      require_for_paths: changesetsConfig.require_for_paths,
+      exclude_paths: changesetsConfig.exclude_paths,
+      validate_format: changesetsConfig.validate_format,
+      allowed_bump_types: changesetsConfig.allowed_bump_types,
+      require_description: changesetsConfig.require_description,
+      min_description_length: changesetsConfig.min_description_length,
     });
   }
   return runner;
@@ -145,6 +179,8 @@ const toolRegistry: ToolEntry[] = [
   { isEnabled: (c) => isEnabled(c.process?.hooks), runner: createHooksRunner },
   { isEnabled: (c) => isEnabled(c.process?.ci), runner: createCiRunner },
   { isEnabled: (c) => isEnabled(c.process?.branches), runner: createBranchesRunner },
+  { isEnabled: (c) => isEnabled(c.process?.commits), runner: createCommitsRunner },
+  { isEnabled: (c) => isEnabled(c.process?.changesets), runner: createChangesetsRunner },
   { isEnabled: (c) => isEnabled(c.process?.pr), runner: createPrRunner },
   { isEnabled: (c) => isEnabled(c.process?.tickets), runner: createTicketsRunner },
   { isEnabled: (c) => isEnabled(c.process?.coverage), runner: createCoverageRunner },

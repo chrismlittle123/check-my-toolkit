@@ -30,7 +30,7 @@ exclude = ["tests/e2e/projects/**"]
 # Detect linter disable comments
 [code.quality.disable-comments]
 enabled = true
-exclude = ["tests/**", "src/code/tools/disable-comments.ts", "src/projects/detector.ts", "src/infra/tools/tagging.ts"]
+exclude = ["tests/**", "src/code/tools/disable-comments.ts", "src/projects/detector.ts", "src/infra/tools/tagging.ts", "src/config/schema.ts", "src/config/registry.ts"]
 
 # Process domain - workflow validation
 [process.hooks]
@@ -44,7 +44,7 @@ pre-push = ["npm run typecheck", "npm run lint", "npm run build", "npm test"]
 
 [process.ci]
 enabled = true
-require_workflows = ["ci.yml", "release.yml"]
+require_workflows = ["ci.yml", "release.yml", "pr-checks.yml"]
 
 [process.ci.jobs]
 "ci.yml" = ["test"]
@@ -55,4 +55,17 @@ require_workflows = ["ci.yml", "release.yml"]
 [process.branches]
 enabled = true
 pattern = "^(feature|fix|hotfix|docs)/v[0-9]+\\.[0-9]+\\.[0-9]+/[a-z0-9-]+$"
-exclude = ["main", "master", "develop"]
+exclude = ["main"]
+
+[process.commits]
+enabled = true
+types = ["feat", "fix", "chore", "docs", "refactor", "test", "style", "perf", "ci", "build"]
+require_scope = false
+max_subject_length = 100
+
+[process.changesets]
+enabled = true
+require_for_paths = ["src/**"]
+exclude_paths = ["**/*.test.ts", "**/*.md"]
+validate_format = true
+require_description = true

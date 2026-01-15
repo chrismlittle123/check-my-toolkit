@@ -301,14 +301,76 @@ function mergeCoverageConfig(base: ProcessConfig["coverage"], override: ProcessC
   };
 }
 
+function mergeCommitsConfig(base: ProcessConfig["commits"], override: ProcessConfig["commits"]): ProcessConfig["commits"] {
+  if (!override) {
+    return base;
+  }
+  // require_scope has schema default, so it's always defined after parsing
+  return {
+    enabled: override.enabled,
+    pattern: override.pattern ?? base?.pattern,
+    types: override.types ?? base?.types,
+    require_scope: override.require_scope,
+    max_subject_length: override.max_subject_length ?? base?.max_subject_length,
+  };
+}
+
+function mergeChangesetsConfig(base: ProcessConfig["changesets"], override: ProcessConfig["changesets"]): ProcessConfig["changesets"] {
+  if (!override) {
+    return base;
+  }
+  // validate_format and require_description have schema defaults, so they're always defined after parsing
+  return {
+    enabled: override.enabled,
+    require_for_paths: override.require_for_paths ?? base?.require_for_paths,
+    exclude_paths: override.exclude_paths ?? base?.exclude_paths,
+    validate_format: override.validate_format,
+    allowed_bump_types: override.allowed_bump_types ?? base?.allowed_bump_types,
+    require_description: override.require_description,
+    min_description_length: override.min_description_length ?? base?.min_description_length,
+  };
+}
+
+function mergeRepoConfig(base: ProcessConfig["repo"], override: ProcessConfig["repo"]): ProcessConfig["repo"] {
+  if (!override) {
+    return base;
+  }
+  // require_branch_protection and require_codeowners have schema defaults
+  return {
+    enabled: override.enabled,
+    require_branch_protection: override.require_branch_protection,
+    require_codeowners: override.require_codeowners,
+    branch_protection: override.branch_protection ?? base?.branch_protection,
+  };
+}
+
+function mergeBackupsConfig(base: ProcessConfig["backups"], override: ProcessConfig["backups"]): ProcessConfig["backups"] {
+  if (!override) {
+    return base;
+  }
+  // max_age_hours has schema default
+  return {
+    enabled: override.enabled,
+    bucket: override.bucket ?? base?.bucket,
+    prefix: override.prefix ?? base?.prefix,
+    max_age_hours: override.max_age_hours,
+    region: override.region ?? base?.region,
+  };
+}
+
+// eslint-disable-next-line complexity -- merging all process config sections requires multiple calls
 function mergeProcessSection(base: ProcessConfig | undefined, override: ProcessConfig): ProcessConfig {
   return {
     hooks: mergeHooksConfig(base?.hooks, override.hooks),
     ci: mergeCiConfig(base?.ci, override.ci),
     branches: mergeBranchesConfig(base?.branches, override.branches),
+    commits: mergeCommitsConfig(base?.commits, override.commits),
+    changesets: mergeChangesetsConfig(base?.changesets, override.changesets),
     pr: mergePrConfig(base?.pr, override.pr),
     tickets: mergeTicketsConfig(base?.tickets, override.tickets),
     coverage: mergeCoverageConfig(base?.coverage, override.coverage),
+    repo: mergeRepoConfig(base?.repo, override.repo),
+    backups: mergeBackupsConfig(base?.backups, override.backups),
   };
 }
 

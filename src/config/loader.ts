@@ -217,6 +217,8 @@ type ProcessConfig = NonNullable<Config["process"]>;
 type HooksConfig = NonNullable<ProcessConfig["hooks"]>;
 type CiConfig = NonNullable<ProcessConfig["ci"]>;
 type BranchesConfig = NonNullable<ProcessConfig["branches"]>;
+type CommitsConfig = NonNullable<ProcessConfig["commits"]>;
+type ChangesetsConfig = NonNullable<ProcessConfig["changesets"]>;
 type PrConfig = NonNullable<ProcessConfig["pr"]>;
 type TicketsConfig = NonNullable<ProcessConfig["tickets"]>;
 type CoverageConfig = NonNullable<ProcessConfig["coverage"]>;
@@ -226,6 +228,8 @@ type BackupsConfig = NonNullable<ProcessConfig["backups"]>;
 const defaultHooks: HooksConfig = { enabled: false, require_husky: true };
 const defaultCi: CiConfig = { enabled: false };
 const defaultBranches: BranchesConfig = { enabled: false };
+const defaultCommits: CommitsConfig = { enabled: false, require_scope: false };
+const defaultChangesets: ChangesetsConfig = { enabled: false, validate_format: true, require_description: true };
 const defaultPr: PrConfig = { enabled: false };
 const defaultTickets: TicketsConfig = { enabled: false, require_in_commits: true, require_in_branch: false };
 const defaultCoverage: CoverageConfig = { enabled: false, enforce_in: "config" };
@@ -247,6 +251,14 @@ function mergeProcessCi(cp: ProcessConfig | undefined, dcp: ProcessConfig | unde
 
 function mergeProcessBranches(cp: ProcessConfig | undefined, dcp: ProcessConfig | undefined): BranchesConfig {
   return mergeProcessSection(defaultBranches, dcp?.branches, cp?.branches);
+}
+
+function mergeProcessCommits(cp: ProcessConfig | undefined, dcp: ProcessConfig | undefined): CommitsConfig {
+  return mergeProcessSection(defaultCommits, dcp?.commits, cp?.commits);
+}
+
+function mergeProcessChangesets(cp: ProcessConfig | undefined, dcp: ProcessConfig | undefined): ChangesetsConfig {
+  return mergeProcessSection(defaultChangesets, dcp?.changesets, cp?.changesets);
 }
 
 function mergeProcessPr(cp: ProcessConfig | undefined, dcp: ProcessConfig | undefined): PrConfig {
@@ -274,6 +286,8 @@ function mergeProcess(c: Config, dc: Config): ProcessConfig {
     hooks: mergeProcessHooks(c.process, dc.process),
     ci: mergeProcessCi(c.process, dc.process),
     branches: mergeProcessBranches(c.process, dc.process),
+    commits: mergeProcessCommits(c.process, dc.process),
+    changesets: mergeProcessChangesets(c.process, dc.process),
     pr: mergeProcessPr(c.process, dc.process),
     tickets: mergeProcessTickets(c.process, dc.process),
     coverage: mergeProcessCoverage(c.process, dc.process),
