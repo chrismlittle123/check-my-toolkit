@@ -262,10 +262,10 @@ pnpm -r run check                         # pnpm
 brew bundle
 
 # Commands
-npm install        # Install dependencies
-npm run build      # Compile TypeScript
-npm test           # Run tests
-npm run lint       # Lint
+pnpm install        # Install dependencies
+pnpm run build      # Compile TypeScript
+pnpm test           # Run tests
+pnpm run lint       # Lint
 ```
 
 ## License

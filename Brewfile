@@ -7,5 +7,8 @@ brew "python@3.13"
 brew "ruff"
 brew "vulture"
 
+# Node.js package manager
+brew "pnpm"
+
 # Node.js (if not using nvm/fnm)
 # brew "node@20"

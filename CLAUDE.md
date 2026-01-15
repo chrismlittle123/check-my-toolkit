@@ -14,21 +14,21 @@ Install system dependencies (macOS):
 brew bundle
 ```
 
-This installs Python 3.13, Ruff, and Vulture which are required for running tests.
+This installs Python 3.13, Ruff, Vulture, and pnpm which are required for running tests.
 
 ## Common Commands
 
 ```bash
 # Development
-npm run build          # Compile TypeScript to dist/
-npm run dev            # Watch mode compilation
-npm run typecheck      # Type check without emitting
-npm run lint           # Run ESLint on src/
-npm run lint:fix       # Auto-fix lint issues
+pnpm run build          # Compile TypeScript to dist/
+pnpm run dev            # Watch mode compilation
+pnpm run typecheck      # Type check without emitting
+pnpm run lint           # Run ESLint on src/
+pnpm run lint:fix       # Auto-fix lint issues
 
 # Testing
-npm test               # Run vitest in watch mode
-npm run test:coverage  # Run tests with coverage
+pnpm test               # Run vitest in watch mode
+pnpm run test:coverage  # Run tests with coverage
 
 # CLI (after build)
 node dist/cli.js code check      # Run linting and type checking
@@ -94,7 +94,7 @@ enabled = true
 3. **Create a changeset** (required for any code changes):
    ```bash
    # Creates .changeset/<random-name>.md
-   npx changeset
+   pnpm exec changeset
    # Or manually create the file
    ```
 
@@ -127,7 +127,7 @@ Uses changesets for versioning and automated npm publishing.
 1. **Create a changeset** describing your changes:
    ```bash
    # Option 1: Interactive mode
-   npx changeset
+   pnpm exec changeset
 
    # Option 2: Manually create .changeset/<unique-name>.md with:
    # ---
@@ -159,7 +159,7 @@ Uses changesets for versioning and automated npm publishing.
 5. **Create a PR** and merge to main
 
 6. **Automated release**: When merged to main, the release workflow:
-   - Runs `npx changeset version` to bump package.json version
+   - Runs `pnpm exec changeset version` to bump package.json version
    - Creates a "Version Packages" PR
    - When that PR is merged, publishes to npm with OIDC provenance
 
@@ -175,7 +175,7 @@ Uses changesets for versioning and automated npm publishing.
 
 How changesets work:
 1. You create a `.changeset/*.md` file describing your change
-2. The Release workflow runs `npx changeset publish`
+2. The Release workflow runs `pnpm exec changeset publish`
 3. If there are pending changesets → version bump + npm publish
 4. If there are NO changesets → nothing happens (no publish)
 
