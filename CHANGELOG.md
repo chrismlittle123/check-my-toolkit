@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.28.2
+
+### Patch Changes
+
+- 26a348c: fix: support comma-separated patterns in test file validation
+
+  The test file pattern option now correctly handles comma-separated patterns like
+  `**/*.{test,spec}.ts,**/test_*.py`. The patterns are split at top-level commas
+  while preserving brace syntax (commas inside braces like `{test,spec}` are kept).
+
+  Fixes BUG-001.
+
 ## 0.28.1
 
 ### Patch Changes
