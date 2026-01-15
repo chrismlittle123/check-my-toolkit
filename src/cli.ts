@@ -13,6 +13,7 @@ import { ConfigError, getProjectRoot, loadConfig, loadConfigAsync } from "./conf
 import { configSchema } from "./config/schema.js";
 import { auditInfraConfig, runInfraChecks } from "./infra/index.js";
 import { formatOutput, type OutputFormat } from "./output/index.js";
+import { checkBranchCommand, checkCommitCommand } from "./process/commands/index.js";
 import { auditProcessConfig, runProcessChecks } from "./process/index.js";
 import { type DetectOptions,runDetect } from "./projects/index.js";
 import { type DomainResult, ExitCode, type FullResult } from "./types/index.js";
@@ -286,6 +287,36 @@ processCommand
   .action(async (options: { config?: string; format: string; apply?: boolean }) => {
     const { runSync } = await import("./process/sync/index.js");
     await runSync({ config: options.config, format: options.format as "text" | "json", apply: options.apply });
+  });
+
+// cm process check-branch
+processCommand
+  .command("check-branch")
+  .description("Validate current branch name (for pre-push hook)")
+  .option("-c, --config <path>", "Path to check.toml config file")
+  .option("-q, --quiet", "Minimal output for hooks")
+  .action(async (options: { config?: string; quiet?: boolean }) => {
+    try {
+      const exitCode = await checkBranchCommand(options);
+      process.exit(exitCode);
+    } catch (error) {
+      handleError(error);
+    }
+  });
+
+// cm process check-commit <file>
+processCommand
+  .command("check-commit <file>")
+  .description("Validate commit message (for commit-msg hook)")
+  .option("-c, --config <path>", "Path to check.toml config file")
+  .option("-q, --quiet", "Minimal output for hooks")
+  .action(async (file: string, options: { config?: string; quiet?: boolean }) => {
+    try {
+      const exitCode = await checkCommitCommand(file, options);
+      process.exit(exitCode);
+    } catch (error) {
+      handleError(error);
+    }
   });
 
 program.addCommand(processCommand);
