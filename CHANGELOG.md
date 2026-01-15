@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.28.1
+
+### Patch Changes
+
+- 22d05fa: Fix missing yaml dependency error - the published v0.28.0 incorrectly imported `yaml` instead of `js-yaml` in process tools
+
 ## 0.28.0
 
 ### Minor Changes
