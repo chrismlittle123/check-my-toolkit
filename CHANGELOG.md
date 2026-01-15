@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.28.3
+
+### Patch Changes
+
+- 1f13593: Run only unit tests in pre-push hook, E2E tests run in CI only
+
 ## 0.28.2
 
 ### Patch Changes
