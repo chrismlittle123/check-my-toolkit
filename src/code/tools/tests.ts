@@ -1,3 +1,6 @@
+import * as fs from "node:fs";
+import * as path from "node:path";
+
 import { glob } from "glob";
 
 import { type CheckResult, type Violation } from "../../types/index.js";
@@ -47,6 +50,7 @@ interface TestsConfig {
   enabled?: boolean;
   pattern?: string;
   min_test_files?: number;
+  required_dir?: string;
 }
 
 /**
@@ -82,15 +86,83 @@ export class TestsRunner extends BaseToolRunner {
     return this.config.min_test_files ?? DEFAULT_MIN_TEST_FILES;
   }
 
+  /**
+   * Check if the required directory exists
+   */
+  private checkRequiredDir(projectRoot: string): Violation | null {
+    const requiredDir = this.config.required_dir;
+    if (!requiredDir) {
+      return null;
+    }
+
+    const normalizedDir = requiredDir.replace(/\/$/, ""); // Remove trailing slash
+    const dirPath = path.join(projectRoot, normalizedDir);
+
+    if (!fs.existsSync(dirPath)) {
+      return {
+        rule: `${this.rule}.${this.toolId}`,
+        tool: this.toolId,
+        message: `Required test directory "${requiredDir}" does not exist`,
+        code: "missing-test-dir",
+        severity: "error",
+      };
+    }
+
+    if (!fs.statSync(dirPath).isDirectory()) {
+      return {
+        rule: `${this.rule}.${this.toolId}`,
+        tool: this.toolId,
+        message: `"${requiredDir}" exists but is not a directory`,
+        code: "not-a-directory",
+        severity: "error",
+      };
+    }
+
+    return null;
+  }
+
+  /**
+   * Get the effective patterns, scoped to required_dir if set
+   */
+  private getEffectivePatterns(): string[] {
+    const basePattern = this.getPattern();
+    const patterns = splitPatterns(basePattern);
+
+    const requiredDir = this.config.required_dir;
+    if (!requiredDir) {
+      return patterns;
+    }
+
+    // Scope patterns to the required directory
+    const normalizedDir = requiredDir.replace(/\/$/, "");
+    return patterns.map((p) => {
+      // If pattern already starts with the required dir, use as-is
+      if (p.startsWith(`${normalizedDir}/`) || p.startsWith(`${normalizedDir}\\`)) {
+        return p;
+      }
+      // If pattern starts with **, prefix with the dir
+      if (p.startsWith("**")) {
+        return `${normalizedDir}/${p}`;
+      }
+      // Otherwise, join the pattern with the dir
+      return `${normalizedDir}/${p}`;
+    });
+  }
+
   async run(projectRoot: string): Promise<CheckResult> {
     const startTime = Date.now();
-    const pattern = this.getPattern();
-    const patterns = splitPatterns(pattern);
     const minTestFiles = this.getMinTestFiles();
 
+    // Check required directory exists first
+    const dirViolation = this.checkRequiredDir(projectRoot);
+    if (dirViolation) {
+      return this.fail([dirViolation], Date.now() - startTime);
+    }
+
     try {
+      const patterns = this.getEffectivePatterns();
+
       // Find all test files matching the pattern(s)
-      // glob accepts an array of patterns
       const testFiles = await glob(patterns, {
         cwd: projectRoot,
         ignore: ["**/node_modules/**", "**/.git/**"],
@@ -102,7 +174,7 @@ export class TestsRunner extends BaseToolRunner {
       // Check if we have enough test files
       if (fileCount < minTestFiles) {
         const violations: Violation[] = [
-          this.createInsufficientTestsViolation(fileCount, minTestFiles, pattern),
+          this.createInsufficientTestsViolation(fileCount, minTestFiles, patterns),
         ];
         return this.fail(violations, Date.now() - startTime);
       }
@@ -120,12 +192,17 @@ export class TestsRunner extends BaseToolRunner {
   private createInsufficientTestsViolation(
     found: number,
     required: number,
-    pattern: string
+    patterns: string[]
   ): Violation {
+    const patternDisplay = patterns.length === 1 ? patterns[0] : patterns.join(", ");
+    const locationHint = this.config.required_dir
+      ? ` in "${this.config.required_dir}"`
+      : "";
+
     const message =
       found === 0
-        ? `No test files found matching pattern "${pattern}". Expected at least ${required}.`
-        : `Found ${found} test file(s) matching pattern "${pattern}", but ${required} required.`;
+        ? `No test files found${locationHint} matching pattern "${patternDisplay}". Expected at least ${required}.`
+        : `Found ${found} test file(s)${locationHint} matching pattern "${patternDisplay}", but ${required} required.`;
 
     return {
       rule: `${this.rule}.${this.toolId}`,
@@ -152,14 +229,23 @@ export class TestsRunner extends BaseToolRunner {
   override async audit(projectRoot: string): Promise<CheckResult> {
     const startTime = Date.now();
 
-    // Tests validation doesn't require external config files
-    // Just verify the pattern is valid by attempting to use it
-    const pattern = this.getPattern();
-    const patterns = splitPatterns(pattern);
+    // Check required directory exists
+    const dirViolation = this.checkRequiredDir(projectRoot);
+    if (dirViolation) {
+      return {
+        name: `${this.name} Config`,
+        rule: this.rule,
+        passed: false,
+        violations: [dirViolation],
+        skipped: false,
+        duration: Date.now() - startTime,
+      };
+    }
+
+    // Validate pattern by attempting a glob with early termination
+    const patterns = this.getEffectivePatterns();
 
     try {
-      // Validate pattern by attempting a glob with early termination
-      // Use iterator to avoid scanning all files - we just need to check pattern is valid
       const iterator = glob.iterate(patterns, {
         cwd: projectRoot,
         ignore: ["**/node_modules/**"],
@@ -178,6 +264,7 @@ export class TestsRunner extends BaseToolRunner {
       };
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown error";
+      const patternDisplay = patterns.join(", ");
       return {
         name: `${this.name} Config`,
         rule: this.rule,
@@ -186,7 +273,7 @@ export class TestsRunner extends BaseToolRunner {
           {
             rule: `${this.rule}.${this.toolId}`,
             tool: "audit",
-            message: `Invalid test pattern "${pattern}": ${message}`,
+            message: `Invalid test pattern "${patternDisplay}": ${message}`,
             severity: "error",
           },
         ],
