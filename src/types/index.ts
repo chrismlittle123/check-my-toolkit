@@ -194,35 +194,3 @@ export const ExitCode = {
 } as const;
 
 export type ExitCodeType = (typeof ExitCode)[keyof typeof ExitCode];
-
-// =============================================================================
-// Monorepo Types
-// =============================================================================
-
-/** Result of checking a single project in a monorepo */
-export interface ProjectCheckResult {
-  /** Relative path from monorepo root */
-  projectPath: string;
-  /** Detected project type */
-  projectType: string;
-  /** Full check result, null if skipped */
-  result: FullResult | null;
-  /** Error message if check failed to run */
-  error?: string;
-}
-
-/** Result of running checks across a monorepo */
-export interface MonorepoResult {
-  version: string;
-  monorepoRoot: string;
-  projects: ProjectCheckResult[];
-  summary: {
-    totalProjects: number;
-    checkedProjects: number;
-    skippedProjects: number;
-    passedProjects: number;
-    failedProjects: number;
-    totalViolations: number;
-    exitCode: number;
-  };
-}

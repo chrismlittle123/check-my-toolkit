@@ -60,7 +60,6 @@ src/
 │   ├── schema.ts       # Zod schemas
 │   └── registry.ts     # Registry resolution
 ├── projects/           # Project detection for monorepos
-├── monorepo/           # Monorepo check runner
 ├── output/             # Output formatters (text, JSON)
 └── types/              # Shared TypeScript types
 ```

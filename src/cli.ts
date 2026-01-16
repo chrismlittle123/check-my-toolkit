@@ -12,8 +12,7 @@ import { auditCodeConfig, runCodeChecks } from "./code/index.js";
 import { ConfigError, getProjectRoot, loadConfig, loadConfigAsync } from "./config/index.js";
 import { configSchema } from "./config/schema.js";
 import { auditInfraConfig, runInfraChecks } from "./infra/index.js";
-import { runMonorepoChecks } from "./monorepo/index.js";
-import { formatMonorepoOutput, formatOutput, type OutputFormat } from "./output/index.js";
+import { formatOutput, type OutputFormat } from "./output/index.js";
 import { checkBranchCommand, checkCommitCommand } from "./process/commands/index.js";
 import { auditProcessConfig, runProcessChecks } from "./process/index.js";
 import { type DetectOptions, runDetect } from "./projects/index.js";
@@ -107,16 +106,6 @@ async function runAudit(options: { config?: string; format: string }, domain?: D
 
     const result = buildResult(configPath, domains);
     process.stdout.write(`${formatOutput(result, options.format as OutputFormat)}\n`);
-    process.exit(result.summary.exitCode);
-  } catch (error) {
-    handleError(error);
-  }
-}
-
-async function runMonorepoCheck(options: { format: string }): Promise<void> {
-  try {
-    const result = await runMonorepoChecks(process.cwd());
-    process.stdout.write(`${formatMonorepoOutput(result, options.format as OutputFormat)}\n`);
     process.exit(result.summary.exitCode);
   } catch (error) {
     handleError(error);
@@ -390,15 +379,8 @@ program
   .command("check")
   .description("Run all checks (code + process + infra)")
   .option("-c, --config <path>", "Path to check.toml config file")
-  .option("--monorepo", "Run checks across all detected projects in monorepo")
   .addOption(new Option("-f, --format <format>", "Output format").choices(["text", "json"]).default("text"))
-  .action(async (options: { config?: string; format: string; monorepo?: boolean }) => {
-    if (options.monorepo) {
-      await runMonorepoCheck(options);
-    } else {
-      await runCheck(options);
-    }
-  });
+  .action((options: { config?: string; format: string }) => runCheck(options));
 
 // cm audit - run all domain audits
 program
