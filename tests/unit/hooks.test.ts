@@ -228,4 +228,177 @@ describe("HooksRunner", () => {
       expect(result.passed).toBe(true);
     });
   });
+
+  describe("protected_branches", () => {
+    beforeEach(() => {
+      fs.mkdirSync(path.join(tempDir, ".husky"), { recursive: true });
+    });
+
+    it("does nothing when protected_branches is not configured", async () => {
+      runner.setConfig({ enabled: true, require_husky: true });
+
+      const result = await runner.run(tempDir);
+      expect(result.passed).toBe(true);
+    });
+
+    it("fails when pre-push hook does not exist", async () => {
+      runner.setConfig({
+        enabled: true,
+        require_husky: true,
+        protected_branches: ["main"],
+      });
+
+      const result = await runner.run(tempDir);
+      expect(result.passed).toBe(false);
+      expect(result.violations).toHaveLength(1);
+      expect(result.violations[0].message).toContain("Pre-push hook not found");
+      expect(result.violations[0].file).toBe(".husky/pre-push");
+    });
+
+    it("fails when pre-push hook does not detect current branch", async () => {
+      fs.writeFileSync(
+        path.join(tempDir, ".husky/pre-push"),
+        "#!/bin/sh\necho 'Hello'\n"
+      );
+      runner.setConfig({
+        enabled: true,
+        require_husky: true,
+        protected_branches: ["main"],
+      });
+
+      const result = await runner.run(tempDir);
+      expect(result.passed).toBe(false);
+      expect(result.violations).toHaveLength(1);
+      expect(result.violations[0].message).toContain("does not detect current branch");
+    });
+
+    it("fails when pre-push hook does not check for protected branch", async () => {
+      fs.writeFileSync(
+        path.join(tempDir, ".husky/pre-push"),
+        `#!/bin/sh
+BRANCH=$(git rev-parse --abbrev-ref HEAD)
+if [ "$BRANCH" = "develop" ]; then
+  exit 1
+fi
+`
+      );
+      runner.setConfig({
+        enabled: true,
+        require_husky: true,
+        protected_branches: ["main"],
+      });
+
+      const result = await runner.run(tempDir);
+      expect(result.passed).toBe(false);
+      expect(result.violations).toHaveLength(1);
+      expect(result.violations[0].message).toContain('does not check for protected branch "main"');
+    });
+
+    it("passes when pre-push hook checks for protected branch using rev-parse", async () => {
+      fs.writeFileSync(
+        path.join(tempDir, ".husky/pre-push"),
+        `#!/bin/sh
+BRANCH=$(git rev-parse --abbrev-ref HEAD)
+if [ "$BRANCH" = "main" ]; then
+  echo "Direct pushes to main are not allowed."
+  exit 1
+fi
+`
+      );
+      runner.setConfig({
+        enabled: true,
+        require_husky: true,
+        protected_branches: ["main"],
+      });
+
+      const result = await runner.run(tempDir);
+      expect(result.passed).toBe(true);
+    });
+
+    it("passes when pre-push hook checks for protected branch using branch --show-current", async () => {
+      fs.writeFileSync(
+        path.join(tempDir, ".husky/pre-push"),
+        `#!/bin/sh
+BRANCH=$(git branch --show-current)
+if [ "$BRANCH" = "main" ]; then
+  echo "Direct pushes to main are not allowed."
+  exit 1
+fi
+`
+      );
+      runner.setConfig({
+        enabled: true,
+        require_husky: true,
+        protected_branches: ["main"],
+      });
+
+      const result = await runner.run(tempDir);
+      expect(result.passed).toBe(true);
+    });
+
+    it("passes when pre-push hook checks for protected branch using symbolic-ref", async () => {
+      fs.writeFileSync(
+        path.join(tempDir, ".husky/pre-push"),
+        `#!/bin/sh
+BRANCH=$(git symbolic-ref --short HEAD)
+if [ "$BRANCH" = "main" ]; then
+  echo "Direct pushes to main are not allowed."
+  exit 1
+fi
+`
+      );
+      runner.setConfig({
+        enabled: true,
+        require_husky: true,
+        protected_branches: ["main"],
+      });
+
+      const result = await runner.run(tempDir);
+      expect(result.passed).toBe(true);
+    });
+
+    it("checks all protected branches", async () => {
+      fs.writeFileSync(
+        path.join(tempDir, ".husky/pre-push"),
+        `#!/bin/sh
+BRANCH=$(git rev-parse --abbrev-ref HEAD)
+if [ "$BRANCH" = "main" ]; then
+  exit 1
+fi
+`
+      );
+      runner.setConfig({
+        enabled: true,
+        require_husky: true,
+        protected_branches: ["main", "master", "release"],
+      });
+
+      const result = await runner.run(tempDir);
+      expect(result.passed).toBe(false);
+      expect(result.violations).toHaveLength(2); // master and release missing
+      expect(result.violations.some((v) => v.message.includes('"master"'))).toBe(true);
+      expect(result.violations.some((v) => v.message.includes('"release"'))).toBe(true);
+    });
+
+    it("passes when all protected branches are checked", async () => {
+      fs.writeFileSync(
+        path.join(tempDir, ".husky/pre-push"),
+        `#!/bin/sh
+BRANCH=$(git rev-parse --abbrev-ref HEAD)
+if [ "$BRANCH" = "main" ] || [ "$BRANCH" = "master" ]; then
+  echo "Direct pushes to main/master are not allowed."
+  exit 1
+fi
+`
+      );
+      runner.setConfig({
+        enabled: true,
+        require_husky: true,
+        protected_branches: ["main", "master"],
+      });
+
+      const result = await runner.run(tempDir);
+      expect(result.passed).toBe(true);
+    });
+  });
 });
