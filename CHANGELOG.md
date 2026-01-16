@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.34.1
+
+### Patch Changes
+
+- b9d7ecf: Add e2e tests for coverage_run, required_dir, and protected_branches features. Fix bug in config loader where coverage_run was not being merged with defaults.
+
 ## 0.34.0
 
 ### Minor Changes
