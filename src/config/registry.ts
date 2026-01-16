@@ -9,7 +9,7 @@ import { ConfigError } from "./loader.js";
 import { type Config, configSchema } from "./schema.js";
 
 /** Authentication method for private registries */
-export type AuthMethod = "token" | "ssh" | "none";
+type AuthMethod = "token" | "ssh" | "none";
 
 interface RegistryLocation {
   type: "github" | "local";
