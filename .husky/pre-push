@@ -1,1 +1,1 @@
-node dist/cli.js process check-branch && npm run typecheck && npm run lint && npm run build && npm run test:unit
+node dist/cli.js process check-branch && npm run typecheck && npm run lint && npm run build

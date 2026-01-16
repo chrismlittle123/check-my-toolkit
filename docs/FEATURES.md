@@ -6,7 +6,7 @@ Unified project health checks for code quality, process compliance, and infrastr
 
 check-my-toolkit (`cm`) provides a single CLI to run multiple code quality, process, and infrastructure tools with unified configuration via `check.toml`. Three domains are fully implemented:
 
-- **CODE** - 15 integrated tools for linting, formatting, type checking, security, and more
+- **CODE** - 14 integrated tools for linting, formatting, type checking, security, and more
 - **PROCESS** - 11 workflow checks for git hooks, CI, PRs, branches, commits, and repository settings
 - **INFRA** - AWS resource tagging validation
 
@@ -239,30 +239,7 @@ enabled = true
 
 ---
 
-## Test Validation
-
-### Tests (`[code.tests]`)
-
-Validates test files exist in the project.
-
-```toml
-[code.tests]
-enabled = true
-pattern = "**/*.{test,spec}.{ts,tsx,js,jsx,py}"
-min_test_files = 1
-```
-
-| Property | Value |
-|----------|-------|
-| `pattern` | Glob pattern for test files (supports comma-separated patterns) |
-| `min_test_files` | Minimum number of test files required (0 = just verify pattern works) |
-
-**Examples:**
-- `**/*.test.ts` - TypeScript test files
-- `**/*.{test,spec}.{ts,tsx,js,jsx}` - JS/TS test and spec files
-- `**/*.test.ts,**/test_*.py` - Multiple patterns (comma-separated)
-
----
+## Test Coverage
 
 ### Coverage Run (`[code.coverage_run]`)
 
@@ -814,12 +791,6 @@ enabled = true
 [code.unused.vulture]
 enabled = true
 
-# Tests
-[code.tests]
-enabled = true
-pattern = "**/*.{test,spec}.{ts,tsx,js,jsx}"
-min_test_files = 5
-
 # Security
 [code.security.secrets]
 enabled = true
@@ -936,7 +907,7 @@ Environment = ["dev", "stag", "prod"]
 
 # Tool Summary
 
-## CODE Domain (15 tools)
+## CODE Domain (14 tools)
 
 | Category | Tool | Languages | Config |
 |----------|------|-----------|--------|
@@ -948,7 +919,6 @@ Environment = ["dev", "stag", "prod"]
 | Types | ty | Python | `[code.types.ty]` |
 | Unused | Knip | JS/TS | `[code.unused.knip]` |
 | Unused | Vulture | Python | `[code.unused.vulture]` |
-| Tests | Built-in | Any | `[code.tests]` |
 | Coverage | Coverage Run | Any | `[code.coverage_run]` |
 | Security | Gitleaks | Any | `[code.security.secrets]` |
 | Security | npm audit | JS/TS | `[code.security.npmaudit]` |

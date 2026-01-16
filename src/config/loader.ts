@@ -178,10 +178,6 @@ function mergeFormatting(c: Config, dc: Config): CodeConfig["formatting"] {
   };
 }
 
-function mergeTests(c: Config, dc: Config): CodeConfig["tests"] {
-  return merge(dc.code?.tests, c.code?.tests);
-}
-
 function mergeCoverageRun(c: Config, dc: Config): CodeConfig["coverage_run"] {
   return merge(dc.code?.coverage_run, c.code?.coverage_run);
 }
@@ -210,7 +206,6 @@ function mergeCode(c: Config, dc: Config): CodeConfig {
     formatting: mergeFormatting(c, dc),
     types: mergeTypes(c, dc),
     unused: mergeUnused(c, dc),
-    tests: mergeTests(c, dc),
     coverage_run: mergeCoverageRun(c, dc),
     security: mergeSecurity(c, dc),
     naming: mergeNaming(c, dc),

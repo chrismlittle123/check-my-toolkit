@@ -4,7 +4,7 @@ import {
   DomainResult,
   type IToolRunner,
 } from "../types/index.js";
-import { CoverageRunRunner, DisableCommentsRunner, ESLintRunner, GitleaksRunner, KnipRunner, NamingRunner, NpmAuditRunner, PipAuditRunner, PrettierRunner, RuffFormatRunner, RuffRunner, TestsRunner, TscRunner, TyRunner, VultureRunner } from "./tools/index.js";
+import { CoverageRunRunner, DisableCommentsRunner, ESLintRunner, GitleaksRunner, KnipRunner, NamingRunner, NpmAuditRunner, PipAuditRunner, PrettierRunner, RuffFormatRunner, RuffRunner, TscRunner, TyRunner, VultureRunner } from "./tools/index.js";
 
 // Tool runner instances (singletons for tools that don't need per-run config)
 const gitleaks = new GitleaksRunner();
@@ -19,7 +19,7 @@ const vulture = new VultureRunner();
 // Note: RuffRunner and TscRunner are created per-run to support config from check.toml
 
 // Export tool runners for direct access
-export { BaseToolRunner, CoverageRunRunner, ESLintRunner, KnipRunner, NamingRunner, PrettierRunner, RuffFormatRunner, RuffRunner, TestsRunner, TscRunner, TyRunner, VultureRunner } from "./tools/index.js";
+export { BaseToolRunner, CoverageRunRunner, ESLintRunner, KnipRunner, NamingRunner, PrettierRunner, RuffFormatRunner, RuffRunner, TscRunner, TyRunner, VultureRunner } from "./tools/index.js";
 
 /** Tool configuration entry mapping config getter to runner or runner factory */
 interface ToolEntry {
@@ -45,18 +45,6 @@ function createEslintRunner(config: Config): ESLintRunner {
       rules: eslintConfig.rules,
     });
   }
-  return runner;
-}
-
-/** Create a configured TestsRunner */
-function createTestsRunner(config: Config): TestsRunner {
-  const runner = new TestsRunner();
-  runner.setConfig({
-    enabled: config.code?.tests?.enabled,
-    pattern: config.code?.tests?.pattern,
-    min_test_files: config.code?.tests?.min_test_files,
-    required_dir: config.code?.tests?.required_dir,
-  });
   return runner;
 }
 
@@ -141,7 +129,6 @@ const toolRegistry: ToolEntry[] = [
   { isEnabled: (c) => isEnabled(c.code?.security?.secrets), runner: gitleaks },
   { isEnabled: (c) => isEnabled(c.code?.security?.npmaudit), runner: npmaudit },
   { isEnabled: (c) => isEnabled(c.code?.security?.pipaudit), runner: pipaudit },
-  { isEnabled: (c) => isEnabled(c.code?.tests), runner: createTestsRunner },
   { isEnabled: (c) => isEnabled(c.code?.coverage_run), runner: createCoverageRunRunner },
   { isEnabled: (c) => isEnabled(c.code?.naming), runner: createNamingRunner },
   { isEnabled: (c) => isEnabled(c.code?.quality?.["disable-comments"]), runner: createDisableCommentsRunner },

@@ -614,53 +614,6 @@ const testCases: TestCase[] = [
   },
 
   // ============================================================
-  // Tests Validation: Test file existence
-  // ============================================================
-  {
-    name: "tests-validation/with-tests passes when test files exist",
-    config: "tests/e2e/projects/tests-validation/with-tests/check.toml",
-    command: "check",
-    expectedExitCode: 0,
-    expectedPatterns: ["Tests: passed", "All checks passed"],
-  },
-  {
-    name: "tests-validation/no-tests fails when no test files exist",
-    config: "tests/e2e/projects/tests-validation/no-tests/check.toml",
-    command: "check",
-    expectedExitCode: 1,
-    expectedPatterns: ["Tests:", "No test files found"],
-  },
-  {
-    name: "tests-validation/custom-pattern uses custom pattern",
-    config: "tests/e2e/projects/tests-validation/custom-pattern/check.toml",
-    command: "check",
-    expectedExitCode: 0,
-    expectedPatterns: ["Tests: passed"],
-  },
-  {
-    name: "tests-validation/disabled skips when tests validation is disabled",
-    config: "tests/e2e/projects/tests-validation/disabled/check.toml",
-    command: "check",
-    expectedExitCode: 0,
-    expectedPatterns: ["CODE"],
-    notExpectedPatterns: ["Tests"],
-  },
-  {
-    name: "tests-validation/required-dir-pass passes when tests in required directory",
-    config: "tests/e2e/projects/tests-validation/required-dir-pass/check.toml",
-    command: "check",
-    expectedExitCode: 0,
-    expectedPatterns: ["Tests: passed"],
-  },
-  {
-    name: "tests-validation/required-dir-fail fails when required directory missing",
-    config: "tests/e2e/projects/tests-validation/required-dir-fail/check.toml",
-    command: "check",
-    expectedExitCode: 1,
-    expectedPatterns: ["Tests:", "Required test directory"],
-  },
-
-  // ============================================================
   // Coverage Run: Run tests and verify coverage threshold
   // ============================================================
   {

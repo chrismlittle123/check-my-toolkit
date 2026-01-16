@@ -1,3 +1,0 @@
-[code.tests]
-enabled = true
-pattern = "**/*_test.go"
