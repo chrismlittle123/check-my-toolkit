@@ -4,6 +4,8 @@ import {
   type DomainResult,
   type DomainStatus,
   type FullResult,
+  type MonorepoResult,
+  type ProjectCheckResult,
   type Violation,
 } from "../types/index.js";
 
@@ -128,5 +130,112 @@ export function formatOutput(result: FullResult, format: OutputFormat): string {
     case "text":
     default:
       return formatText(result);
+  }
+}
+
+// =============================================================================
+// Monorepo Output Formatters
+// =============================================================================
+
+function getProjectStatusIcon(project: ProjectCheckResult): string {
+  if (project.error) {
+    return chalk.red("✗");
+  }
+  if (project.result === null) {
+    return chalk.yellow("○");
+  }
+  return project.result.summary.exitCode === 0 ? chalk.green("✓") : chalk.red("✗");
+}
+
+function getProjectStatusText(project: ProjectCheckResult): string {
+  if (project.error) {
+    return chalk.red("ERROR");
+  }
+  if (project.result === null) {
+    return chalk.yellow("SKIP");
+  }
+  return project.result.summary.exitCode === 0 ? chalk.green("PASS") : chalk.red("FAIL");
+}
+
+function formatProjectLine(project: ProjectCheckResult): string[] {
+  const icon = getProjectStatusIcon(project);
+  const status = getProjectStatusText(project);
+  const projectType = chalk.dim(`[${project.projectType}]`);
+  const lines: string[] = [];
+
+  lines.push(`${icon} ${status} ${project.projectPath} ${projectType}`);
+
+  if (project.error) {
+    lines.push(chalk.red(`    Error: ${project.error}`));
+  } else if (project.result && project.result.summary.totalViolations > 0) {
+    // Show violation count per domain
+    for (const [domainName, domainResult] of Object.entries(project.result.domains)) {
+      if (domainResult.violationCount > 0) {
+        lines.push(chalk.dim(`    ${domainName}: ${domainResult.violationCount} violation(s)`));
+      }
+    }
+  }
+
+  return lines;
+}
+
+/**
+ * Format monorepo result as JSON
+ */
+export function formatMonorepoJson(result: MonorepoResult): string {
+  return JSON.stringify(result, null, 2);
+}
+
+function formatMonorepoHeader(result: MonorepoResult): string[] {
+  return [
+    `check-my-toolkit v${result.version} ${chalk.cyan("(monorepo mode)")}`,
+    `Root: ${result.monorepoRoot}`,
+    "",
+  ];
+}
+
+function formatMonorepoSummary(summary: MonorepoResult["summary"]): string[] {
+  const lines: string[] = ["", chalk.dim("─".repeat(50))];
+  const projectStats = `${summary.passedProjects}/${summary.checkedProjects} projects passed`;
+  const skippedInfo = summary.skippedProjects > 0 ? `, ${summary.skippedProjects} skipped` : "";
+
+  if (summary.totalViolations === 0 && summary.failedProjects === 0) {
+    lines.push(chalk.green(`✓ ${projectStats}${skippedInfo}`));
+  } else {
+    lines.push(chalk.red(`✗ ${projectStats}${skippedInfo}`));
+    lines.push(chalk.red(`  ${summary.totalViolations} total violation(s)`));
+  }
+  return lines;
+}
+
+/**
+ * Format monorepo result as human-readable text
+ */
+export function formatMonorepoText(result: MonorepoResult): string {
+  const lines = formatMonorepoHeader(result);
+
+  if (result.projects.length === 0) {
+    lines.push(chalk.yellow("No projects detected"));
+    return lines.join("\n");
+  }
+
+  for (const project of result.projects) {
+    lines.push(...formatProjectLine(project));
+  }
+
+  lines.push(...formatMonorepoSummary(result.summary));
+  return lines.join("\n");
+}
+
+/**
+ * Format monorepo result based on output format
+ */
+export function formatMonorepoOutput(result: MonorepoResult, format: OutputFormat): string {
+  switch (format) {
+    case "json":
+      return formatMonorepoJson(result);
+    case "text":
+    default:
+      return formatMonorepoText(result);
   }
 }
