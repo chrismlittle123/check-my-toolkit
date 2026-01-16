@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.31.0
+
+### Minor Changes
+
+- bf7fec7: Add monorepo support with `--monorepo` flag for `cm check` command. Detects all projects in a monorepo and runs checks in each project that has a check.toml config, then aggregates results with per-project status and total summary.
+
 ## 0.30.1
 
 ### Patch Changes
