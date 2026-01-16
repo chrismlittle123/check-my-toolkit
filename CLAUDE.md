@@ -9,8 +9,6 @@ check-my-toolkit is a unified CLI tool (`cm`) for project health checks. It impl
 - **PROCESS** - 11 workflow checks for git hooks, CI, PRs, branches, commits, and repository settings
 - **INFRA** - AWS resource tagging validation
 
-A fourth **STACK** domain (environment validation) is planned but not yet implemented.
-
 ## Prerequisites
 
 Install system dependencies (macOS):
