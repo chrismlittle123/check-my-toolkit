@@ -285,7 +285,7 @@ function mergeCodeSection(base: CodeConfig | undefined, override: CodeConfig): C
     formatting: mergeFormatting(base?.formatting, override.formatting),
     types: mergeTypes(base?.types, override.types),
     unused: mergeUnused(base?.unused, override.unused),
-    tests: mergeToolConfig(base?.tests, override.tests),
+    coverage_run: mergeToolConfig(base?.coverage_run, override.coverage_run),
     security: mergeSecurity(base?.security, override.security),
     naming: mergeNaming(base?.naming, override.naming),
     quality: mergeQuality(base?.quality, override.quality),

@@ -18,7 +18,6 @@ Registry (org standards) → check.toml [extends] → validates project configs
 ├── [code.formatting]   # Prettier, Ruff (format)
 ├── [code.types]        # tsc, ty
 ├── [code.unused]       # Knip, Vulture
-├── [code.tests]        # Test file validation
 ├── [code.coverage_run] # Run tests with coverage threshold
 ├── [code.security]     # Secrets, dependency audits
 ├── [code.naming]       # File and folder naming conventions
@@ -95,20 +94,6 @@ enabled = true
 
 [code.unused.vulture]
 enabled = true
-```
-
-### Tests: `[code.tests]`
-
-| Check | Description |
-|-------|-------------|
-| Test files exist | Validates test files match pattern |
-
-```toml
-[code.tests]
-enabled = true
-pattern = "**/*.{test,spec}.{ts,tsx,js,jsx,py}"
-min_test_files = 1
-required_dir = "tests"  # Optional: require a specific directory exists
 ```
 
 ### Coverage Run: `[code.coverage_run]`

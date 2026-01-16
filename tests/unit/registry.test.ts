@@ -276,7 +276,6 @@ foo = "bar"`
           formatting: { prettier: { enabled: true } },
           types: { tsc: { enabled: true } },
           unused: { knip: { enabled: true } },
-          tests: { enabled: true, pattern: "**/*.test.ts" },
           security: { secrets: { enabled: true } },
         },
       };
@@ -286,7 +285,6 @@ foo = "bar"`
           linting: { ruff: { enabled: true } },
           types: { ty: { enabled: true } },
           unused: { vulture: { enabled: true } },
-          tests: { min_test_files: 5 },
           security: { npmaudit: { enabled: true }, pipaudit: { enabled: true } },
         },
       };
@@ -298,15 +296,12 @@ foo = "bar"`
       expect(result.code?.formatting?.prettier?.enabled).toBe(true);
       expect(result.code?.types?.tsc?.enabled).toBe(true);
       expect(result.code?.unused?.knip?.enabled).toBe(true);
-      expect(result.code?.tests?.enabled).toBe(true);
-      expect(result.code?.tests?.pattern).toBe("**/*.test.ts");
       expect(result.code?.security?.secrets?.enabled).toBe(true);
 
       // Override values added
       expect(result.code?.linting?.ruff?.enabled).toBe(true);
       expect(result.code?.types?.ty?.enabled).toBe(true);
       expect(result.code?.unused?.vulture?.enabled).toBe(true);
-      expect(result.code?.tests?.min_test_files).toBe(5);
       expect(result.code?.security?.npmaudit?.enabled).toBe(true);
       expect(result.code?.security?.pipaudit?.enabled).toBe(true);
     });

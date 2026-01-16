@@ -45,7 +45,6 @@ export {
   RuffFormatRunner,
   RuffRunner,
   runCodeChecks,
-  TestsRunner,
   TscRunner,
   TyRunner,
   VultureRunner,

@@ -151,21 +151,6 @@ const prettierConfigSchema = z
   .optional();
 
 // =============================================================================
-// Tests Validation Configuration
-// =============================================================================
-
-/** Tests validation configuration */
-const testsConfigSchema = z
-  .object({
-    enabled: z.boolean().optional().default(false),
-    pattern: z.string().optional(), // Glob pattern for test files
-    min_test_files: z.number().int().nonnegative().optional(), // Minimum test files required (0 = just verify pattern works)
-    required_dir: z.string().optional(), // Required directory for tests (e.g., "tests/")
-  })
-  .strict()
-  .optional();
-
-// =============================================================================
 // Coverage Run Configuration
 // =============================================================================
 
@@ -317,7 +302,6 @@ const codeSchema = z
     formatting: codeFormattingSchema,
     types: codeTypesSchema,
     unused: codeUnusedSchema,
-    tests: testsConfigSchema,
     coverage_run: coverageRunConfigSchema,
     security: codeSecuritySchema,
     naming: namingConfigSchema,
@@ -574,9 +558,6 @@ export const defaultConfig: Config = {
     unused: {
       knip: { enabled: false },
       vulture: { enabled: false },
-    },
-    tests: {
-      enabled: false,
     },
     coverage_run: {
       enabled: false,

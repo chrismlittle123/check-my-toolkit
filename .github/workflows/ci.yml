@@ -53,8 +53,11 @@ jobs:
       - name: Build
         run: pnpm run build
 
-      - name: Run tests with coverage
-        run: pnpm run test:coverage
+      - name: Run unit tests
+        run: pnpm run test:unit
+
+      - name: Run e2e tests
+        run: pnpm run test:e2e
 
       - name: Self check
         run: node dist/cli.js code check
