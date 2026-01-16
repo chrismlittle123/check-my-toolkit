@@ -19,8 +19,10 @@ Registry (org standards) → check.toml [extends] → validates project configs
 ├── [code.types]        # tsc, ty
 ├── [code.unused]       # Knip, Vulture
 ├── [code.tests]        # Test file validation
+├── [code.coverage_run] # Run tests with coverage threshold
 ├── [code.security]     # Secrets, dependency audits
-└── [code.naming]       # File and folder naming conventions
+├── [code.naming]       # File and folder naming conventions
+└── [code.quality]      # Disable comments detection
 ```
 
 ---
@@ -106,7 +108,29 @@ enabled = true
 enabled = true
 pattern = "**/*.{test,spec}.{ts,tsx,js,jsx,py}"
 min_test_files = 1
+required_dir = "tests"  # Optional: require a specific directory exists
 ```
+
+### Coverage Run: `[code.coverage_run]`
+
+Run tests with coverage and validate against thresholds.
+
+| Check | Description |
+|-------|-------------|
+| Coverage threshold | Run tests and verify coverage meets minimum |
+
+```toml
+[code.coverage_run]
+enabled = true
+min_threshold = 80
+command = "pnpm test:coverage"  # Optional: custom command
+```
+
+**How it works:**
+- Auto-detects test runner (vitest, jest, pytest) if no command specified
+- Runs tests with coverage enabled
+- Parses coverage output and validates against `min_threshold`
+- Reports actual coverage percentage vs required
 
 ### Security: `[code.security]`
 
@@ -192,6 +216,30 @@ folder_case = "snake_case"
 - Files are validated against `file_case` based on their extension
 - Folders containing files with matching extensions are validated against `folder_case`
 - Common directories (`node_modules`, `.git`, `dist`, `__pycache__`) are automatically excluded
+
+### Code Quality: `[code.quality]`
+
+Detect linter/type-checker disable comments in code.
+
+| Check | Description |
+|-------|-------------|
+| Disable comments | Detects eslint-disable, @ts-ignore, noqa, etc. |
+
+```toml
+[code.quality.disable-comments]
+enabled = true
+extensions = ["ts", "tsx", "js", "jsx", "py"]
+exclude = ["tests/**", "**/*.test.ts"]
+
+# Optional: custom patterns (defaults are built-in)
+patterns = ["eslint-disable", "@ts-ignore", "@ts-expect-error", "noqa", "type: ignore", "prettier-ignore"]
+```
+
+**Default patterns detected:**
+- `eslint-disable`, `eslint-disable-next-line`
+- `@ts-ignore`, `@ts-expect-error`
+- `# noqa`, `# type: ignore`
+- `prettier-ignore`
 
 ---
 

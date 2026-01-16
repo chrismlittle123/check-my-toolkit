@@ -6,7 +6,7 @@ Unified project health checks for code quality, process compliance, and infrastr
 
 check-my-toolkit (`cm`) provides a single CLI to run multiple code quality, process, and infrastructure tools with unified configuration via `check.toml`. Three domains are fully implemented:
 
-- **CODE** - 14 integrated tools for linting, formatting, type checking, security, and more
+- **CODE** - 15 integrated tools for linting, formatting, type checking, security, and more
 - **PROCESS** - 11 workflow checks for git hooks, CI, PRs, branches, commits, and repository settings
 - **INFRA** - AWS resource tagging validation
 
@@ -261,6 +261,31 @@ min_test_files = 1
 - `**/*.test.ts` - TypeScript test files
 - `**/*.{test,spec}.{ts,tsx,js,jsx}` - JS/TS test and spec files
 - `**/*.test.ts,**/test_*.py` - Multiple patterns (comma-separated)
+
+---
+
+### Coverage Run (`[code.coverage_run]`)
+
+Run tests with coverage and validate against thresholds.
+
+```toml
+[code.coverage_run]
+enabled = true
+min_threshold = 80
+command = "pnpm test:coverage"  # Optional: auto-detects if not specified
+```
+
+| Property | Value |
+|----------|-------|
+| `min_threshold` | Minimum coverage percentage required (0-100) |
+| `command` | Custom test command (optional) |
+
+**Auto-detected runners:** vitest, jest, pytest
+
+**How it works:**
+- Runs tests with coverage enabled
+- Parses coverage output to extract percentage
+- Fails if coverage is below `min_threshold`
 
 ---
 
@@ -911,7 +936,7 @@ Environment = ["dev", "stag", "prod"]
 
 # Tool Summary
 
-## CODE Domain (14 tools)
+## CODE Domain (15 tools)
 
 | Category | Tool | Languages | Config |
 |----------|------|-----------|--------|
@@ -924,6 +949,7 @@ Environment = ["dev", "stag", "prod"]
 | Unused | Knip | JS/TS | `[code.unused.knip]` |
 | Unused | Vulture | Python | `[code.unused.vulture]` |
 | Tests | Built-in | Any | `[code.tests]` |
+| Coverage | Coverage Run | Any | `[code.coverage_run]` |
 | Security | Gitleaks | Any | `[code.security.secrets]` |
 | Security | npm audit | JS/TS | `[code.security.npmaudit]` |
 | Security | pip-audit | Python | `[code.security.pipaudit]` |
