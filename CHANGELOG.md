@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.35.1
+
+### Patch Changes
+
+- d58ab78: Sync documentation with implemented features: update roadmaps, fix tool count (15 not 14), add coverage_run docs, remove STACK domain references
+
 ## 0.35.0
 
 ### Minor Changes
