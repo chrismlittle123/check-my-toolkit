@@ -7,6 +7,7 @@ interface HooksConfig {
   require_husky?: boolean;
   require_hooks?: string[];
   commands?: Record<string, string[]>;
+  protected_branches?: string[];
 }
 
 /**
@@ -85,6 +86,53 @@ export class HooksRunner extends BaseProcessToolRunner {
     return violations;
   }
 
+  /** Create a pre-push hook violation */
+  private createPrePushViolation(ruleId: string, message: string): Violation {
+    return {
+      rule: `${this.rule}.${ruleId}`,
+      tool: this.toolId,
+      file: ".husky/pre-push",
+      message,
+      severity: "error",
+    };
+  }
+
+  /** Check if pre-push hook has branch detection */
+  private hasBranchDetection(projectRoot: string): boolean {
+    const branchDetectionPatterns = [
+      "git rev-parse --abbrev-ref HEAD",
+      "git branch --show-current",
+      "git symbolic-ref --short HEAD",
+    ];
+    const hookPath = ".husky/pre-push";
+    return branchDetectionPatterns.some((pattern) => this.fileContains(projectRoot, hookPath, pattern));
+  }
+
+  /** Check that pre-push hook prevents direct pushes to protected branches */
+  private checkProtectedBranches(projectRoot: string): Violation[] {
+    const protectedBranches = this.config.protected_branches ?? [];
+    if (protectedBranches.length === 0) {
+      return [];
+    }
+
+    const hookPath = ".husky/pre-push";
+
+    // First check if pre-push hook exists
+    if (!this.fileExists(projectRoot, hookPath)) {
+      return [this.createPrePushViolation("pre-push", "Pre-push hook not found. Required for protected branch enforcement.")];
+    }
+
+    // Check for branch detection pattern
+    if (!this.hasBranchDetection(projectRoot)) {
+      return [this.createPrePushViolation("pre-push.branch-detection", "Pre-push hook does not detect current branch. Expected one of: git rev-parse --abbrev-ref HEAD, git branch --show-current")];
+    }
+
+    // Check that each protected branch is referenced in the hook
+    return protectedBranches
+      .filter((branch) => !this.fileContains(projectRoot, hookPath, branch))
+      .map((branch) => this.createPrePushViolation("pre-push.protected-branch", `Pre-push hook does not check for protected branch "${branch}"`));
+  }
+
   /** Run hooks validation */
   async run(projectRoot: string): Promise<CheckResult> {
     const startTime = Date.now();
@@ -99,6 +147,7 @@ export class HooksRunner extends BaseProcessToolRunner {
     const violations = [
       ...this.checkRequiredHooks(projectRoot),
       ...this.checkHookCommands(projectRoot),
+      ...this.checkProtectedBranches(projectRoot),
     ];
 
     return this.fromViolations(violations, elapsed());

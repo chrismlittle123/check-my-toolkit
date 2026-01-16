@@ -340,6 +340,7 @@ const hooksConfigSchema = z
     require_husky: z.boolean().optional().default(true), // Require .husky/ directory
     require_hooks: z.array(z.string()).optional(), // e.g., ["pre-commit", "pre-push"]
     commands: hookCommandsSchema, // e.g., { "pre-commit": ["lint-staged"] }
+    protected_branches: z.array(z.string()).optional(), // e.g., ["main", "master"] - verify pre-push prevents direct pushes
   })
   .strict()
   .optional();

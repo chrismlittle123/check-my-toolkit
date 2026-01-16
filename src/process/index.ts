@@ -30,6 +30,7 @@ function createHooksRunner(config: Config): HooksRunner {
       require_husky: hooksConfig.require_husky,
       require_hooks: hooksConfig.require_hooks,
       commands: hooksConfig.commands,
+      protected_branches: hooksConfig.protected_branches,
     });
   }
   return runner;
