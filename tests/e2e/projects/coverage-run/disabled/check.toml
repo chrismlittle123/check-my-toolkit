@@ -1,0 +1,10 @@
+# Test project: Coverage run disabled
+
+[code.linting.eslint]
+enabled = false
+
+[code.linting.ruff]
+enabled = false
+
+[code.coverage_run]
+enabled = false

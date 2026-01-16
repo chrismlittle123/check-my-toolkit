@@ -1,0 +1,5 @@
+# Test project: Tests in required directory (should pass)
+
+[code.tests]
+enabled = true
+required_dir = "tests"

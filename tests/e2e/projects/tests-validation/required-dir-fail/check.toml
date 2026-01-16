@@ -1,0 +1,5 @@
+# Test project: Required test directory does not exist (should fail)
+
+[code.tests]
+enabled = true
+required_dir = "tests"

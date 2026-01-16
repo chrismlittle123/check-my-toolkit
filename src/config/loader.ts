@@ -182,6 +182,10 @@ function mergeTests(c: Config, dc: Config): CodeConfig["tests"] {
   return merge(dc.code?.tests, c.code?.tests);
 }
 
+function mergeCoverageRun(c: Config, dc: Config): CodeConfig["coverage_run"] {
+  return merge(dc.code?.coverage_run, c.code?.coverage_run);
+}
+
 function mergeNaming(c: Config, dc: Config): CodeConfig["naming"] {
   const cn = c.code?.naming;
   const dn = dc.code?.naming;
@@ -207,6 +211,7 @@ function mergeCode(c: Config, dc: Config): CodeConfig {
     types: mergeTypes(c, dc),
     unused: mergeUnused(c, dc),
     tests: mergeTests(c, dc),
+    coverage_run: mergeCoverageRun(c, dc),
     security: mergeSecurity(c, dc),
     naming: mergeNaming(c, dc),
     quality: mergeQuality(c, dc),

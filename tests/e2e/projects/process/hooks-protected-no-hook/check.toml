@@ -1,0 +1,6 @@
+# Test project: No pre-push hook but protected_branches configured (should fail)
+
+[process.hooks]
+enabled = true
+require_husky = true
+protected_branches = ["main"]
