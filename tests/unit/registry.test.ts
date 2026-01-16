@@ -35,6 +35,19 @@ describe("Registry", () => {
   });
 
   describe("parseRegistryUrl", () => {
+    const originalEnv = process.env;
+
+    beforeEach(() => {
+      // Clear relevant env vars for each test
+      delete process.env.CM_REGISTRY_TOKEN;
+      delete process.env.GITHUB_TOKEN;
+      delete process.env.SSH_AUTH_SOCK;
+    });
+
+    afterEach(() => {
+      process.env = originalEnv;
+    });
+
     it("parses GitHub URL without ref", () => {
       const result = parseRegistryUrl("github:myorg/standards");
       expect(result.type).toBe("github");
@@ -67,6 +80,81 @@ describe("Registry", () => {
     it("throws for invalid GitHub URL", () => {
       expect(() => parseRegistryUrl("github:invalid")).toThrow(ConfigError);
       expect(() => parseRegistryUrl("github:invalid")).toThrow("Invalid GitHub registry URL");
+    });
+
+    describe("private registry support", () => {
+      it("parses github+ssh: URL with SSH path", () => {
+        const result = parseRegistryUrl("github+ssh:myorg/private-standards");
+        expect(result.type).toBe("github");
+        expect(result.owner).toBe("myorg");
+        expect(result.repo).toBe("private-standards");
+        expect(result.path).toBe("git@github.com:myorg/private-standards.git");
+        expect(result.auth).toBe("ssh");
+      });
+
+      it("parses github+ssh: URL with ref", () => {
+        const result = parseRegistryUrl("github+ssh:myorg/private-standards@v2.0.0");
+        expect(result.type).toBe("github");
+        expect(result.owner).toBe("myorg");
+        expect(result.repo).toBe("private-standards");
+        expect(result.ref).toBe("v2.0.0");
+        expect(result.path).toBe("git@github.com:myorg/private-standards.git");
+        expect(result.auth).toBe("ssh");
+      });
+
+      it("parses github+token: URL with token in path", () => {
+        process.env.GITHUB_TOKEN = "ghp_test123";
+        const result = parseRegistryUrl("github+token:myorg/private-standards");
+        expect(result.type).toBe("github");
+        expect(result.owner).toBe("myorg");
+        expect(result.repo).toBe("private-standards");
+        expect(result.path).toBe("https://x-access-token:ghp_test123@github.com/myorg/private-standards.git");
+        expect(result.auth).toBe("token");
+      });
+
+      it("prefers CM_REGISTRY_TOKEN over GITHUB_TOKEN", () => {
+        process.env.GITHUB_TOKEN = "ghp_github";
+        process.env.CM_REGISTRY_TOKEN = "ghp_cm_registry";
+        const result = parseRegistryUrl("github+token:myorg/private-standards");
+        expect(result.path).toBe("https://x-access-token:ghp_cm_registry@github.com/myorg/private-standards.git");
+      });
+
+      it("falls back to HTTPS when token auth requested but no token found", () => {
+        const result = parseRegistryUrl("github+token:myorg/private-standards");
+        expect(result.path).toBe("https://github.com/myorg/private-standards.git");
+        expect(result.auth).toBe("token");
+      });
+
+      it("auto-detects token auth when GITHUB_TOKEN is set", () => {
+        process.env.GITHUB_TOKEN = "ghp_auto123";
+        const result = parseRegistryUrl("github:myorg/standards");
+        expect(result.path).toBe("https://x-access-token:ghp_auto123@github.com/myorg/standards.git");
+        expect(result.auth).toBe("token");
+      });
+
+      it("auto-detects SSH auth when SSH_AUTH_SOCK is set", () => {
+        process.env.SSH_AUTH_SOCK = "/tmp/ssh-agent.sock";
+        const result = parseRegistryUrl("github:myorg/standards");
+        expect(result.path).toBe("git@github.com:myorg/standards.git");
+        expect(result.auth).toBe("ssh");
+      });
+
+      it("prefers token over SSH when both are available", () => {
+        process.env.GITHUB_TOKEN = "ghp_test";
+        process.env.SSH_AUTH_SOCK = "/tmp/ssh-agent.sock";
+        const result = parseRegistryUrl("github:myorg/standards");
+        expect(result.auth).toBe("token");
+      });
+
+      it("uses no auth when neither token nor SSH is available", () => {
+        const result = parseRegistryUrl("github:myorg/standards");
+        expect(result.path).toBe("https://github.com/myorg/standards.git");
+        expect(result.auth).toBe("none");
+      });
+
+      it("throws for invalid github+ prefix", () => {
+        expect(() => parseRegistryUrl("github+invalid:myorg/repo")).toThrow(ConfigError);
+      });
     });
   });
 

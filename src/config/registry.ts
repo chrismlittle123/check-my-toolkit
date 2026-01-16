@@ -8,34 +8,101 @@ import { execa } from "execa";
 import { ConfigError } from "./loader.js";
 import { type Config, configSchema } from "./schema.js";
 
+/** Authentication method for private registries */
+export type AuthMethod = "token" | "ssh" | "none";
+
 interface RegistryLocation {
   type: "github" | "local";
   owner?: string;
   repo?: string;
   ref?: string;
   path: string;
+  auth?: AuthMethod;
+}
+
+/**
+ * Detect authentication method based on environment variables.
+ * Priority: CM_REGISTRY_TOKEN > GITHUB_TOKEN > SSH key detection > none
+ */
+function detectAuthMethod(): AuthMethod {
+  if (process.env.CM_REGISTRY_TOKEN || process.env.GITHUB_TOKEN) {
+    return "token";
+  }
+  // Check for SSH key - if SSH_AUTH_SOCK is set, SSH agent is available
+  if (process.env.SSH_AUTH_SOCK) {
+    return "ssh";
+  }
+  return "none";
+}
+
+/**
+ * Get the authentication token from environment variables.
+ */
+function getAuthToken(): string | undefined {
+  return process.env.CM_REGISTRY_TOKEN ?? process.env.GITHUB_TOKEN;
+}
+
+/**
+ * Build the git URL for a GitHub repository based on auth method.
+ */
+function buildGitHubUrl(owner: string, repo: string, auth: AuthMethod): string {
+  switch (auth) {
+    case "ssh":
+      return `git@github.com:${owner}/${repo}.git`;
+    case "token": {
+      const token = getAuthToken();
+      if (token) {
+        return `https://x-access-token:${token}@github.com/${owner}/${repo}.git`;
+      }
+      // Fall back to regular HTTPS if no token found
+      return `https://github.com/${owner}/${repo}.git`;
+    }
+    case "none":
+    default:
+      return `https://github.com/${owner}/${repo}.git`;
+  }
+}
+
+/**
+ * Parse explicit auth method from URL prefix.
+ * Supports: github+ssh:, github+token:, github: (auto-detect)
+ */
+function parseAuthFromUrl(url: string): { auth: AuthMethod | "auto"; rest: string } {
+  if (url.startsWith("github+ssh:")) {
+    return { auth: "ssh", rest: url.slice(11) };
+  }
+  if (url.startsWith("github+token:")) {
+    return { auth: "token", rest: url.slice(13) };
+  }
+  if (url.startsWith("github:")) {
+    return { auth: "auto", rest: url.slice(7) };
+  }
+  throw new ConfigError(`Invalid GitHub registry URL: ${url}`);
 }
 
 function parseGitHubUrl(url: string): RegistryLocation {
-  const rest = url.slice(7);
+  const { auth: explicitAuth, rest } = parseAuthFromUrl(url);
   const [repoPath, ref] = rest.split("@");
   const [owner, repo] = repoPath.split("/");
 
   if (!owner || !repo) {
-    throw new ConfigError(`Invalid GitHub registry URL: ${url}. Expected format: github:owner/repo`);
+    throw new ConfigError(`Invalid GitHub registry URL: ${url}. Expected format: github:owner/repo or github+ssh:owner/repo`);
   }
+
+  const auth = explicitAuth === "auto" ? detectAuthMethod() : explicitAuth;
 
   return {
     type: "github",
     owner,
     repo,
     ref: ref || undefined,
-    path: `https://github.com/${owner}/${repo}.git`,
+    path: buildGitHubUrl(owner, repo, auth),
+    auth,
   };
 }
 
 export function parseRegistryUrl(url: string, configDir?: string): RegistryLocation {
-  if (url.startsWith("github:")) {
+  if (url.startsWith("github:") || url.startsWith("github+")) {
     return parseGitHubUrl(url);
   }
 
