@@ -1,0 +1,1 @@
+node dist/cli.js process check-commit "$1"
