@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.29.1
+
+### Patch Changes
+
+- 78f6d89: Dogfood hook commands in project's own git hooks
+
+  - Add commit-msg hook using `cm process check-commit`
+  - Add check-branch to pre-push hook
+  - Update check.toml to require these hooks
+
 ## 0.29.0
 
 ### Minor Changes
