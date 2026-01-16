@@ -50,7 +50,7 @@ export default tseslint.config(
       'simple-import-sort/exports': 'error',
 
       // Detect circular dependencies (architecture rot, weird runtime bugs)
-      'import/no-cycle': ['error', { maxDepth: 10 }],
+      'import/no-cycle': ['error', { maxDepth: 2 }],
 
       // ============================================
       // Bug prevention rules
