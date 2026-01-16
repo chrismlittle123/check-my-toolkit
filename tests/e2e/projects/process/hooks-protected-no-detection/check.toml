@@ -1,0 +1,6 @@
+# Test project: Pre-push hook exists but has no branch detection (should fail)
+
+[process.hooks]
+enabled = true
+require_husky = true
+protected_branches = ["main"]

@@ -645,6 +645,46 @@ const testCases: TestCase[] = [
     expectedPatterns: ["CODE"],
     notExpectedPatterns: ["Tests"],
   },
+  {
+    name: "tests-validation/required-dir-pass passes when tests in required directory",
+    config: "tests/e2e/projects/tests-validation/required-dir-pass/check.toml",
+    command: "check",
+    expectedExitCode: 0,
+    expectedPatterns: ["Tests: passed"],
+  },
+  {
+    name: "tests-validation/required-dir-fail fails when required directory missing",
+    config: "tests/e2e/projects/tests-validation/required-dir-fail/check.toml",
+    command: "check",
+    expectedExitCode: 1,
+    expectedPatterns: ["Tests:", "Required test directory"],
+  },
+
+  // ============================================================
+  // Coverage Run: Run tests and verify coverage threshold
+  // ============================================================
+  {
+    name: "coverage-run/audit-pass passes when test runner detected",
+    config: "tests/e2e/projects/coverage-run/audit-pass/check.toml",
+    command: "audit",
+    expectedExitCode: 0,
+    expectedPatterns: ["Coverage Run Config: passed"],
+  },
+  {
+    name: "coverage-run/audit-fail fails when no test runner detected",
+    config: "tests/e2e/projects/coverage-run/audit-fail/check.toml",
+    command: "audit",
+    expectedExitCode: 1,
+    expectedPatterns: ["Coverage Run Config:", "Could not detect test runner"],
+  },
+  {
+    name: "coverage-run/disabled skips when coverage_run is disabled",
+    config: "tests/e2e/projects/coverage-run/disabled/check.toml",
+    command: "check",
+    expectedExitCode: 0,
+    expectedPatterns: ["CODE"],
+    notExpectedPatterns: ["Coverage Run"],
+  },
 
   // ============================================================
   // ty: Python type checking
@@ -816,6 +856,38 @@ const testCases: TestCase[] = [
     expectedExitCode: 0,
     expectedPatterns: ["PROCESS"],
     notExpectedPatterns: ["Hooks"],
+  },
+  {
+    name: "process/hooks-protected-pass passes when pre-push protects branch",
+    config: "tests/e2e/projects/process/hooks-protected-pass/check.toml",
+    command: "check",
+    domain: "process",
+    expectedExitCode: 0,
+    expectedPatterns: ["✓ Hooks: passed"],
+  },
+  {
+    name: "process/hooks-protected-no-hook fails when pre-push hook missing",
+    config: "tests/e2e/projects/process/hooks-protected-no-hook/check.toml",
+    command: "check",
+    domain: "process",
+    expectedExitCode: 1,
+    expectedPatterns: ["✗ Hooks:", "Pre-push hook not found"],
+  },
+  {
+    name: "process/hooks-protected-no-detection fails when no branch detection",
+    config: "tests/e2e/projects/process/hooks-protected-no-detection/check.toml",
+    command: "check",
+    domain: "process",
+    expectedExitCode: 1,
+    expectedPatterns: ["✗ Hooks:", "does not detect current branch"],
+  },
+  {
+    name: "process/hooks-protected-missing-branch fails when branch not checked",
+    config: "tests/e2e/projects/process/hooks-protected-missing-branch/check.toml",
+    command: "check",
+    domain: "process",
+    expectedExitCode: 1,
+    expectedPatterns: ["✗ Hooks:", "does not check for protected branch", "master"],
   },
 
   // ============================================================

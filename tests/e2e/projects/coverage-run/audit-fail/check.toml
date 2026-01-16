@@ -1,0 +1,11 @@
+# Test project: Coverage run with no runner config (audit fails)
+
+[code.linting.eslint]
+enabled = false
+
+[code.linting.ruff]
+enabled = false
+
+[code.coverage_run]
+enabled = true
+min_threshold = 80

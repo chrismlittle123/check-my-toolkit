@@ -1,0 +1,6 @@
+# Test project: Pre-push hook protects main branch (should pass)
+
+[process.hooks]
+enabled = true
+require_husky = true
+protected_branches = ["main"]

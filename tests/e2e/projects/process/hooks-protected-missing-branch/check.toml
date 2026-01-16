@@ -1,0 +1,6 @@
+# Test project: Pre-push hook checks for wrong branch (should fail)
+
+[process.hooks]
+enabled = true
+require_husky = true
+protected_branches = ["main", "master"]
