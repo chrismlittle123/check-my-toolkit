@@ -73,25 +73,20 @@ import { execa } from "execa";
 
 const mockedExeca = vi.mocked(execa);
 
+// Import CLI once to register handlers (mocks are already set up above)
+// This avoids the slow re-import on every test that was causing timeouts
+await import("../../src/cli.js");
+
 describe("CLI", () => {
   let tempDir: string;
 
-  beforeEach(async () => {
+  beforeEach(() => {
     tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "cm-cli-test-"));
     vi.clearAllMocks();
-    checkActionHandler = null;
-    auditActionHandler = null;
-    validateConfigActionHandler = null;
-    validateRegistryActionHandler = null;
-    schemaConfigActionHandler = null;
-
-    // Import CLI to register handlers
-    await import("../../src/cli.js");
   });
 
   afterEach(() => {
     fs.rmSync(tempDir, { recursive: true, force: true });
-    vi.resetModules();
   });
 
   describe("code check command", () => {
