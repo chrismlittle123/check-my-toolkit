@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.33.0
+
+### Minor Changes
+
+- caae2d2: Add test location validation with `required_dir` option
+
+  - Add `required_dir` config option to `code.tests` section
+  - Validates that the required directory exists
+  - Scopes test file search to only the required directory
+  - Clear error messages when directory is missing or empty
+  - Works for both single repos and monorepos (per-package check.toml)
+
 ## 0.32.0
 
 ### Minor Changes
