@@ -1,4 +1,4 @@
-# Features - check-my-toolkit v0.28.0
+# Features - check-my-toolkit v0.30.0
 
 Unified project health checks for code quality, process compliance, and infrastructure validation.
 
@@ -7,7 +7,7 @@ Unified project health checks for code quality, process compliance, and infrastr
 check-my-toolkit (`cm`) provides a single CLI to run multiple code quality, process, and infrastructure tools with unified configuration via `check.toml`. Three domains are fully implemented:
 
 - **CODE** - 14 integrated tools for linting, formatting, type checking, security, and more
-- **PROCESS** - 8 workflow checks for git hooks, CI, PRs, branches, and repository settings
+- **PROCESS** - 11 workflow checks for git hooks, CI, PRs, branches, commits, and repository settings
 - **INFRA** - AWS resource tagging validation
 
 ---
@@ -17,7 +17,7 @@ check-my-toolkit (`cm`) provides a single CLI to run multiple code quality, proc
 | Domain | Tools | Config |
 |--------|-------|--------|
 | CODE | ESLint, Ruff, Prettier, tsc, ty, Knip, Vulture, Gitleaks, npm-audit, pip-audit | `[code.*]` |
-| PROCESS | Hooks, CI, Branches, PR, Tickets, Coverage, Repo, Backups | `[process.*]` |
+| PROCESS | Hooks, CI, Branches, Commits, Changesets, PR, Tickets, Coverage, Repo, Backups, CODEOWNERS | `[process.*]` |
 | INFRA | AWS Tagging | `[infra.*]` |
 
 ---
@@ -49,6 +49,8 @@ Run checks for a specific domain:
 | `cm process audit` | Verify workflow configs |
 | `cm process diff` | Show branch protection differences |
 | `cm process sync --apply` | Sync branch protection to GitHub |
+| `cm process check-branch` | Validate branch name (for pre-push hook) |
+| `cm process check-commit <file>` | Validate commit message (for commit-msg hook) |
 | `cm infra check` | Run infrastructure checks |
 | `cm infra audit` | Verify infrastructure configs |
 
@@ -241,7 +243,7 @@ enabled = true
 
 ### Tests (`[code.tests]`)
 
-Validates test files exist.
+Validates test files exist in the project.
 
 ```toml
 [code.tests]
@@ -249,6 +251,16 @@ enabled = true
 pattern = "**/*.{test,spec}.{ts,tsx,js,jsx,py}"
 min_test_files = 1
 ```
+
+| Property | Value |
+|----------|-------|
+| `pattern` | Glob pattern for test files (supports comma-separated patterns) |
+| `min_test_files` | Minimum number of test files required (0 = just verify pattern works) |
+
+**Examples:**
+- `**/*.test.ts` - TypeScript test files
+- `**/*.{test,spec}.{ts,tsx,js,jsx}` - JS/TS test and spec files
+- `**/*.test.ts,**/test_*.py` - Multiple patterns (comma-separated)
 
 ---
 
@@ -341,7 +353,7 @@ Workflow and policy enforcement.
 
 ## Git Hooks (`[process.hooks]`)
 
-Verify Husky git hooks are installed.
+Verify Husky git hooks are installed and configured.
 
 ```toml
 [process.hooks]
@@ -354,11 +366,19 @@ pre-commit = ["lint-staged"]
 pre-push = ["npm test"]
 ```
 
+| Property | Value |
+|----------|-------|
+| `require_husky` | Require `.husky/` directory exists |
+| `require_hooks` | List of required hook files (e.g., `pre-commit`, `pre-push`, `commit-msg`) |
+| `commands` | Map of hook name to required commands in that hook file |
+
+**Violations detected:** Missing husky installation, missing hook files, hooks missing required commands.
+
 ---
 
 ## CI Workflows (`[process.ci]`)
 
-Verify GitHub workflows exist with required jobs/actions.
+Verify GitHub Actions workflows exist with required jobs and actions.
 
 ```toml
 [process.ci]
@@ -371,6 +391,14 @@ require_workflows = ["ci.yml", "release.yml"]
 [process.ci.actions]
 "ci.yml" = ["actions/checkout", "actions/setup-node"]
 ```
+
+| Property | Value |
+|----------|-------|
+| `require_workflows` | List of required workflow files in `.github/workflows/` |
+| `jobs` | Map of workflow file to required job names |
+| `actions` | Map of workflow file to required action uses |
+
+**Violations detected:** Missing workflow files, missing jobs, missing actions.
 
 ---
 
@@ -385,11 +413,18 @@ pattern = "^(feature|fix|hotfix|docs)/v[0-9]+\\.[0-9]+\\.[0-9]+/.+"
 exclude = ["main", "master", "develop"]
 ```
 
+| Property | Value |
+|----------|-------|
+| `pattern` | Regex pattern for valid branch names |
+| `exclude` | Branch names to skip validation (e.g., `main`, `develop`) |
+
+**Tip:** Use `cm process check-branch` in pre-push hooks for local enforcement.
+
 ---
 
 ## PR Size Limits (`[process.pr]`)
 
-Enforce PR size limits.
+Enforce PR size limits in CI.
 
 ```toml
 [process.pr]
@@ -398,11 +433,18 @@ max_files = 20
 max_lines = 500
 ```
 
+| Property | Value |
+|----------|-------|
+| `max_files` | Maximum number of files changed in a PR |
+| `max_lines` | Maximum total lines changed (additions + deletions) |
+
+**Note:** Reads PR data from `GITHUB_EVENT_PATH` environment variable. Skips gracefully when not in a PR context.
+
 ---
 
 ## Ticket References (`[process.tickets]`)
 
-Require ticket references in commits/branches.
+Require ticket references in commits and/or branches.
 
 ```toml
 [process.tickets]
@@ -412,18 +454,37 @@ require_in_commits = true
 require_in_branch = false
 ```
 
+| Property | Value |
+|----------|-------|
+| `pattern` | Regex pattern for ticket IDs (e.g., `JIRA-123`, `GH-456`) |
+| `require_in_commits` | Require ticket reference in commit messages |
+| `require_in_branch` | Require ticket reference in branch name |
+
+**Tip:** Use `cm process check-commit` in commit-msg hooks for local enforcement.
+
 ---
 
 ## Coverage Enforcement (`[process.coverage]`)
 
-Verify coverage thresholds are configured.
+Verify coverage thresholds are configured in test tools or CI.
 
 ```toml
 [process.coverage]
 enabled = true
 min_threshold = 80
 enforce_in = "config"  # or "ci" or "both"
+ci_workflow = "ci.yml"
+ci_job = "test"
 ```
+
+| Property | Value |
+|----------|-------|
+| `min_threshold` | Minimum coverage percentage required (0-100) |
+| `enforce_in` | Where to check: `config`, `ci`, or `both` |
+| `ci_workflow` | Workflow file to check (when `enforce_in` includes `ci`) |
+| `ci_job` | Job name to check for coverage commands |
+
+**Config locations checked:** vitest.config.ts, jest.config.js, .nycrc, package.json
 
 ---
 
@@ -470,6 +531,136 @@ region = "us-east-1"
 ```
 
 **AWS Permissions:** `s3:ListBucket`
+
+---
+
+## Commit Messages (`[process.commits]`)
+
+Enforce commit message format (conventional commits or custom patterns).
+
+```toml
+[process.commits]
+enabled = true
+types = ["feat", "fix", "docs", "style", "refactor", "test", "chore"]
+require_scope = false
+max_subject_length = 72
+```
+
+| Property | Value |
+|----------|-------|
+| `types` | Allowed commit types (conventional commits) |
+| `pattern` | Custom regex pattern (alternative to types) |
+| `require_scope` | Require scope like `feat(api): ...` |
+| `max_subject_length` | Maximum subject line length |
+
+**Supported Formats:**
+- Conventional commits: `feat: add login`, `fix(auth): resolve token issue`
+- Custom regex patterns via `pattern` option
+
+---
+
+## Changesets (`[process.changesets]`)
+
+Validate changeset files for versioning.
+
+```toml
+[process.changesets]
+enabled = true
+require_for_paths = ["src/**"]
+exclude_paths = ["**/*.test.ts"]
+validate_format = true
+allowed_bump_types = ["patch", "minor"]
+require_description = true
+min_description_length = 10
+```
+
+| Property | Value |
+|----------|-------|
+| `require_for_paths` | Glob patterns that require changesets when modified |
+| `exclude_paths` | Paths exempt from changeset requirement |
+| `validate_format` | Validate frontmatter structure |
+| `allowed_bump_types` | Restrict to specific bump types (`patch`, `minor`, `major`) |
+| `require_description` | Require non-empty description |
+| `min_description_length` | Minimum description character count |
+
+**Detects:** Missing changesets for code changes, invalid format, missing descriptions, disallowed bump types.
+
+---
+
+## CODEOWNERS (`[process.codeowners]`)
+
+Validate CODEOWNERS file contains required rules.
+
+```toml
+[process.codeowners]
+enabled = true
+
+[[process.codeowners.rules]]
+pattern = "*"
+owners = ["@myorg/engineering"]
+
+[[process.codeowners.rules]]
+pattern = "/docs/*"
+owners = ["@myorg/docs-team"]
+
+[[process.codeowners.rules]]
+pattern = "*.ts"
+owners = ["@myorg/typescript-team"]
+```
+
+| Property | Value |
+|----------|-------|
+| `rules` | Array of required CODEOWNERS rules |
+| `rules[].pattern` | File pattern (e.g., `*`, `/src/*`, `*.ts`) |
+| `rules[].owners` | Required owners (e.g., `@user`, `@org/team`) |
+
+**Validation:**
+- Checks CODEOWNERS file exists (`.github/CODEOWNERS`, `CODEOWNERS`, or `docs/CODEOWNERS`)
+- Validates all configured rules exist with exact owner match
+- Reports rules in CODEOWNERS not defined in config
+- Supports registry inheritance (rules from registry and project config are merged)
+
+---
+
+## Hook-Specific Commands
+
+Commands designed for use in git hooks with minimal output.
+
+### `cm process check-branch`
+
+Validates current branch name against configured pattern. Use in pre-push hooks.
+
+```bash
+cm process check-branch           # Full output
+cm process check-branch --quiet   # Minimal output for hooks
+```
+
+**Configuration:** Uses `[process.branches]` settings.
+
+### `cm process check-commit <file>`
+
+Validates commit message format and ticket references. Use in commit-msg hooks.
+
+```bash
+cm process check-commit .git/COMMIT_EDITMSG
+cm process check-commit .git/COMMIT_EDITMSG --quiet
+```
+
+**Configuration:** Uses `[process.commits]` and `[process.tickets]` settings.
+
+**Git Hook Example (.husky/commit-msg):**
+```bash
+#!/bin/sh
+cm process check-commit "$1" --quiet
+```
+
+**Git Hook Example (.husky/pre-push):**
+```bash
+#!/bin/sh
+cm process check-branch --quiet
+```
+
+**Auto-skipped commits:** Merge, Revert, fixup!, squash!, amend!
 
 ---
 
@@ -654,6 +845,18 @@ enabled = true
 pattern = "^(feature|fix|hotfix)/v[0-9]+\\.[0-9]+\\.[0-9]+/.+"
 exclude = ["main", "develop"]
 
+[process.commits]
+enabled = true
+types = ["feat", "fix", "docs", "style", "refactor", "test", "chore"]
+require_scope = false
+max_subject_length = 72
+
+[process.changesets]
+enabled = true
+require_for_paths = ["src/**"]
+validate_format = true
+require_description = true
+
 [process.pr]
 enabled = true
 max_files = 20
@@ -683,6 +886,13 @@ enabled = true
 bucket = "my-backups"
 prefix = "github/myorg/myrepo"
 max_age_hours = 24
+
+[process.codeowners]
+enabled = true
+
+[[process.codeowners.rules]]
+pattern = "*"
+owners = ["@myorg/engineering"]
 
 # =============================================================================
 # INFRA DOMAIN
@@ -720,24 +930,49 @@ Environment = ["dev", "stag", "prod"]
 | Naming | Built-in | Any | `[code.naming]` |
 | Quality | Disable Comments | JS/TS/Python | `[code.quality.disable-comments]` |
 
-## PROCESS Domain (8 checks)
+## PROCESS Domain (11 checks)
 
 | Check | Purpose | Config |
 |-------|---------|--------|
 | Hooks | Git hooks (Husky) | `[process.hooks]` |
 | CI | GitHub workflows | `[process.ci]` |
 | Branches | Naming patterns | `[process.branches]` |
+| Commits | Message format | `[process.commits]` |
+| Changesets | Changeset validation | `[process.changesets]` |
 | PR | Size limits | `[process.pr]` |
 | Tickets | Reference validation | `[process.tickets]` |
 | Coverage | Threshold enforcement | `[process.coverage]` |
-| Repo | Branch protection, CODEOWNERS | `[process.repo]` |
+| Repo | Branch protection | `[process.repo]` |
 | Backups | S3 backup verification | `[process.backups]` |
+| CODEOWNERS | CODEOWNERS validation | `[process.codeowners]` |
 
 ## INFRA Domain (1 check)
 
 | Check | Purpose | Config |
 |-------|---------|--------|
 | Tagging | AWS resource tags | `[infra.tagging]` |
+
+---
+
+# Environment Variables
+
+Some features require environment variables to be set:
+
+| Variable | Used By | Purpose |
+|----------|---------|---------|
+| `GITHUB_TOKEN` | `process.repo`, `process diff/sync` | GitHub API access for branch protection |
+| `GITHUB_EVENT_PATH` | `process.pr` | PR context in GitHub Actions |
+| `AWS_REGION` | `infra.tagging`, `process.backups` | AWS region (can also use config) |
+| `AWS_ACCESS_KEY_ID` | `infra.tagging`, `process.backups` | AWS credentials |
+| `AWS_SECRET_ACCESS_KEY` | `infra.tagging`, `process.backups` | AWS credentials |
+
+**GitHub Actions example:**
+```yaml
+- name: Run checks
+  env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  run: cm check
+```
 
 ---
 
@@ -751,7 +986,8 @@ src/
 │   └── tools/          # 14 tool integrations
 ├── process/
 │   ├── index.ts        # PROCESS domain runner
-│   ├── tools/          # 8 check implementations
+│   ├── tools/          # 11 check implementations
+│   ├── commands/       # Hook-specific commands (check-branch, check-commit)
 │   └── sync/           # Branch protection sync
 ├── infra/
 │   ├── index.ts        # INFRA domain runner
