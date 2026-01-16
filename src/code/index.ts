@@ -4,7 +4,7 @@ import {
   DomainResult,
   type IToolRunner,
 } from "../types/index.js";
-import { DisableCommentsRunner, ESLintRunner, GitleaksRunner, KnipRunner, NamingRunner, NpmAuditRunner, PipAuditRunner, PrettierRunner, RuffFormatRunner, RuffRunner, TestsRunner, TscRunner, TyRunner, VultureRunner } from "./tools/index.js";
+import { CoverageRunRunner, DisableCommentsRunner, ESLintRunner, GitleaksRunner, KnipRunner, NamingRunner, NpmAuditRunner, PipAuditRunner, PrettierRunner, RuffFormatRunner, RuffRunner, TestsRunner, TscRunner, TyRunner, VultureRunner } from "./tools/index.js";
 
 // Tool runner instances (singletons for tools that don't need per-run config)
 const gitleaks = new GitleaksRunner();
@@ -19,7 +19,7 @@ const vulture = new VultureRunner();
 // Note: RuffRunner and TscRunner are created per-run to support config from check.toml
 
 // Export tool runners for direct access
-export { BaseToolRunner, ESLintRunner, KnipRunner, NamingRunner, PrettierRunner, RuffFormatRunner, RuffRunner, TestsRunner, TscRunner, TyRunner, VultureRunner } from "./tools/index.js";
+export { BaseToolRunner, CoverageRunRunner, ESLintRunner, KnipRunner, NamingRunner, PrettierRunner, RuffFormatRunner, RuffRunner, TestsRunner, TscRunner, TyRunner, VultureRunner } from "./tools/index.js";
 
 /** Tool configuration entry mapping config getter to runner or runner factory */
 interface ToolEntry {
@@ -56,6 +56,21 @@ function createTestsRunner(config: Config): TestsRunner {
     pattern: config.code?.tests?.pattern,
     min_test_files: config.code?.tests?.min_test_files,
   });
+  return runner;
+}
+
+/** Create a configured CoverageRunRunner */
+function createCoverageRunRunner(config: Config): CoverageRunRunner {
+  const runner = new CoverageRunRunner();
+  const coverageConfig = config.code?.coverage_run;
+  if (coverageConfig) {
+    runner.setConfig({
+      enabled: coverageConfig.enabled,
+      min_threshold: coverageConfig.min_threshold,
+      runner: coverageConfig.runner,
+      command: coverageConfig.command,
+    });
+  }
   return runner;
 }
 
@@ -126,6 +141,7 @@ const toolRegistry: ToolEntry[] = [
   { isEnabled: (c) => isEnabled(c.code?.security?.npmaudit), runner: npmaudit },
   { isEnabled: (c) => isEnabled(c.code?.security?.pipaudit), runner: pipaudit },
   { isEnabled: (c) => isEnabled(c.code?.tests), runner: createTestsRunner },
+  { isEnabled: (c) => isEnabled(c.code?.coverage_run), runner: createCoverageRunRunner },
   { isEnabled: (c) => isEnabled(c.code?.naming), runner: createNamingRunner },
   { isEnabled: (c) => isEnabled(c.code?.quality?.["disable-comments"]), runner: createDisableCommentsRunner },
 ];

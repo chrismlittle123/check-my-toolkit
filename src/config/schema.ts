@@ -165,6 +165,24 @@ const testsConfigSchema = z
   .optional();
 
 // =============================================================================
+// Coverage Run Configuration
+// =============================================================================
+
+/** Coverage run test runner type */
+const coverageRunnerSchema = z.enum(["vitest", "jest", "pytest", "auto"]);
+
+/** Coverage run configuration - runs tests and verifies coverage threshold */
+const coverageRunConfigSchema = z
+  .object({
+    enabled: z.boolean().optional().default(false),
+    min_threshold: z.number().int().min(0).max(100).optional().default(80), // Minimum coverage percentage
+    runner: coverageRunnerSchema.optional().default("auto"), // Test runner to use
+    command: z.string().optional(), // Custom command to run tests with coverage
+  })
+  .strict()
+  .optional();
+
+// =============================================================================
 // Security Configuration
 // =============================================================================
 
@@ -299,6 +317,7 @@ const codeSchema = z
     types: codeTypesSchema,
     unused: codeUnusedSchema,
     tests: testsConfigSchema,
+    coverage_run: coverageRunConfigSchema,
     security: codeSecuritySchema,
     naming: namingConfigSchema,
     quality: codeQualitySchema,
@@ -559,6 +578,11 @@ export const defaultConfig: Config = {
     },
     tests: {
       enabled: false,
+    },
+    coverage_run: {
+      enabled: false,
+      min_threshold: 80,
+      runner: "auto",
     },
     security: {
       secrets: { enabled: false },
