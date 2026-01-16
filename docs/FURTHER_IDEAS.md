@@ -2,19 +2,9 @@
 
 Unimplemented features and enhancements for check-my-toolkit.
 
-## CODE Domain
-
-### 1. Test Location Validation (Per-Package)
-
-- Enforce that each package has tests in the correct location (e.g., `tests/` folder)
-- For monorepos: validate each package individually has tests in its own `tests/` directory
-- For single repos: validate tests exist in the configured location
-- Configurable required test directory pattern per package
-- Report which packages are missing tests or have tests in wrong locations
-
 ## PROCESS Domain
 
-### 2. Protected Branch Push Prevention Hook
+### 1. Protected Branch Push Prevention Hook
 
 - Verify that a pre-push hook exists which prevents direct pushes to protected branches (e.g., main)
 - Hook should check the current branch and block pushes to main/master with a helpful error message
