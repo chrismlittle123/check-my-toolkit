@@ -4,10 +4,10 @@ import {
   DomainResult,
   type IToolRunner,
 } from "../types/index.js";
-import { BackupsRunner, BranchesRunner, ChangesetsRunner, CiRunner, CommitsRunner, CoverageRunner, HooksRunner, PrRunner, RepoRunner, TicketsRunner } from "./tools/index.js";
+import { BackupsRunner, BranchesRunner, ChangesetsRunner, CiRunner, CodeownersRunner, CommitsRunner, CoverageRunner, HooksRunner, PrRunner, RepoRunner, TicketsRunner } from "./tools/index.js";
 
 // Export tool runners for direct access
-export { BackupsRunner, BaseProcessToolRunner, BranchesRunner, ChangesetsRunner, CiRunner, CommitsRunner, CoverageRunner, HooksRunner, PrRunner, RepoRunner, TicketsRunner } from "./tools/index.js";
+export { BackupsRunner, BaseProcessToolRunner, BranchesRunner, ChangesetsRunner, CiRunner, CodeownersRunner, CommitsRunner, CoverageRunner, HooksRunner, PrRunner, RepoRunner, TicketsRunner } from "./tools/index.js";
 
 /** Tool configuration entry mapping config getter to runner or runner factory */
 interface ToolEntry {
@@ -174,6 +174,19 @@ function createBackupsRunner(config: Config): BackupsRunner {
   return runner;
 }
 
+/** Create a configured CodeownersRunner */
+function createCodeownersRunner(config: Config): CodeownersRunner {
+  const runner = new CodeownersRunner();
+  const codeownersConfig = config.process?.codeowners;
+  if (codeownersConfig) {
+    runner.setConfig({
+      enabled: codeownersConfig.enabled,
+      rules: codeownersConfig.rules,
+    });
+  }
+  return runner;
+}
+
 /** All available process tools with their config predicates */
 const toolRegistry: ToolEntry[] = [
   { isEnabled: (c) => isEnabled(c.process?.hooks), runner: createHooksRunner },
@@ -186,6 +199,7 @@ const toolRegistry: ToolEntry[] = [
   { isEnabled: (c) => isEnabled(c.process?.coverage), runner: createCoverageRunner },
   { isEnabled: (c) => isEnabled(c.process?.repo), runner: createRepoRunner },
   { isEnabled: (c) => isEnabled(c.process?.backups), runner: createBackupsRunner },
+  { isEnabled: (c) => isEnabled(c.process?.codeowners), runner: createCodeownersRunner },
 ];
 
 /**

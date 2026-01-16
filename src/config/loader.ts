@@ -224,6 +224,7 @@ type TicketsConfig = NonNullable<ProcessConfig["tickets"]>;
 type CoverageConfig = NonNullable<ProcessConfig["coverage"]>;
 type RepoConfig = NonNullable<ProcessConfig["repo"]>;
 type BackupsConfig = NonNullable<ProcessConfig["backups"]>;
+type CodeownersConfig = NonNullable<ProcessConfig["codeowners"]>;
 
 const defaultHooks: HooksConfig = { enabled: false, require_husky: true };
 const defaultCi: CiConfig = { enabled: false };
@@ -235,6 +236,7 @@ const defaultTickets: TicketsConfig = { enabled: false, require_in_commits: true
 const defaultCoverage: CoverageConfig = { enabled: false, enforce_in: "config" };
 const defaultRepo: RepoConfig = { enabled: false, require_branch_protection: false, require_codeowners: false };
 const defaultBackups: BackupsConfig = { enabled: false, max_age_hours: 24 };
+const defaultCodeowners: CodeownersConfig = { enabled: false };
 
 /** Merge a single process config section with defaults */
 function mergeProcessSection<T>(defaultVal: T, dcVal: T | undefined, cVal: T | undefined): T {
@@ -281,6 +283,29 @@ function mergeProcessBackups(cp: ProcessConfig | undefined, dcp: ProcessConfig |
   return mergeProcessSection(defaultBackups, dcp?.backups, cp?.backups);
 }
 
+function mergeProcessCodeowners(cp: ProcessConfig | undefined, dcp: ProcessConfig | undefined): CodeownersConfig {
+  const cco = cp?.codeowners;
+  const dco = dcp?.codeowners;
+  // Merge rules arrays: registry rules + project rules (deduplicated by pattern)
+  const registryRules = dco?.rules ?? [];
+  const projectRules = cco?.rules ?? [];
+  // Project rules can override registry rules for the same pattern
+  const ruleMap = new Map<string, { pattern: string; owners: string[] }>();
+  for (const rule of registryRules) {
+    ruleMap.set(rule.pattern, rule);
+  }
+  for (const rule of projectRules) {
+    ruleMap.set(rule.pattern, rule);
+  }
+  const mergedRules = Array.from(ruleMap.values());
+  return {
+    ...defaultCodeowners,
+    ...dco,
+    ...cco,
+    rules: mergedRules.length > 0 ? mergedRules : undefined,
+  };
+}
+
 function mergeProcess(c: Config, dc: Config): ProcessConfig {
   return {
     hooks: mergeProcessHooks(c.process, dc.process),
@@ -293,6 +318,7 @@ function mergeProcess(c: Config, dc: Config): ProcessConfig {
     coverage: mergeProcessCoverage(c.process, dc.process),
     repo: mergeProcessRepo(c.process, dc.process),
     backups: mergeProcessBackups(c.process, dc.process),
+    codeowners: mergeProcessCodeowners(c.process, dc.process),
   };
 }
 
