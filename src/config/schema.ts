@@ -160,6 +160,7 @@ const testsConfigSchema = z
     enabled: z.boolean().optional().default(false),
     pattern: z.string().optional(), // Glob pattern for test files
     min_test_files: z.number().int().nonnegative().optional(), // Minimum test files required (0 = just verify pattern works)
+    required_dir: z.string().optional(), // Required directory for tests (e.g., "tests/")
   })
   .strict()
   .optional();

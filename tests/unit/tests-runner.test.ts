@@ -308,5 +308,121 @@ describe("TestsRunner", () => {
       expect(result.violations[0].message).toContain("5 required");
     });
   });
+
+  describe("required_dir", () => {
+    it("fails when required directory does not exist", async () => {
+      runner.setConfig({ required_dir: "tests" });
+
+      const result = await runner.run(tempDir);
+
+      expect(result.passed).toBe(false);
+      expect(result.violations).toHaveLength(1);
+      expect(result.violations[0].code).toBe("missing-test-dir");
+      expect(result.violations[0].message).toContain('Required test directory "tests" does not exist');
+    });
+
+    it("fails when required_dir is a file instead of directory", async () => {
+      fs.writeFileSync(path.join(tempDir, "tests"), "not a directory");
+      runner.setConfig({ required_dir: "tests" });
+
+      const result = await runner.run(tempDir);
+
+      expect(result.passed).toBe(false);
+      expect(result.violations[0].code).toBe("not-a-directory");
+      expect(result.violations[0].message).toContain("is not a directory");
+    });
+
+    it("passes when required directory exists and contains tests", async () => {
+      fs.mkdirSync(path.join(tempDir, "tests"));
+      fs.writeFileSync(path.join(tempDir, "tests", "example.test.ts"), "");
+      runner.setConfig({ required_dir: "tests" });
+
+      const result = await runner.run(tempDir);
+
+      expect(result.passed).toBe(true);
+    });
+
+    it("fails when required directory exists but is empty", async () => {
+      fs.mkdirSync(path.join(tempDir, "tests"));
+      runner.setConfig({ required_dir: "tests" });
+
+      const result = await runner.run(tempDir);
+
+      expect(result.passed).toBe(false);
+      expect(result.violations[0].message).toContain('in "tests"');
+      expect(result.violations[0].message).toContain("No test files found");
+    });
+
+    it("scopes pattern search to required directory", async () => {
+      // Create test in root (should be ignored) and in tests/ (should be found)
+      fs.writeFileSync(path.join(tempDir, "root.test.ts"), "");
+      fs.mkdirSync(path.join(tempDir, "tests"));
+      runner.setConfig({ required_dir: "tests" });
+
+      const result = await runner.run(tempDir);
+
+      expect(result.passed).toBe(false); // Only root test exists, not in tests/
+    });
+
+    it("supports trailing slash in required_dir", async () => {
+      fs.mkdirSync(path.join(tempDir, "tests"));
+      fs.writeFileSync(path.join(tempDir, "tests", "example.test.ts"), "");
+      runner.setConfig({ required_dir: "tests/" });
+
+      const result = await runner.run(tempDir);
+
+      expect(result.passed).toBe(true);
+    });
+
+    it("supports nested required_dir path", async () => {
+      fs.mkdirSync(path.join(tempDir, "src", "tests"), { recursive: true });
+      fs.writeFileSync(path.join(tempDir, "src", "tests", "example.test.ts"), "");
+      runner.setConfig({ required_dir: "src/tests" });
+
+      const result = await runner.run(tempDir);
+
+      expect(result.passed).toBe(true);
+    });
+
+    it("combines required_dir with custom pattern", async () => {
+      fs.mkdirSync(path.join(tempDir, "tests"));
+      fs.writeFileSync(path.join(tempDir, "tests", "example.spec.ts"), "");
+      runner.setConfig({ required_dir: "tests", pattern: "**/*.spec.ts" });
+
+      const result = await runner.run(tempDir);
+
+      expect(result.passed).toBe(true);
+    });
+
+    it("combines required_dir with min_test_files", async () => {
+      fs.mkdirSync(path.join(tempDir, "tests"));
+      fs.writeFileSync(path.join(tempDir, "tests", "a.test.ts"), "");
+      runner.setConfig({ required_dir: "tests", min_test_files: 2 });
+
+      const result = await runner.run(tempDir);
+
+      expect(result.passed).toBe(false);
+      expect(result.violations[0].message).toContain('in "tests"');
+      expect(result.violations[0].message).toContain("2 required");
+    });
+
+    it("audit fails when required directory does not exist", async () => {
+      runner.setConfig({ required_dir: "tests" });
+
+      const result = await runner.audit(tempDir);
+
+      expect(result.passed).toBe(false);
+      expect(result.violations[0].code).toBe("missing-test-dir");
+    });
+
+    it("audit passes when required directory exists", async () => {
+      fs.mkdirSync(path.join(tempDir, "tests"));
+      runner.setConfig({ required_dir: "tests" });
+
+      const result = await runner.audit(tempDir);
+
+      expect(result.passed).toBe(true);
+    });
+  });
 });
 

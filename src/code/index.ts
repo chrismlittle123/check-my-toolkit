@@ -55,6 +55,7 @@ function createTestsRunner(config: Config): TestsRunner {
     enabled: config.code?.tests?.enabled,
     pattern: config.code?.tests?.pattern,
     min_test_files: config.code?.tests?.min_test_files,
+    required_dir: config.code?.tests?.required_dir,
   });
   return runner;
 }
