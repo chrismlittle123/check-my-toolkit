@@ -544,9 +544,6 @@ const extendsSchema = z
 // Full Configuration
 // =============================================================================
 
-// Note: stack domain is not yet implemented.
-// It is reserved for future use and will be added when implemented.
-
 /** Full check.toml schema */
 export const configSchema = z
   .object({

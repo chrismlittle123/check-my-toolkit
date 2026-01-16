@@ -8,14 +8,17 @@ The PROCESS domain validates development workflow compliance.
 
 ```toml
 [process]
-├── [process.hooks]     # Git hooks (husky) ✅
-├── [process.ci]        # CI/CD workflows ✅
-├── [process.branches]  # Naming patterns ✅
-├── [process.pr]        # Size limits ✅
-├── [process.tickets]   # Linear/Jira references ✅
-├── [process.coverage]  # Coverage enforcement ✅
-├── [process.repo]      # Branch protection, CODEOWNERS ✅
-└── [process.backups]   # S3 backup verification ✅
+├── [process.hooks]      # Git hooks (husky) ✅
+├── [process.ci]         # CI/CD workflows ✅
+├── [process.branches]   # Naming patterns ✅
+├── [process.commits]    # Commit message format ✅
+├── [process.changesets] # Changeset validation ✅
+├── [process.pr]         # Size limits ✅
+├── [process.tickets]    # Linear/Jira references ✅
+├── [process.coverage]   # Coverage enforcement ✅
+├── [process.repo]       # Branch protection ✅
+├── [process.codeowners] # CODEOWNERS validation ✅
+└── [process.backups]    # S3 backup verification ✅
 ```
 
 ---
@@ -31,6 +34,49 @@ Verify GitHub workflows exist with required jobs and actions.
 ### `[process.branches]` ✅
 Enforce branch naming conventions via regex patterns.
 
+```toml
+[process.branches]
+enabled = true
+pattern = "^(feature|fix|hotfix)/v[0-9]+\\.[0-9]+\\.[0-9]+/.+"
+exclude = ["main", "master", "develop"]
+```
+
+### `[process.commits]` ✅
+Enforce commit message format (conventional commits or custom patterns).
+
+```toml
+[process.commits]
+enabled = true
+types = ["feat", "fix", "docs", "style", "refactor", "test", "chore"]
+require_scope = false
+max_subject_length = 72
+
+# Or use a custom pattern instead of types:
+# pattern = "^[A-Z]+-[0-9]+: .+"
+```
+
+**Git hook command:** `cm process check-commit .git/COMMIT_EDITMSG`
+
+### `[process.changesets]` ✅
+Validate changeset files for versioning.
+
+```toml
+[process.changesets]
+enabled = true
+require_for_paths = ["src/**"]
+exclude_paths = ["**/*.test.ts"]
+validate_format = true
+allowed_bump_types = ["patch", "minor"]
+require_description = true
+min_description_length = 10
+```
+
+**Checks:**
+- Frontmatter format is valid
+- Package names exist in workspace
+- Bump types are allowed
+- Description meets requirements
+
 ### `[process.pr]` ✅
 Enforce PR size limits (files and lines changed).
 
@@ -41,7 +87,47 @@ Require ticket references (Linear, Jira) in PRs.
 Verify coverage thresholds are configured.
 
 ### `[process.repo]` ✅
-Verify CODEOWNERS exists and branch protection is configured.
+Verify branch protection is configured via GitHub API.
+
+```toml
+[process.repo]
+enabled = true
+require_branch_protection = true
+
+[process.repo.branch_protection]
+branch = "main"
+required_reviews = 1
+dismiss_stale_reviews = true
+require_code_owner_reviews = true
+require_status_checks = ["ci"]
+require_branches_up_to_date = true
+enforce_admins = true
+```
+
+### `[process.codeowners]` ✅
+Validate CODEOWNERS file contains required rules.
+
+```toml
+[process.codeowners]
+enabled = true
+
+[[process.codeowners.rules]]
+pattern = "*"
+owners = ["@myorg/engineering"]
+
+[[process.codeowners.rules]]
+pattern = "/docs/*"
+owners = ["@myorg/docs-team"]
+
+[[process.codeowners.rules]]
+pattern = "*.ts"
+owners = ["@myorg/typescript-team"]
+```
+
+**Checks:**
+- CODEOWNERS file exists (`.github/CODEOWNERS`, `CODEOWNERS`, or `docs/CODEOWNERS`)
+- All configured rules exist with exact owner match
+- Reports rules in CODEOWNERS not defined in config
 
 ### `cm process sync` ✅
 Sync branch protection settings from check.toml to GitHub.
@@ -129,9 +215,12 @@ mock.on(ListObjectsV2Command).resolves({
 | `[process.hooks]` | ✅ Done |
 | `[process.ci]` | ✅ Done |
 | `[process.branches]` | ✅ Done |
+| `[process.commits]` | ✅ Done |
+| `[process.changesets]` | ✅ Done |
 | `[process.pr]` | ✅ Done |
 | `[process.tickets]` | ✅ Done |
 | `[process.coverage]` | ✅ Done |
 | `[process.repo]` | ✅ Done |
+| `[process.codeowners]` | ✅ Done |
 | `cm process sync` | ✅ Done |
 | `[process.backups]` | ✅ Done |

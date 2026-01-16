@@ -4,7 +4,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with th
 
 ## Project Overview
 
-check-my-toolkit is a unified CLI tool (`cm`) for project health checks. It currently focuses on the CODE domain (linting and type checking) with planned expansion to PROCESS (workflow enforcement) and STACK (environment validation) domains.
+check-my-toolkit is a unified CLI tool (`cm`) for project health checks. It implements three domains:
+- **CODE** - 15 tools for linting, formatting, type checking, security, and code quality
+- **PROCESS** - 11 workflow checks for git hooks, CI, PRs, branches, commits, and repository settings
+- **INFRA** - AWS resource tagging validation
 
 ## Prerequisites
 
@@ -42,13 +45,22 @@ node dist/cli.js validate        # Validate check.toml
 src/
 ├── cli.ts              # Entry point, Commander.js setup
 ├── index.ts            # Library exports
-├── code/               # CODE domain implementation
+├── code/               # CODE domain (15 tools)
 │   ├── index.ts        # Domain runner
-│   ├── tools/          # Tool implementations (ESLint, Ruff, tsc)
-│   └── ...
+│   └── tools/          # Tool implementations (ESLint, Ruff, tsc, etc.)
+├── process/            # PROCESS domain (11 checks)
+│   ├── index.ts        # Domain runner
+│   ├── tools/          # Check implementations (hooks, ci, branches, etc.)
+│   └── commands/       # Hook commands (check-branch, check-commit)
+├── infra/              # INFRA domain
+│   ├── index.ts        # Domain runner
+│   └── tools/          # AWS tagging runner
 ├── config/             # Configuration loading and validation
 │   ├── loader.ts       # Find and load check.toml
-│   └── schema.ts       # Zod schemas
+│   ├── schema.ts       # Zod schemas
+│   └── registry.ts     # Registry resolution
+├── projects/           # Project detection for monorepos
+├── monorepo/           # Monorepo check runner
 ├── output/             # Output formatters (text, JSON)
 └── types/              # Shared TypeScript types
 ```
