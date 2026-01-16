@@ -19,7 +19,7 @@ const vulture = new VultureRunner();
 // Note: RuffRunner and TscRunner are created per-run to support config from check.toml
 
 // Export tool runners for direct access
-export { BaseToolRunner, CoverageRunRunner, ESLintRunner, KnipRunner, NamingRunner, PrettierRunner, RuffFormatRunner, RuffRunner, TscRunner, TyRunner, VultureRunner } from "./tools/index.js";
+export { BaseToolRunner, ESLintRunner, KnipRunner, NamingRunner, PrettierRunner, RuffFormatRunner, RuffRunner, TscRunner, TyRunner, VultureRunner } from "./tools/index.js";
 
 /** Tool configuration entry mapping config getter to runner or runner factory */
 interface ToolEntry {
