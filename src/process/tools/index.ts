@@ -3,6 +3,7 @@ export { BaseProcessToolRunner } from "./base.js";
 export { BranchesRunner } from "./branches.js";
 export { ChangesetsRunner } from "./changesets.js";
 export { CiRunner } from "./ci.js";
+export { CodeownersRunner } from "./codeowners.js";
 export { CommitsRunner } from "./commits.js";
 export { CoverageRunner } from "./coverage.js";
 export { HooksRunner } from "./hooks.js";

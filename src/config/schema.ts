@@ -448,6 +448,23 @@ const backupsConfigSchema = z
   .strict()
   .optional();
 
+/** Single CODEOWNERS rule */
+const codeownersRuleSchema = z
+  .object({
+    pattern: z.string(), // File pattern (e.g., "/check.toml", "*.js", "/src/api/*")
+    owners: z.array(z.string()), // Owner handles (e.g., ["@user", "@org/team"])
+  })
+  .strict();
+
+/** CODEOWNERS validation configuration */
+const codeownersConfigSchema = z
+  .object({
+    enabled: z.boolean().optional().default(false),
+    rules: z.array(codeownersRuleSchema).optional(), // Required rules in CODEOWNERS
+  })
+  .strict()
+  .optional();
+
 /** Process domain configuration */
 const processSchema = z
   .object({
@@ -461,6 +478,7 @@ const processSchema = z
     coverage: coverageConfigSchema,
     repo: repoConfigSchema,
     backups: backupsConfigSchema,
+    codeowners: codeownersConfigSchema,
   })
   .strict()
   .optional();
@@ -594,6 +612,9 @@ export const defaultConfig: Config = {
     backups: {
       enabled: false,
       max_age_hours: 24,
+    },
+    codeowners: {
+      enabled: false,
     },
   },
   infra: {
