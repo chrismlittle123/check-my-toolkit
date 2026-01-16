@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.30.1
+
+### Patch Changes
+
+- 7935b05: Improve CLI test performance by importing module once instead of on every test
+
 ## 0.30.0
 
 ### Minor Changes
