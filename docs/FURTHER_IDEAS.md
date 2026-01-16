@@ -4,16 +4,7 @@ Unimplemented features and enhancements for check-my-toolkit.
 
 ## CODE Domain
 
-### 1. Test Coverage Verification
-
-- Run the actual test suite during `cm code check` and verify coverage meets a configured threshold
-- Should be configurable to enable/disable (disabled by default since it's slow)
-- Support different test runners (vitest, jest, pytest, etc.)
-- Parse coverage output to extract percentage
-- Fail check if coverage is below the configured minimum (e.g., 80%)
-- Works for both single-package repos and monorepos (run per-package in monorepo mode)
-
-### 2. Test Location Validation (Per-Package)
+### 1. Test Location Validation (Per-Package)
 
 - Enforce that each package has tests in the correct location (e.g., `tests/` folder)
 - For monorepos: validate each package individually has tests in its own `tests/` directory
@@ -23,7 +14,7 @@ Unimplemented features and enhancements for check-my-toolkit.
 
 ## PROCESS Domain
 
-### 3. Protected Branch Push Prevention Hook
+### 2. Protected Branch Push Prevention Hook
 
 - Verify that a pre-push hook exists which prevents direct pushes to protected branches (e.g., main)
 - Hook should check the current branch and block pushes to main/master with a helpful error message
