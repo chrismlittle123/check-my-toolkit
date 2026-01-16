@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.32.0
+
+### Minor Changes
+
+- 172bb1f: Add test coverage verification feature (`code.coverage_run`)
+
+  - Runs actual test suite with coverage during `cm code check`
+  - Supports vitest, jest, and pytest (auto-detected or configurable)
+  - Verifies coverage meets a configurable minimum threshold (default 80%)
+  - Supports custom test commands via `command` option
+  - Parses coverage reports from common formats (coverage-summary.json, coverage-final.json, pytest-cov)
+
 ## 0.31.0
 
 ### Minor Changes
