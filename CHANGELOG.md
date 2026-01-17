@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.1
+
+### Patch Changes
+
+- 5a80f5a: Verify CI and release workflow after pnpmaudit changes
+
 ## 1.1.0
 
 ### Minor Changes
