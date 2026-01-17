@@ -49,12 +49,18 @@ function findFrontmatterBounds(lines: string[]): { start: number; end: number } 
 }
 
 /** Parse frontmatter lines to extract packages and bump types */
-function parseFrontmatterPackages(lines: string[], start: number, end: number): Map<string, BumpType> {
+function parseFrontmatterPackages(
+  lines: string[],
+  start: number,
+  end: number
+): Map<string, BumpType> {
   const packages = new Map<string, BumpType>();
 
   for (let i = start + 1; i < end; i++) {
     const line = lines[i].trim();
-    if (!line) {continue;}
+    if (!line) {
+      continue;
+    }
 
     // Match: "package-name": bump-type
     const match = /^["']([^"']+)["']:\s*(patch|minor|major)\s*$/.exec(line);
@@ -147,7 +153,10 @@ export class ChangesetsRunner extends BaseProcessToolRunner {
       }
 
       result.packages = parseFrontmatterPackages(lines, start, end);
-      result.description = lines.slice(end + 1).join("\n").trim();
+      result.description = lines
+        .slice(end + 1)
+        .join("\n")
+        .trim();
     } catch (error) {
       const msg = error instanceof Error ? error.message : "Unknown error";
       result.parseError = `Failed to read file: ${msg}`;
@@ -184,7 +193,9 @@ export class ChangesetsRunner extends BaseProcessToolRunner {
 
     return changedFiles.some((file) => {
       const isExcluded = excludePaths.some((pattern) => minimatch(file, pattern));
-      if (isExcluded) {return false;}
+      if (isExcluded) {
+        return false;
+      }
       return requirePaths.some((pattern) => minimatch(file, pattern));
     });
   }
@@ -266,13 +277,15 @@ export class ChangesetsRunner extends BaseProcessToolRunner {
   /** Validate a single changeset file */
   private validateChangeset(changeset: ParsedChangeset): Violation[] {
     if (changeset.parseError) {
-      return [{
-        rule: `${this.rule}.format`,
-        tool: this.toolId,
-        message: `Invalid changeset format: ${changeset.parseError}`,
-        severity: "error",
-        file: changeset.filePath,
-      }];
+      return [
+        {
+          rule: `${this.rule}.format`,
+          tool: this.toolId,
+          message: `Invalid changeset format: ${changeset.parseError}`,
+          severity: "error",
+          file: changeset.filePath,
+        },
+      ];
     }
 
     const violations: Violation[] = [];
@@ -291,12 +304,14 @@ export class ChangesetsRunner extends BaseProcessToolRunner {
   private checkDirectoryExists(elapsed: () => number): CheckResult | null {
     if (!this.directoryExists(process.cwd(), ".changeset")) {
       return this.fromViolations(
-        [{
-          rule: `${this.rule}.directory`,
-          tool: this.toolId,
-          message: "No .changeset directory found. Run 'pnpm exec changeset init' to initialize.",
-          severity: "error",
-        }],
+        [
+          {
+            rule: `${this.rule}.directory`,
+            tool: this.toolId,
+            message: "No .changeset directory found. Run 'pnpm exec changeset init' to initialize.",
+            severity: "error",
+          },
+        ],
         elapsed()
       );
     }
@@ -317,7 +332,10 @@ export class ChangesetsRunner extends BaseProcessToolRunner {
     const changedFiles = await this.getChangedFiles(process.cwd());
 
     if (changedFiles === null) {
-      return { skip: "Could not determine changed files (not on a branch or no base branch found)", violations: [] };
+      return {
+        skip: "Could not determine changed files (not on a branch or no base branch found)",
+        violations: [],
+      };
     }
 
     const violations: Violation[] = [];
@@ -341,14 +359,18 @@ export class ChangesetsRunner extends BaseProcessToolRunner {
 
     // Check directory exists
     const dirCheck = this.checkDirectoryExists(elapsed);
-    if (dirCheck) {return dirCheck;}
+    if (dirCheck) {
+      return dirCheck;
+    }
 
     // Get changeset files
     const changesetFiles = this.getChangesetFiles(projectRoot);
 
     // Check if changes require changeset
     const { skip, violations } = await this.checkChangesRequireChangeset(changesetFiles, elapsed);
-    if (skip) {return this.skip(skip, elapsed());}
+    if (skip) {
+      return this.skip(skip, elapsed());
+    }
 
     // Validate each changeset file
     for (const file of changesetFiles) {
@@ -356,6 +378,8 @@ export class ChangesetsRunner extends BaseProcessToolRunner {
       violations.push(...this.validateChangeset(parsed));
     }
 
-    return violations.length > 0 ? this.fromViolations(violations, elapsed()) : this.pass(elapsed());
+    return violations.length > 0
+      ? this.fromViolations(violations, elapsed())
+      : this.pass(elapsed());
   }
 }

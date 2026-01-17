@@ -1,3 +1,4 @@
+/* eslint-disable max-lines -- registry config merging requires many type-safe merge functions */
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
@@ -86,7 +87,9 @@ function parseGitHubUrl(url: string): RegistryLocation {
   const [owner, repo] = repoPath.split("/");
 
   if (!owner || !repo) {
-    throw new ConfigError(`Invalid GitHub registry URL: ${url}. Expected format: github:owner/repo or github+ssh:owner/repo`);
+    throw new ConfigError(
+      `Invalid GitHub registry URL: ${url}. Expected format: github:owner/repo or github+ssh:owner/repo`
+    );
   }
 
   const auth = explicitAuth === "auto" ? detectAuthMethod() : explicitAuth;
@@ -203,7 +206,10 @@ function mergeToolConfig<T extends object>(base?: T, override?: T): T | undefine
   return { ...base, ...override };
 }
 
-function mergeLinting(base: CodeConfig["linting"], override: CodeConfig["linting"]): CodeConfig["linting"] {
+function mergeLinting(
+  base: CodeConfig["linting"],
+  override: CodeConfig["linting"]
+): CodeConfig["linting"] {
   if (!override) {
     return base;
   }
@@ -214,7 +220,10 @@ function mergeLinting(base: CodeConfig["linting"], override: CodeConfig["linting
   };
 }
 
-function mergeFormatting(base: CodeConfig["formatting"], override: CodeConfig["formatting"]): CodeConfig["formatting"] {
+function mergeFormatting(
+  base: CodeConfig["formatting"],
+  override: CodeConfig["formatting"]
+): CodeConfig["formatting"] {
   if (!override) {
     return base;
   }
@@ -235,7 +244,10 @@ function mergeTypes(base: CodeConfig["types"], override: CodeConfig["types"]): C
   };
 }
 
-function mergeUnused(base: CodeConfig["unused"], override: CodeConfig["unused"]): CodeConfig["unused"] {
+function mergeUnused(
+  base: CodeConfig["unused"],
+  override: CodeConfig["unused"]
+): CodeConfig["unused"] {
   if (!override) {
     return base;
   }
@@ -246,7 +258,10 @@ function mergeUnused(base: CodeConfig["unused"], override: CodeConfig["unused"])
   };
 }
 
-function mergeSecurity(base: CodeConfig["security"], override: CodeConfig["security"]): CodeConfig["security"] {
+function mergeSecurity(
+  base: CodeConfig["security"],
+  override: CodeConfig["security"]
+): CodeConfig["security"] {
   if (!override) {
     return base;
   }
@@ -258,7 +273,10 @@ function mergeSecurity(base: CodeConfig["security"], override: CodeConfig["secur
   };
 }
 
-function mergeNaming(base: CodeConfig["naming"], override: CodeConfig["naming"]): CodeConfig["naming"] {
+function mergeNaming(
+  base: CodeConfig["naming"],
+  override: CodeConfig["naming"]
+): CodeConfig["naming"] {
   if (!override) {
     return base;
   }
@@ -269,7 +287,10 @@ function mergeNaming(base: CodeConfig["naming"], override: CodeConfig["naming"])
   };
 }
 
-function mergeQuality(base: CodeConfig["quality"], override: CodeConfig["quality"]): CodeConfig["quality"] {
+function mergeQuality(
+  base: CodeConfig["quality"],
+  override: CodeConfig["quality"]
+): CodeConfig["quality"] {
   if (!override) {
     return base;
   }
@@ -294,7 +315,10 @@ function mergeCodeSection(base: CodeConfig | undefined, override: CodeConfig): C
 
 type ProcessConfig = NonNullable<Config["process"]>;
 
-function mergeHooksConfig(base: ProcessConfig["hooks"], override: ProcessConfig["hooks"]): ProcessConfig["hooks"] {
+function mergeHooksConfig(
+  base: ProcessConfig["hooks"],
+  override: ProcessConfig["hooks"]
+): ProcessConfig["hooks"] {
   if (!override) {
     return base;
   }
@@ -307,7 +331,10 @@ function mergeHooksConfig(base: ProcessConfig["hooks"], override: ProcessConfig[
   };
 }
 
-function mergeCiConfig(base: ProcessConfig["ci"], override: ProcessConfig["ci"]): ProcessConfig["ci"] {
+function mergeCiConfig(
+  base: ProcessConfig["ci"],
+  override: ProcessConfig["ci"]
+): ProcessConfig["ci"] {
   if (!override) {
     return base;
   }
@@ -319,7 +346,10 @@ function mergeCiConfig(base: ProcessConfig["ci"], override: ProcessConfig["ci"])
   };
 }
 
-function mergeBranchesConfig(base: ProcessConfig["branches"], override: ProcessConfig["branches"]): ProcessConfig["branches"] {
+function mergeBranchesConfig(
+  base: ProcessConfig["branches"],
+  override: ProcessConfig["branches"]
+): ProcessConfig["branches"] {
   if (!override) {
     return base;
   }
@@ -330,7 +360,10 @@ function mergeBranchesConfig(base: ProcessConfig["branches"], override: ProcessC
   };
 }
 
-function mergePrConfig(base: ProcessConfig["pr"], override: ProcessConfig["pr"]): ProcessConfig["pr"] {
+function mergePrConfig(
+  base: ProcessConfig["pr"],
+  override: ProcessConfig["pr"]
+): ProcessConfig["pr"] {
   if (!override) {
     return base;
   }
@@ -341,7 +374,10 @@ function mergePrConfig(base: ProcessConfig["pr"], override: ProcessConfig["pr"])
   };
 }
 
-function mergeTicketsConfig(base: ProcessConfig["tickets"], override: ProcessConfig["tickets"]): ProcessConfig["tickets"] {
+function mergeTicketsConfig(
+  base: ProcessConfig["tickets"],
+  override: ProcessConfig["tickets"]
+): ProcessConfig["tickets"] {
   if (!override) {
     return base;
   }
@@ -354,7 +390,10 @@ function mergeTicketsConfig(base: ProcessConfig["tickets"], override: ProcessCon
   };
 }
 
-function mergeCoverageConfig(base: ProcessConfig["coverage"], override: ProcessConfig["coverage"]): ProcessConfig["coverage"] {
+function mergeCoverageConfig(
+  base: ProcessConfig["coverage"],
+  override: ProcessConfig["coverage"]
+): ProcessConfig["coverage"] {
   if (!override) {
     return base;
   }
@@ -368,7 +407,10 @@ function mergeCoverageConfig(base: ProcessConfig["coverage"], override: ProcessC
   };
 }
 
-function mergeCommitsConfig(base: ProcessConfig["commits"], override: ProcessConfig["commits"]): ProcessConfig["commits"] {
+function mergeCommitsConfig(
+  base: ProcessConfig["commits"],
+  override: ProcessConfig["commits"]
+): ProcessConfig["commits"] {
   if (!override) {
     return base;
   }
@@ -382,7 +424,10 @@ function mergeCommitsConfig(base: ProcessConfig["commits"], override: ProcessCon
   };
 }
 
-function mergeChangesetsConfig(base: ProcessConfig["changesets"], override: ProcessConfig["changesets"]): ProcessConfig["changesets"] {
+function mergeChangesetsConfig(
+  base: ProcessConfig["changesets"],
+  override: ProcessConfig["changesets"]
+): ProcessConfig["changesets"] {
   if (!override) {
     return base;
   }
@@ -398,7 +443,10 @@ function mergeChangesetsConfig(base: ProcessConfig["changesets"], override: Proc
   };
 }
 
-function mergeRepoConfig(base: ProcessConfig["repo"], override: ProcessConfig["repo"]): ProcessConfig["repo"] {
+function mergeRepoConfig(
+  base: ProcessConfig["repo"],
+  override: ProcessConfig["repo"]
+): ProcessConfig["repo"] {
   if (!override) {
     return base;
   }
@@ -411,7 +459,10 @@ function mergeRepoConfig(base: ProcessConfig["repo"], override: ProcessConfig["r
   };
 }
 
-function mergeBackupsConfig(base: ProcessConfig["backups"], override: ProcessConfig["backups"]): ProcessConfig["backups"] {
+function mergeBackupsConfig(
+  base: ProcessConfig["backups"],
+  override: ProcessConfig["backups"]
+): ProcessConfig["backups"] {
   if (!override) {
     return base;
   }
@@ -426,7 +477,10 @@ function mergeBackupsConfig(base: ProcessConfig["backups"], override: ProcessCon
 }
 
 // eslint-disable-next-line complexity -- merging all process config sections requires multiple calls
-function mergeProcessSection(base: ProcessConfig | undefined, override: ProcessConfig): ProcessConfig {
+function mergeProcessSection(
+  base: ProcessConfig | undefined,
+  override: ProcessConfig
+): ProcessConfig {
   return {
     hooks: mergeHooksConfig(base?.hooks, override.hooks),
     ci: mergeCiConfig(base?.ci, override.ci),

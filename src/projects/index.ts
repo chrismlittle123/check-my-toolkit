@@ -51,16 +51,25 @@ function outputTableHeader(pathWidth: number, typeWidth: number): void {
 }
 
 /** Output a single project row */
-function outputProjectRow(project: { path: string; type: string; hasCheckToml: boolean }, pathWidth: number, typeWidth: number): void {
+function outputProjectRow(
+  project: { path: string; type: string; hasCheckToml: boolean },
+  pathWidth: number,
+  typeWidth: number
+): void {
   const statusIcon = project.hasCheckToml ? chalk.green("\u2713") : chalk.red("\u2717");
-  const statusText = project.hasCheckToml ? chalk.green("has check.toml") : chalk.red("missing check.toml");
-  writeLine(`  ${project.path.padEnd(pathWidth)}${project.type.padEnd(typeWidth)}${statusIcon} ${statusText}`);
+  const statusText = project.hasCheckToml
+    ? chalk.green("has check.toml")
+    : chalk.red("missing check.toml");
+  writeLine(
+    `  ${project.path.padEnd(pathWidth)}${project.type.padEnd(typeWidth)}${statusIcon} ${statusText}`
+  );
 }
 
 /** Output summary for missing projects */
 function outputMissingSummary(missingCount: number): void {
   writeLine(
-    `\n${missingCount} project(s) missing check.toml. ` + `Run ${chalk.cyan("cm projects detect --fix")} to create them.`
+    `\n${missingCount} project(s) missing check.toml. ` +
+      `Run ${chalk.cyan("cm projects detect --fix")} to create them.`
   );
 }
 
@@ -95,7 +104,12 @@ function outputText(result: DetectionResult, options: DetectOptions): void {
 }
 
 /** Output registry creation info */
-function outputRegistryCreation(options: DetectOptions, registryPath: string, projectTypes: Set<string>, actions: FixAction[]): void {
+function outputRegistryCreation(
+  options: DetectOptions,
+  registryPath: string,
+  projectTypes: Set<string>,
+  actions: FixAction[]
+): void {
   const actionWord = options.dryRun ? "Would create" : "Created";
   writeLine(`\n${chalk.cyan(actionWord)} registry at ${registryPath}/`);
   for (const type of projectTypes) {
@@ -108,7 +122,11 @@ function outputRegistryCreation(options: DetectOptions, registryPath: string, pr
 }
 
 /** Get registry relative path from project directory */
-function getRegistryRelativePath(options: DetectOptions, searchRoot: string, projectAbsPath: string): string | undefined {
+function getRegistryRelativePath(
+  options: DetectOptions,
+  searchRoot: string,
+  projectAbsPath: string
+): string | undefined {
   if (!options.registry) {
     return undefined;
   }
@@ -125,7 +143,12 @@ function processMissingProject(
 ): void {
   const projectAbsPath = path.join(searchRoot, project.path);
   const registryRelativePath = getRegistryRelativePath(options, searchRoot, projectAbsPath);
-  const created = createCheckToml(projectAbsPath, project.type, !!options.dryRun, registryRelativePath);
+  const created = createCheckToml(
+    projectAbsPath,
+    project.type,
+    !!options.dryRun,
+    registryRelativePath
+  );
 
   if (!created) {
     return;
@@ -141,7 +164,12 @@ function processMissingProject(
 }
 
 /** Create check.toml files for missing projects */
-function createMissingCheckTomls(result: DetectionResult, options: DetectOptions, searchRoot: string, actions: FixAction[]): void {
+function createMissingCheckTomls(
+  result: DetectionResult,
+  options: DetectOptions,
+  searchRoot: string,
+  actions: FixAction[]
+): void {
   const missing = result.projects.filter((p) => !p.hasCheckToml);
 
   for (const project of missing) {
@@ -154,7 +182,12 @@ function createMissingCheckTomls(result: DetectionResult, options: DetectOptions
 }
 
 /** Handle registry creation if --registry is specified */
-function handleRegistryCreation(result: DetectionResult, options: DetectOptions, searchRoot: string, actions: FixAction[]): void {
+function handleRegistryCreation(
+  result: DetectionResult,
+  options: DetectOptions,
+  searchRoot: string,
+  actions: FixAction[]
+): void {
   if (!options.registry) {
     return;
   }
@@ -163,12 +196,21 @@ function handleRegistryCreation(result: DetectionResult, options: DetectOptions,
   createRegistry(absoluteRegistryPath, projectTypes, !!options.dryRun);
 
   if (options.format === "text") {
-    outputRegistryCreation(options, options.registry, projectTypes as unknown as Set<string>, actions);
+    outputRegistryCreation(
+      options,
+      options.registry,
+      projectTypes as unknown as Set<string>,
+      actions
+    );
   }
 }
 
 /** Handle --fix and --dry-run flags */
-function handleFix(result: DetectionResult, options: DetectOptions, searchRoot: string): FixAction[] {
+function handleFix(
+  result: DetectionResult,
+  options: DetectOptions,
+  searchRoot: string
+): FixAction[] {
   const missing = result.projects.filter((p) => !p.hasCheckToml);
   const actions: FixAction[] = [];
 

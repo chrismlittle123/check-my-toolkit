@@ -100,7 +100,9 @@ function outputDiffText(result: SyncDiffResult): void {
 
   writeDiffTable(result);
   writeLine("");
-  writeLine(`${result.diffs.length} setting(s) differ. Run 'cm process sync --apply' to apply changes.`);
+  writeLine(
+    `${result.diffs.length} setting(s) differ. Run 'cm process sync --apply' to apply changes.`
+  );
 }
 
 /** Write repository header */
@@ -121,7 +123,9 @@ function writeDiffTable(result: SyncDiffResult): void {
   for (const diff of result.diffs) {
     const currentStr = formatValue(diff.current);
     const desiredStr = formatValue(diff.desired);
-    writeLine(`${diff.setting.padEnd(settingWidth)}  ${currentStr.padEnd(currentWidth)}  ${desiredStr}`);
+    writeLine(
+      `${diff.setting.padEnd(settingWidth)}  ${currentStr.padEnd(currentWidth)}  ${desiredStr}`
+    );
   }
 }
 
@@ -151,9 +155,19 @@ function outputPreview(result: SyncDiffResult, format: "text" | "json"): void {
 }
 
 /** Output sync result */
-function outputSyncResult(diffResult: SyncDiffResult, result: SyncResult, format: "text" | "json"): void {
+function outputSyncResult(
+  diffResult: SyncDiffResult,
+  result: SyncResult,
+  format: "text" | "json"
+): void {
   if (format === "json") {
-    writeLine(JSON.stringify({ repoInfo: diffResult.repoInfo, branch: diffResult.branch, ...result }, null, 2));
+    writeLine(
+      JSON.stringify(
+        { repoInfo: diffResult.repoInfo, branch: diffResult.branch, ...result },
+        null,
+        2
+      )
+    );
   } else {
     outputSyncResultText(diffResult, result);
   }

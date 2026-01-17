@@ -29,7 +29,10 @@ export class VultureRunner extends BaseToolRunner {
 
   private isBinaryNotFound(result: Awaited<ReturnType<typeof execa>>): boolean {
     const execaResult = result as typeof result & { code?: string; message?: string };
-    return execaResult.code === "ENOENT" || (execaResult.failed && String(execaResult.message ?? "").includes("ENOENT"));
+    return (
+      execaResult.code === "ENOENT" ||
+      (execaResult.failed && String(execaResult.message ?? "").includes("ENOENT"))
+    );
   }
 
   async run(projectRoot: string): Promise<CheckResult> {
@@ -58,7 +61,10 @@ export class VultureRunner extends BaseToolRunner {
         );
       }
 
-      return this.fromViolations(this.parseOutput(result.stdout, projectRoot), Date.now() - startTime);
+      return this.fromViolations(
+        this.parseOutput(result.stdout, projectRoot),
+        Date.now() - startTime
+      );
     } catch (error) {
       return this.handleRunError(error, startTime);
     }
@@ -69,7 +75,10 @@ export class VultureRunner extends BaseToolRunner {
       return this.skipNotInstalled(Date.now() - startTime);
     }
     const message = error instanceof Error ? error.message : "Unknown error";
-    return this.fail([this.createErrorViolation(`Vulture error: ${message}`)], Date.now() - startTime);
+    return this.fail(
+      [this.createErrorViolation(`Vulture error: ${message}`)],
+      Date.now() - startTime
+    );
   }
 
   private skip(reason: string, duration: number): CheckResult {
@@ -181,12 +190,14 @@ export class VultureRunner extends BaseToolRunner {
 
     if (!hasPyproject && !hasSetupPy && !hasRequirements) {
       return this.fail(
-        [{
-          rule: `${this.rule}.${this.toolId}`,
-          tool: "audit",
-          message: "No Python project file found (pyproject.toml, setup.py, or requirements.txt)",
-          severity: "warning",
-        }],
+        [
+          {
+            rule: `${this.rule}.${this.toolId}`,
+            tool: "audit",
+            message: "No Python project file found (pyproject.toml, setup.py, or requirements.txt)",
+            severity: "warning",
+          },
+        ],
         Date.now() - startTime
       );
     }

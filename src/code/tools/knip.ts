@@ -127,13 +127,41 @@ export class KnipRunner extends BaseToolRunner {
   private parseFileIssues(issue: KnipFileIssue): Violation[] {
     const file = issue.file;
     return [
-      ...this.mapToViolations(file, issue.dependencies, { prefix: "Unused dependency", code: "unused-dependency", severity: "warning" }),
-      ...this.mapToViolations(file, issue.devDependencies, { prefix: "Unused devDependency", code: "unused-devDependency", severity: "warning" }),
-      ...this.mapToViolations(file, issue.unlisted, { prefix: "Unlisted dependency", code: "unlisted-dependency", severity: "error" }),
-      ...this.mapToViolations(file, issue.unresolved, { prefix: "Unresolved import", code: "unresolved-import", severity: "error" }),
-      ...this.mapToViolations(file, issue.exports, { prefix: "Unused export", code: "unused-export", severity: "warning" }),
-      ...this.mapToViolations(file, issue.types, { prefix: "Unused type", code: "unused-type", severity: "warning" }),
-      ...this.mapToViolations(file, issue.duplicates, { prefix: "Duplicate export", code: "duplicate-export", severity: "warning" }),
+      ...this.mapToViolations(file, issue.dependencies, {
+        prefix: "Unused dependency",
+        code: "unused-dependency",
+        severity: "warning",
+      }),
+      ...this.mapToViolations(file, issue.devDependencies, {
+        prefix: "Unused devDependency",
+        code: "unused-devDependency",
+        severity: "warning",
+      }),
+      ...this.mapToViolations(file, issue.unlisted, {
+        prefix: "Unlisted dependency",
+        code: "unlisted-dependency",
+        severity: "error",
+      }),
+      ...this.mapToViolations(file, issue.unresolved, {
+        prefix: "Unresolved import",
+        code: "unresolved-import",
+        severity: "error",
+      }),
+      ...this.mapToViolations(file, issue.exports, {
+        prefix: "Unused export",
+        code: "unused-export",
+        severity: "warning",
+      }),
+      ...this.mapToViolations(file, issue.types, {
+        prefix: "Unused type",
+        code: "unused-type",
+        severity: "warning",
+      }),
+      ...this.mapToViolations(file, issue.duplicates, {
+        prefix: "Duplicate export",
+        code: "duplicate-export",
+        severity: "warning",
+      }),
     ];
   }
 
@@ -142,7 +170,7 @@ export class KnipRunner extends BaseToolRunner {
     items: { name: string; line?: number; col?: number }[] | undefined,
     opts: { prefix: string; code: string; severity: "error" | "warning" }
   ): Violation[] {
-    return (items ?? []).map(item => ({
+    return (items ?? []).map((item) => ({
       rule: `${this.rule}.${this.toolId}`,
       tool: this.toolId,
       file,
@@ -174,12 +202,14 @@ export class KnipRunner extends BaseToolRunner {
 
     if (!hasPackageJson) {
       return this.fail(
-        [{
-          rule: `${this.rule}.${this.toolId}`,
-          tool: "audit",
-          message: "package.json not found (required for Knip)",
-          severity: "error",
-        }],
+        [
+          {
+            rule: `${this.rule}.${this.toolId}`,
+            tool: "audit",
+            message: "package.json not found (required for Knip)",
+            severity: "error",
+          },
+        ],
         Date.now() - startTime
       );
     }

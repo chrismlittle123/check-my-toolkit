@@ -70,13 +70,17 @@ function formatCheckLine(check: DomainResult["checks"][number]): string[] {
   const duration = check.duration ? chalk.dim(` (${check.duration}ms)`) : "";
 
   if (check.skipped) {
-    return [`  ${checkIcon} ${chalk.bold(check.name)}: ${chalk.gray("skipped")} - ${chalk.gray(check.skipReason)}${duration}`];
+    return [
+      `  ${checkIcon} ${chalk.bold(check.name)}: ${chalk.gray("skipped")} - ${chalk.gray(check.skipReason)}${duration}`,
+    ];
   }
   if (check.passed) {
     return [`  ${checkIcon} ${chalk.bold(check.name)}: ${chalk.green("passed")}${duration}`];
   }
 
-  const lines = [`  ${checkIcon} ${chalk.bold(check.name)}: ${chalk.red(`${check.violations.length} violation(s)`)}${duration}`];
+  const lines = [
+    `  ${checkIcon} ${chalk.bold(check.name)}: ${chalk.red(`${check.violations.length} violation(s)`)}${duration}`,
+  ];
   const violationsToShow = check.violations.slice(0, 10);
   lines.push(...violationsToShow.map(formatViolationText));
   if (check.violations.length > 10) {

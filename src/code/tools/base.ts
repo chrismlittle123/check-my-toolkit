@@ -1,11 +1,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 
-import {
-  CheckResult,
-  type IToolRunner,
-  type Violation,
-} from "../../types/index.js";
+import { CheckResult, type IToolRunner, type Violation } from "../../types/index.js";
 
 /**
  * Abstract base class for tool runners.
@@ -21,9 +17,7 @@ export abstract class BaseToolRunner implements IToolRunner {
    * Check if any of the config files exist
    */
   protected hasConfig(projectRoot: string): boolean {
-    return this.configFiles.some((config) =>
-      fs.existsSync(path.join(projectRoot, config))
-    );
+    return this.configFiles.some((config) => fs.existsSync(path.join(projectRoot, config)));
   }
 
   /**
@@ -73,12 +67,7 @@ export abstract class BaseToolRunner implements IToolRunner {
    * Create a skip result for when tool is not installed
    */
   protected skipNotInstalled(duration: number): CheckResult {
-    return CheckResult.skip(
-      this.name,
-      this.rule,
-      `${this.name} not installed`,
-      duration
-    );
+    return CheckResult.skip(this.name, this.rule, `${this.name} not installed`, duration);
   }
 
   /**

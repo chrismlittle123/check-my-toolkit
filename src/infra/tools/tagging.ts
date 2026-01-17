@@ -69,9 +69,12 @@ export class TaggingRunner extends BaseInfraToolRunner {
   }
 
   private getClient(): ResourceGroupsTaggingAPIClient {
-    return this.client ?? new ResourceGroupsTaggingAPIClient({
-      region: this.config.region ?? process.env.AWS_REGION ?? "us-east-1",
-    });
+    return (
+      this.client ??
+      new ResourceGroupsTaggingAPIClient({
+        region: this.config.region ?? process.env.AWS_REGION ?? "us-east-1",
+      })
+    );
   }
 
   private async fetchAllResources(
@@ -82,9 +85,11 @@ export class TaggingRunner extends BaseInfraToolRunner {
 
     do {
       // eslint-disable-next-line no-await-in-loop -- Sequential pagination required
-      const response = await client.send(new GetResourcesCommand({
-        PaginationToken: paginationToken,
-      }));
+      const response = await client.send(
+        new GetResourcesCommand({
+          PaginationToken: paginationToken,
+        })
+      );
 
       if (response.ResourceTagMappingList) {
         resources.push(...response.ResourceTagMappingList);
@@ -98,7 +103,7 @@ export class TaggingRunner extends BaseInfraToolRunner {
   private checkResource(resource: ResourceTagMapping): Violation[] {
     const violations: Violation[] = [];
     const arn = resource.ResourceARN ?? "unknown";
-    const tags = new Map(resource.Tags?.map(t => [t.Key, t.Value]) ?? []);
+    const tags = new Map(resource.Tags?.map((t) => [t.Key, t.Value]) ?? []);
 
     violations.push(...this.checkRequiredTags(arn, tags));
     violations.push(...this.checkTagValues(arn, tags));
@@ -106,22 +111,30 @@ export class TaggingRunner extends BaseInfraToolRunner {
     return violations;
   }
 
-  private checkRequiredTags(arn: string, tags: Map<string | undefined, string | undefined>): Violation[] {
-    const missingTags = this.config.required?.filter(tag => !tags.has(tag)) ?? [];
+  private checkRequiredTags(
+    arn: string,
+    tags: Map<string | undefined, string | undefined>
+  ): Violation[] {
+    const missingTags = this.config.required?.filter((tag) => !tags.has(tag)) ?? [];
     if (missingTags.length === 0) {
       return [];
     }
 
-    return [{
-      rule: `${this.rule}.required`,
-      tool: this.toolId,
-      message: `Missing required tags: ${missingTags.join(", ")}`,
-      severity: "error",
-      file: arn,
-    }];
+    return [
+      {
+        rule: `${this.rule}.required`,
+        tool: this.toolId,
+        message: `Missing required tags: ${missingTags.join(", ")}`,
+        severity: "error",
+        file: arn,
+      },
+    ];
   }
 
-  private checkTagValues(arn: string, tags: Map<string | undefined, string | undefined>): Violation[] {
+  private checkTagValues(
+    arn: string,
+    tags: Map<string | undefined, string | undefined>
+  ): Violation[] {
     if (!this.config.values) {
       return [];
     }

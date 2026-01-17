@@ -28,10 +28,7 @@ const eslintRuleWithOptions = z
  * - severity string: "error"
  * - object with severity and options: { severity: "error", max: 10 }
  */
-const eslintRuleValue = z.union([
-  eslintRuleSeverity,
-  eslintRuleWithOptions,
-]);
+const eslintRuleValue = z.union([eslintRuleSeverity, eslintRuleWithOptions]);
 
 /** ESLint rules configuration */
 const eslintRulesSchema = z.record(z.string(), eslintRuleValue).optional();

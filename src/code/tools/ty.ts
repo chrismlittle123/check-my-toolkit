@@ -109,8 +109,14 @@ export class TyRunner extends BaseToolRunner {
   }
 
   private isBinaryNotFound(result: Awaited<ReturnType<typeof execa>>): boolean {
-    const execaResult = result as Awaited<ReturnType<typeof execa>> & { code?: string; message?: string };
-    return execaResult.code === "ENOENT" || (execaResult.failed && String(execaResult.message ?? "").includes("ENOENT"));
+    const execaResult = result as Awaited<ReturnType<typeof execa>> & {
+      code?: string;
+      message?: string;
+    };
+    return (
+      execaResult.code === "ENOENT" ||
+      (execaResult.failed && String(execaResult.message ?? "").includes("ENOENT"))
+    );
   }
 
   private handleExitCode(
@@ -136,7 +142,10 @@ export class TyRunner extends BaseToolRunner {
       const stderr = String(result.stderr ?? "").trim();
       const stdout = String(result.stdout ?? "").trim();
       const errorMessage = stderr || stdout || "Configuration error";
-      return this.fail([this.createErrorViolation(`ty configuration error: ${errorMessage.slice(0, 500)}`)], elapsed());
+      return this.fail(
+        [this.createErrorViolation(`ty configuration error: ${errorMessage.slice(0, 500)}`)],
+        elapsed()
+      );
     }
 
     const violations = this.handleUnexpectedFailure(result, projectRoot);
@@ -151,12 +160,18 @@ export class TyRunner extends BaseToolRunner {
     const violations = this.parseOutput(String(result.stdout ?? ""), projectRoot);
     if (violations.length === 0) {
       const errorOutput = String(result.stdout ?? result.stderr ?? "Type check failed");
-      return this.fail([this.createErrorViolation(`ty error: ${errorOutput.slice(0, 500)}`)], elapsed());
+      return this.fail(
+        [this.createErrorViolation(`ty error: ${errorOutput.slice(0, 500)}`)],
+        elapsed()
+      );
     }
     return this.fail(violations, elapsed());
   }
 
-  private handleUnexpectedFailure(result: Awaited<ReturnType<typeof execa>>, projectRoot: string): Violation[] {
+  private handleUnexpectedFailure(
+    result: Awaited<ReturnType<typeof execa>>,
+    projectRoot: string
+  ): Violation[] {
     const stdout = String(result.stdout ?? "");
     const violations = this.parseOutput(stdout, projectRoot);
     if (violations.length === 0) {

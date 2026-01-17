@@ -1,8 +1,4 @@
-import {
-  CheckResult,
-  type IToolRunner,
-  type Violation,
-} from "../../types/index.js";
+import { CheckResult, type IToolRunner, type Violation } from "../../types/index.js";
 
 /**
  * Abstract base class for infrastructure tool runners.

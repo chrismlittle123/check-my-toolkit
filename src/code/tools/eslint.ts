@@ -225,17 +225,17 @@ export class ESLintRunner extends BaseToolRunner {
    * Get effective option value, handling both object and primitive formats.
    * ESLint normalizes some rules like max-depth from ["error", { max: 4 }] to [2, 4].
    */
-  private getEffectiveOptionValue(
-    effectiveOptions: unknown,
-    optionName: string
-  ): unknown {
+  private getEffectiveOptionValue(effectiveOptions: unknown, optionName: string): unknown {
     // If effectiveOptions is an object, look up the key
     if (typeof effectiveOptions === "object" && effectiveOptions !== null) {
       return (effectiveOptions as Record<string, unknown>)[optionName];
     }
     // If effectiveOptions is a primitive and we're looking for "max", return the primitive
     // This handles rules like max-depth, max-params, complexity where ESLint uses [severity, number]
-    if (optionName === "max" && (typeof effectiveOptions === "number" || typeof effectiveOptions === "string")) {
+    if (
+      optionName === "max" &&
+      (typeof effectiveOptions === "number" || typeof effectiveOptions === "string")
+    ) {
       return effectiveOptions;
     }
     return undefined;
@@ -300,7 +300,9 @@ export class ESLintRunner extends BaseToolRunner {
       return false;
     }
     for (const key of keysA) {
-      if (!this.deepEqual((a as Record<string, unknown>)[key], (b as Record<string, unknown>)[key])) {
+      if (
+        !this.deepEqual((a as Record<string, unknown>)[key], (b as Record<string, unknown>)[key])
+      ) {
         return false;
       }
     }
@@ -317,7 +319,13 @@ export class ESLintRunner extends BaseToolRunner {
     configFile: string | undefined
   ): Violation[] {
     if (!effectiveRule) {
-      return [this.createAuditViolation(`Rule "${ruleName}" is required but not configured`, "error", configFile)];
+      return [
+        this.createAuditViolation(
+          `Rule "${ruleName}" is required but not configured`,
+          "error",
+          configFile
+        ),
+      ];
     }
 
     const violations: Violation[] = [];
@@ -331,7 +339,9 @@ export class ESLintRunner extends BaseToolRunner {
 
     const requiredOptions = this.extractRuleOptions(requiredValue);
     if (requiredOptions) {
-      violations.push(...this.compareRuleOptions(ruleName, requiredOptions, effectiveRule, configFile));
+      violations.push(
+        ...this.compareRuleOptions(ruleName, requiredOptions, effectiveRule, configFile)
+      );
     }
 
     return violations;
@@ -355,7 +365,11 @@ export class ESLintRunner extends BaseToolRunner {
   /**
    * Create an audit violation
    */
-  private createAuditViolation(message: string, severity: "error" | "warning", file?: string): Violation {
+  private createAuditViolation(
+    message: string,
+    severity: "error" | "warning",
+    file?: string
+  ): Violation {
     return {
       rule: `${this.rule}.${this.toolId}`,
       tool: "audit",

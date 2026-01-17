@@ -117,38 +117,39 @@ export class RepoRunner extends BaseProcessToolRunner {
 
   private checkCodeowners(projectRoot: string): Violation[] {
     // Check common CODEOWNERS locations
-    const codeownersLocations = [
-      "CODEOWNERS",
-      ".github/CODEOWNERS",
-      "docs/CODEOWNERS",
-    ];
+    const codeownersLocations = ["CODEOWNERS", ".github/CODEOWNERS", "docs/CODEOWNERS"];
 
-    const codeownersExists = codeownersLocations.some(
-      (location) => this.fileExists(projectRoot, location)
+    const codeownersExists = codeownersLocations.some((location) =>
+      this.fileExists(projectRoot, location)
     );
 
     if (!codeownersExists) {
-      return [{
-        rule: `${this.rule}.codeowners`,
-        tool: this.toolId,
-        message: "CODEOWNERS file not found (checked CODEOWNERS, .github/CODEOWNERS, docs/CODEOWNERS)",
-        severity: "error",
-      }];
+      return [
+        {
+          rule: `${this.rule}.codeowners`,
+          tool: this.toolId,
+          message:
+            "CODEOWNERS file not found (checked CODEOWNERS, .github/CODEOWNERS, docs/CODEOWNERS)",
+          severity: "error",
+        },
+      ];
     }
 
     return [];
   }
 
-  private async checkBranchProtection(
-    repoInfo: { owner: string; repo: string }
-  ): Promise<Violation[]> {
+  private async checkBranchProtection(repoInfo: {
+    owner: string;
+    repo: string;
+  }): Promise<Violation[]> {
     const branch = this.config.branch_protection?.branch ?? "main";
 
     try {
       const result = await execa("gh", [
         "api",
         `repos/${repoInfo.owner}/${repoInfo.repo}/branches/${branch}/protection`,
-        "--jq", ".",
+        "--jq",
+        ".",
       ]);
 
       const protection = JSON.parse(result.stdout) as BranchProtectionResponse;
@@ -163,31 +164,37 @@ export class RepoRunner extends BaseProcessToolRunner {
 
     if (errorMessage.includes("404") || errorMessage.includes("Branch not protected")) {
       if (this.config.require_branch_protection) {
-        return [{
-          rule: `${this.rule}.branch_protection`,
-          tool: this.toolId,
-          message: `Branch '${branch}' does not have branch protection enabled`,
-          severity: "error",
-        }];
+        return [
+          {
+            rule: `${this.rule}.branch_protection`,
+            tool: this.toolId,
+            message: `Branch '${branch}' does not have branch protection enabled`,
+            severity: "error",
+          },
+        ];
       }
       return [];
     }
 
     if (errorMessage.includes("403") || errorMessage.includes("Must have admin rights")) {
-      return [{
-        rule: `${this.rule}.branch_protection`,
-        tool: this.toolId,
-        message: `Cannot check branch protection: insufficient permissions (requires admin access)`,
-        severity: "warning",
-      }];
+      return [
+        {
+          rule: `${this.rule}.branch_protection`,
+          tool: this.toolId,
+          message: `Cannot check branch protection: insufficient permissions (requires admin access)`,
+          severity: "warning",
+        },
+      ];
     }
 
-    return [{
-      rule: `${this.rule}.branch_protection`,
-      tool: this.toolId,
-      message: `Failed to check branch protection: ${errorMessage}`,
-      severity: "error",
-    }];
+    return [
+      {
+        rule: `${this.rule}.branch_protection`,
+        tool: this.toolId,
+        message: `Failed to check branch protection: ${errorMessage}`,
+        severity: "error",
+      },
+    ];
   }
 
   private validateProtectionSettings(
@@ -334,7 +341,10 @@ export class RepoRunner extends BaseProcessToolRunner {
   ): Violation[] {
     const violations: Violation[] = [];
 
-    if (bpConfig.require_signed_commits === true && !(protection.required_signatures?.enabled ?? false)) {
+    if (
+      bpConfig.require_signed_commits === true &&
+      !(protection.required_signatures?.enabled ?? false)
+    ) {
       violations.push({
         rule: `${this.rule}.branch_protection.require_signed_commits`,
         tool: this.toolId,

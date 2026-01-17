@@ -107,8 +107,14 @@ export class RuffRunner extends BaseToolRunner {
   }
 
   private isBinaryNotFound(result: Awaited<ReturnType<typeof execa>>): boolean {
-    const execaResult = result as Awaited<ReturnType<typeof execa>> & { code?: string; message?: string };
-    return execaResult.code === "ENOENT" || (execaResult.failed && String(execaResult.message ?? "").includes("ENOENT"));
+    const execaResult = result as Awaited<ReturnType<typeof execa>> & {
+      code?: string;
+      message?: string;
+    };
+    return (
+      execaResult.code === "ENOENT" ||
+      (execaResult.failed && String(execaResult.message ?? "").includes("ENOENT"))
+    );
   }
 
   async run(projectRoot: string): Promise<CheckResult> {

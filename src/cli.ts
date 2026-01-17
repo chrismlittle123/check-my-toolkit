@@ -26,10 +26,7 @@ const VERSION = packageJson.version;
 
 const program = new Command();
 
-program
-  .name("cm")
-  .description("Unified project health checks for code quality")
-  .version(VERSION);
+program.name("cm").description("Unified project health checks for code quality").version(VERSION);
 
 // =============================================================================
 // Shared action handlers
@@ -64,7 +61,10 @@ function handleError(error: unknown): never {
   process.exit(ExitCode.RUNTIME_ERROR);
 }
 
-async function runCheck(options: { config?: string; format: string }, domain?: DomainFilter): Promise<void> {
+async function runCheck(
+  options: { config?: string; format: string },
+  domain?: DomainFilter
+): Promise<void> {
   try {
     const { config, configPath } = await loadConfigAsync(options.config);
     const projectRoot = getProjectRoot(configPath);
@@ -88,7 +88,10 @@ async function runCheck(options: { config?: string; format: string }, domain?: D
   }
 }
 
-async function runAudit(options: { config?: string; format: string }, domain?: DomainFilter): Promise<void> {
+async function runAudit(
+  options: { config?: string; format: string },
+  domain?: DomainFilter
+): Promise<void> {
   try {
     const { config, configPath } = await loadConfigAsync(options.config);
     const projectRoot = getProjectRoot(configPath);
@@ -123,7 +126,9 @@ validateCommand
   .command("config")
   .description("Validate check.toml configuration file")
   .option("-c, --config <path>", "Path to check.toml config file")
-  .addOption(new Option("-f, --format <format>", "Output format").choices(["text", "json"]).default("text"))
+  .addOption(
+    new Option("-f, --format <format>", "Output format").choices(["text", "json"]).default("text")
+  )
   .action(async (options: { config?: string; format: string }) => {
     try {
       // Use async loader to validate extends registry and rulesets
@@ -138,20 +143,30 @@ validateCommand
     } catch (error) {
       if (error instanceof ConfigError) {
         if (options.format === "json") {
-          process.stdout.write(`${JSON.stringify({ valid: false, error: error.message }, null, 2)}\n`);
+          process.stdout.write(
+            `${JSON.stringify({ valid: false, error: error.message }, null, 2)}\n`
+          );
         } else {
           console.error(chalk.red(`✗ Invalid: ${error.message}`));
         }
         process.exit(ExitCode.CONFIG_ERROR);
       }
-      console.error(chalk.red(`Error: ${error instanceof Error ? error.message : "Unknown error"}`));
+      console.error(
+        chalk.red(`Error: ${error instanceof Error ? error.message : "Unknown error"}`)
+      );
       process.exit(ExitCode.RUNTIME_ERROR);
     }
   });
 
 // cm validate registry - validate registry structure
-interface RegistryError { file: string; error: string }
-interface RegistryValidation { count: number; errors: RegistryError[] }
+interface RegistryError {
+  file: string;
+  error: string;
+}
+interface RegistryValidation {
+  count: number;
+  errors: RegistryError[];
+}
 
 function validateRulesets(cwd: string): RegistryValidation {
   const dir = path.join(cwd, "rulesets");
@@ -165,13 +180,20 @@ function validateRulesets(cwd: string): RegistryValidation {
       loadConfig(path.join(dir, file));
       count++;
     } catch (error) {
-      errors.push({ file: `rulesets/${file}`, error: error instanceof Error ? error.message : "Unknown error" });
+      errors.push({
+        file: `rulesets/${file}`,
+        error: error instanceof Error ? error.message : "Unknown error",
+      });
     }
   }
   return { count, errors };
 }
 
-interface RegistryResult { valid: boolean; rulesetsCount: number; errors: RegistryError[] }
+interface RegistryResult {
+  valid: boolean;
+  rulesetsCount: number;
+  errors: RegistryError[];
+}
 
 function outputRegistryResult(result: RegistryResult, format: string): void {
   const { valid, rulesetsCount, errors } = result;
@@ -189,7 +211,9 @@ function outputRegistryResult(result: RegistryResult, format: string): void {
 validateCommand
   .command("registry")
   .description("Validate registry structure (rulesets/*.toml)")
-  .addOption(new Option("-f, --format <format>", "Output format").choices(["text", "json"]).default("text"))
+  .addOption(
+    new Option("-f, --format <format>", "Output format").choices(["text", "json"]).default("text")
+  )
   .action(async (options: { format: string }) => {
     const rulesets = validateRulesets(process.cwd());
     const { count: rulesetsCount, errors } = rulesets;
@@ -204,7 +228,9 @@ program.addCommand(validateCommand);
 // Schema subcommand
 // =============================================================================
 
-const schemaCommand = new Command("schema").description("Output JSON schemas for configuration files");
+const schemaCommand = new Command("schema").description(
+  "Output JSON schemas for configuration files"
+);
 
 // cm schema config - output check.toml JSON schema
 schemaCommand
@@ -231,7 +257,9 @@ codeCommand
   .command("check")
   .description("Run linting and type checking tools")
   .option("-c, --config <path>", "Path to check.toml config file")
-  .addOption(new Option("-f, --format <format>", "Output format").choices(["text", "json"]).default("text"))
+  .addOption(
+    new Option("-f, --format <format>", "Output format").choices(["text", "json"]).default("text")
+  )
   .action((options) => runCheck(options, "code"));
 
 // cm code audit
@@ -239,7 +267,9 @@ codeCommand
   .command("audit")
   .description("Verify linting and type checking configs exist")
   .option("-c, --config <path>", "Path to check.toml config file")
-  .addOption(new Option("-f, --format <format>", "Output format").choices(["text", "json"]).default("text"))
+  .addOption(
+    new Option("-f, --format <format>", "Output format").choices(["text", "json"]).default("text")
+  )
   .action((options) => runAudit(options, "code"));
 
 program.addCommand(codeCommand);
@@ -255,7 +285,9 @@ processCommand
   .command("check")
   .description("Run workflow validation (hooks, CI, etc.)")
   .option("-c, --config <path>", "Path to check.toml config file")
-  .addOption(new Option("-f, --format <format>", "Output format").choices(["text", "json"]).default("text"))
+  .addOption(
+    new Option("-f, --format <format>", "Output format").choices(["text", "json"]).default("text")
+  )
   .action((options) => runCheck(options, "process"));
 
 // cm process audit
@@ -263,7 +295,9 @@ processCommand
   .command("audit")
   .description("Verify workflow configs exist")
   .option("-c, --config <path>", "Path to check.toml config file")
-  .addOption(new Option("-f, --format <format>", "Output format").choices(["text", "json"]).default("text"))
+  .addOption(
+    new Option("-f, --format <format>", "Output format").choices(["text", "json"]).default("text")
+  )
   .action((options) => runAudit(options, "process"));
 
 // cm process diff
@@ -271,7 +305,9 @@ processCommand
   .command("diff")
   .description("Show repository setting differences (current vs. config)")
   .option("-c, --config <path>", "Path to check.toml config file")
-  .addOption(new Option("-f, --format <format>", "Output format").choices(["text", "json"]).default("text"))
+  .addOption(
+    new Option("-f, --format <format>", "Output format").choices(["text", "json"]).default("text")
+  )
   .action(async (options: { config?: string; format: string }) => {
     const { runDiff } = await import("./process/sync/index.js");
     await runDiff({ config: options.config, format: options.format as "text" | "json" });
@@ -283,10 +319,16 @@ processCommand
   .description("Synchronize repository settings to match config")
   .option("-c, --config <path>", "Path to check.toml config file")
   .option("--apply", "Actually apply changes (required for safety)")
-  .addOption(new Option("-f, --format <format>", "Output format").choices(["text", "json"]).default("text"))
+  .addOption(
+    new Option("-f, --format <format>", "Output format").choices(["text", "json"]).default("text")
+  )
   .action(async (options: { config?: string; format: string; apply?: boolean }) => {
     const { runSync } = await import("./process/sync/index.js");
-    await runSync({ config: options.config, format: options.format as "text" | "json", apply: options.apply });
+    await runSync({
+      config: options.config,
+      format: options.format as "text" | "json",
+      apply: options.apply,
+    });
   });
 
 // cm process check-branch
@@ -332,7 +374,9 @@ infraCommand
   .command("check")
   .description("Run infrastructure checks (tagging, etc.)")
   .option("-c, --config <path>", "Path to check.toml config file")
-  .addOption(new Option("-f, --format <format>", "Output format").choices(["text", "json"]).default("text"))
+  .addOption(
+    new Option("-f, --format <format>", "Output format").choices(["text", "json"]).default("text")
+  )
   .action((options) => runCheck(options, "infra"));
 
 // cm infra audit
@@ -340,7 +384,9 @@ infraCommand
   .command("audit")
   .description("Verify infrastructure configs exist")
   .option("-c, --config <path>", "Path to check.toml config file")
-  .addOption(new Option("-f, --format <format>", "Output format").choices(["text", "json"]).default("text"))
+  .addOption(
+    new Option("-f, --format <format>", "Output format").choices(["text", "json"]).default("text")
+  )
   .action((options) => runAudit(options, "infra"));
 
 program.addCommand(infraCommand);
@@ -358,15 +404,19 @@ projectsCommand
   .option("--fix", "Create missing check.toml files")
   .option("--dry-run", "Show what would be created without creating")
   .option("--registry <path>", "Create shared registry and extend from it")
-  .addOption(new Option("-f, --format <format>", "Output format").choices(["text", "json"]).default("text"))
-  .action(async (options: { fix?: boolean; dryRun?: boolean; registry?: string; format: string }) => {
-    try {
-      await runDetect(options as DetectOptions);
-      process.exit(ExitCode.SUCCESS);
-    } catch (error) {
-      handleError(error);
+  .addOption(
+    new Option("-f, --format <format>", "Output format").choices(["text", "json"]).default("text")
+  )
+  .action(
+    async (options: { fix?: boolean; dryRun?: boolean; registry?: string; format: string }) => {
+      try {
+        await runDetect(options as DetectOptions);
+        process.exit(ExitCode.SUCCESS);
+      } catch (error) {
+        handleError(error);
+      }
     }
-  });
+  );
 
 program.addCommand(projectsCommand);
 
@@ -379,7 +429,9 @@ program
   .command("check")
   .description("Run all checks (code + process + infra)")
   .option("-c, --config <path>", "Path to check.toml config file")
-  .addOption(new Option("-f, --format <format>", "Output format").choices(["text", "json"]).default("text"))
+  .addOption(
+    new Option("-f, --format <format>", "Output format").choices(["text", "json"]).default("text")
+  )
   .action((options: { config?: string; format: string }) => runCheck(options));
 
 // cm audit - run all domain audits
@@ -387,7 +439,9 @@ program
   .command("audit")
   .description("Verify all configs exist (code + process + infra)")
   .option("-c, --config <path>", "Path to check.toml config file")
-  .addOption(new Option("-f, --format <format>", "Output format").choices(["text", "json"]).default("text"))
+  .addOption(
+    new Option("-f, --format <format>", "Output format").choices(["text", "json"]).default("text")
+  )
   .action((options) => runAudit(options));
 
 program.parse();

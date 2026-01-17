@@ -1,13 +1,36 @@
 import { type Config } from "../config/index.js";
+import { type CheckResult, DomainResult, type IToolRunner } from "../types/index.js";
 import {
-  type CheckResult,
-  DomainResult,
-  type IToolRunner,
-} from "../types/index.js";
-import { BackupsRunner, BranchesRunner, ChangesetsRunner, CiRunner, CodeownersRunner, CommitsRunner, CoverageRunner, DocsRunner, HooksRunner, PrRunner, RepoRunner, TicketsRunner } from "./tools/index.js";
+  BackupsRunner,
+  BranchesRunner,
+  ChangesetsRunner,
+  CiRunner,
+  CodeownersRunner,
+  CommitsRunner,
+  CoverageRunner,
+  DocsRunner,
+  HooksRunner,
+  PrRunner,
+  RepoRunner,
+  TicketsRunner,
+} from "./tools/index.js";
 
 // Export tool runners for direct access
-export { BackupsRunner, BaseProcessToolRunner, BranchesRunner, ChangesetsRunner, CiRunner, CodeownersRunner, CommitsRunner, CoverageRunner, DocsRunner, HooksRunner, PrRunner, RepoRunner, TicketsRunner } from "./tools/index.js";
+export {
+  BackupsRunner,
+  BaseProcessToolRunner,
+  BranchesRunner,
+  ChangesetsRunner,
+  CiRunner,
+  CodeownersRunner,
+  CommitsRunner,
+  CoverageRunner,
+  DocsRunner,
+  HooksRunner,
+  PrRunner,
+  RepoRunner,
+  TicketsRunner,
+} from "./tools/index.js";
 
 /** Tool configuration entry mapping config getter to runner or runner factory */
 interface ToolEntry {
@@ -241,10 +264,7 @@ function getEnabledTools(config: Config): IToolRunner[] {
 /**
  * Run all process checks based on configuration
  */
-export async function runProcessChecks(
-  projectRoot: string,
-  config: Config
-): Promise<DomainResult> {
+export async function runProcessChecks(projectRoot: string, config: Config): Promise<DomainResult> {
   const tools = getEnabledTools(config);
   const checks = await runTools(tools, projectRoot, "run");
   return DomainResult.fromChecks("process", checks);
@@ -284,20 +304,20 @@ async function runTools(
 
     // Handle rejected promise - create error result for the tool
     const tool = tools[index];
-    const errorMessage = result.reason instanceof Error
-      ? result.reason.message
-      : "Unknown error";
+    const errorMessage = result.reason instanceof Error ? result.reason.message : "Unknown error";
 
     return {
       name: tool.name,
       rule: tool.rule,
       passed: false,
-      violations: [{
-        rule: tool.rule,
-        tool: tool.toolId,
-        message: `Tool error: ${errorMessage}`,
-        severity: "error" as const,
-      }],
+      violations: [
+        {
+          rule: tool.rule,
+          tool: tool.toolId,
+          message: `Tool error: ${errorMessage}`,
+          severity: "error" as const,
+        },
+      ],
       skipped: false,
       duration: 0,
     };

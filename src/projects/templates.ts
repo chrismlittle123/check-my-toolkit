@@ -111,7 +111,11 @@ export function createCheckToml(
  * Create a shared registry with rulesets.
  * @param projectTypes - Set of project types that need rulesets
  */
-export function createRegistry(registryPath: string, projectTypes: Set<ProjectType>, dryRun: boolean): void {
+export function createRegistry(
+  registryPath: string,
+  projectTypes: Set<ProjectType>,
+  dryRun: boolean
+): void {
   const rulesetsDir = path.join(registryPath, "rulesets");
 
   if (!dryRun) {

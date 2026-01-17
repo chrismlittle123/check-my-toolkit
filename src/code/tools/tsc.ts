@@ -82,12 +82,17 @@ export class TscRunner extends BaseToolRunner {
    */
   private isTscNotFoundOutput(output: string): boolean {
     const stripped = this.stripAnsi(output);
-    return stripped.includes("This is not the tsc command you are looking for") ||
-           stripped.includes("command not found") ||
-           stripped.includes("ENOENT");
+    return (
+      stripped.includes("This is not the tsc command you are looking for") ||
+      stripped.includes("command not found") ||
+      stripped.includes("ENOENT")
+    );
   }
 
-  private handleTscFailure(result: Awaited<ReturnType<typeof execa>>, projectRoot: string): Violation[] | "not-installed" {
+  private handleTscFailure(
+    result: Awaited<ReturnType<typeof execa>>,
+    projectRoot: string
+  ): Violation[] | "not-installed" {
     const stdout = String(result.stdout ?? "");
     const stderr = String(result.stderr ?? "");
     const combinedOutput = stdout || stderr;
@@ -100,7 +105,11 @@ export class TscRunner extends BaseToolRunner {
     const violations = this.parseOutput(stdout, projectRoot);
     if (violations.length === 0) {
       if (combinedOutput) {
-        return [this.createErrorViolation(`TypeScript error: ${this.stripAnsi(combinedOutput).slice(0, 500)}`)];
+        return [
+          this.createErrorViolation(
+            `TypeScript error: ${this.stripAnsi(combinedOutput).slice(0, 500)}`
+          ),
+        ];
       }
     }
     return violations;
@@ -207,12 +216,17 @@ export class TscRunner extends BaseToolRunner {
 
     // First check if config exists
     if (!this.hasConfig(projectRoot)) {
-      return this.fail([{
-        rule: `${this.rule}.${this.toolId}`,
-        tool: "audit",
-        message: `${this.name} config not found. Expected: ${this.configFiles.join(", ")}`,
-        severity: "error",
-      }], elapsed());
+      return this.fail(
+        [
+          {
+            rule: `${this.rule}.${this.toolId}`,
+            tool: "audit",
+            message: `${this.name} config not found. Expected: ${this.configFiles.join(", ")}`,
+            severity: "error",
+          },
+        ],
+        elapsed()
+      );
     }
 
     // If no required options, just pass
@@ -231,7 +245,9 @@ export class TscRunner extends BaseToolRunner {
     return CheckResult.fail(`${this.name} Config`, this.rule, violations, elapsed());
   }
 
-  private parseConfigFile(configPath: string): { compilerOptions?: Record<string, unknown> } | null {
+  private parseConfigFile(
+    configPath: string
+  ): { compilerOptions?: Record<string, unknown> } | null {
     try {
       const content = fs.readFileSync(configPath, "utf-8");
       const jsonContent = stripJsonComments(content);
@@ -244,13 +260,15 @@ export class TscRunner extends BaseToolRunner {
   private auditCompilerOptions(configPath: string): Violation[] {
     const tsconfig = this.parseConfigFile(configPath);
     if (tsconfig === null) {
-      return [{
-        rule: `${this.rule}.${this.toolId}`,
-        tool: "audit",
-        file: "tsconfig.json",
-        message: "Failed to parse tsconfig.json",
-        severity: "error",
-      }];
+      return [
+        {
+          rule: `${this.rule}.${this.toolId}`,
+          tool: "audit",
+          file: "tsconfig.json",
+          message: "Failed to parse tsconfig.json",
+          severity: "error",
+        },
+      ];
     }
 
     const compilerOptions = tsconfig.compilerOptions ?? {};

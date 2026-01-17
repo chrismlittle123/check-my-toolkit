@@ -32,14 +32,20 @@ export async function applyBranchProtection(
   const requestBody = buildRequestBody(desired);
 
   try {
-    await execa("gh", [
-      "api",
-      `repos/${repoInfo.owner}/${repoInfo.repo}/branches/${branch}/protection`,
-      "-X", "PUT",
-      "--input", "-",
-    ], {
-      input: JSON.stringify(requestBody),
-    });
+    await execa(
+      "gh",
+      [
+        "api",
+        `repos/${repoInfo.owner}/${repoInfo.repo}/branches/${branch}/protection`,
+        "-X",
+        "PUT",
+        "--input",
+        "-",
+      ],
+      {
+        input: JSON.stringify(requestBody),
+      }
+    );
 
     return { success: true, applied: diffs, failed: [] };
   } catch (error) {
@@ -74,7 +80,9 @@ function buildRequestBody(desired: DesiredBranchProtection): Record<string, unkn
     ...(prReviews && { required_pull_request_reviews: prReviews }),
     ...(statusChecks && { required_status_checks: statusChecks }),
     ...(desired.enforce_admins !== undefined && { enforce_admins: desired.enforce_admins }),
-    ...(desired.require_signed_commits !== undefined && { required_signatures: desired.require_signed_commits }),
+    ...(desired.require_signed_commits !== undefined && {
+      required_signatures: desired.require_signed_commits,
+    }),
     // GitHub API requires these fields to prevent accidentally removing existing protections
     restrictions: null,
     required_linear_history: false,
@@ -84,7 +92,9 @@ function buildRequestBody(desired: DesiredBranchProtection): Record<string, unkn
 }
 
 /** Build required_pull_request_reviews section */
-function buildPullRequestReviewsSection(desired: DesiredBranchProtection): Record<string, unknown> | null {
+function buildPullRequestReviewsSection(
+  desired: DesiredBranchProtection
+): Record<string, unknown> | null {
   const hasReviewSettings =
     desired.required_reviews !== undefined ||
     desired.dismiss_stale_reviews !== undefined ||
@@ -95,14 +105,22 @@ function buildPullRequestReviewsSection(desired: DesiredBranchProtection): Recor
   }
 
   return {
-    ...(desired.required_reviews !== undefined && { required_approving_review_count: desired.required_reviews }),
-    ...(desired.dismiss_stale_reviews !== undefined && { dismiss_stale_reviews: desired.dismiss_stale_reviews }),
-    ...(desired.require_code_owner_reviews !== undefined && { require_code_owner_reviews: desired.require_code_owner_reviews }),
+    ...(desired.required_reviews !== undefined && {
+      required_approving_review_count: desired.required_reviews,
+    }),
+    ...(desired.dismiss_stale_reviews !== undefined && {
+      dismiss_stale_reviews: desired.dismiss_stale_reviews,
+    }),
+    ...(desired.require_code_owner_reviews !== undefined && {
+      require_code_owner_reviews: desired.require_code_owner_reviews,
+    }),
   };
 }
 
 /** Build required_status_checks section */
-function buildStatusChecksSection(desired: DesiredBranchProtection): Record<string, unknown> | null {
+function buildStatusChecksSection(
+  desired: DesiredBranchProtection
+): Record<string, unknown> | null {
   const hasStatusSettings =
     desired.require_status_checks !== undefined ||
     desired.require_branches_up_to_date !== undefined;
@@ -113,6 +131,8 @@ function buildStatusChecksSection(desired: DesiredBranchProtection): Record<stri
 
   return {
     ...(desired.require_status_checks !== undefined && { contexts: desired.require_status_checks }),
-    ...(desired.require_branches_up_to_date !== undefined && { strict: desired.require_branches_up_to_date }),
+    ...(desired.require_branches_up_to_date !== undefined && {
+      strict: desired.require_branches_up_to_date,
+    }),
   };
 }

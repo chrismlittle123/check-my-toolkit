@@ -36,10 +36,7 @@ export async function getRepoInfo(projectRoot: string): Promise<RepoInfo> {
     const data = JSON.parse(result.stdout) as { owner: { login: string }; name: string };
     return { owner: data.owner.login, repo: data.name };
   } catch {
-    throw new FetcherError(
-      "Could not determine GitHub repository from git remote",
-      "NO_REPO"
-    );
+    throw new FetcherError("Could not determine GitHub repository from git remote", "NO_REPO");
   }
 }
 
@@ -94,7 +91,12 @@ function parseGitHubProtection(
 }
 
 /** Parse PR review settings */
-function parsePullRequestReviews(prReviews: GitHubBranchProtection["required_pull_request_reviews"]): Pick<BranchProtectionSettings, "requiredReviews" | "dismissStaleReviews" | "requireCodeOwnerReviews"> {
+function parsePullRequestReviews(
+  prReviews: GitHubBranchProtection["required_pull_request_reviews"]
+): Pick<
+  BranchProtectionSettings,
+  "requiredReviews" | "dismissStaleReviews" | "requireCodeOwnerReviews"
+> {
   return {
     requiredReviews: prReviews?.required_approving_review_count ?? null,
     dismissStaleReviews: prReviews?.dismiss_stale_reviews ?? null,
@@ -103,7 +105,9 @@ function parsePullRequestReviews(prReviews: GitHubBranchProtection["required_pul
 }
 
 /** Parse status check settings */
-function parseStatusChecks(statusChecks: GitHubBranchProtection["required_status_checks"]): Pick<BranchProtectionSettings, "requiredStatusChecks" | "requireBranchesUpToDate"> {
+function parseStatusChecks(
+  statusChecks: GitHubBranchProtection["required_status_checks"]
+): Pick<BranchProtectionSettings, "requiredStatusChecks" | "requireBranchesUpToDate"> {
   return {
     requiredStatusChecks: statusChecks?.contexts ?? null,
     requireBranchesUpToDate: statusChecks?.strict ?? null,

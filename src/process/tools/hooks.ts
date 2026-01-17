@@ -105,7 +105,9 @@ export class HooksRunner extends BaseProcessToolRunner {
       "git symbolic-ref --short HEAD",
     ];
     const hookPath = ".husky/pre-push";
-    return branchDetectionPatterns.some((pattern) => this.fileContains(projectRoot, hookPath, pattern));
+    return branchDetectionPatterns.some((pattern) =>
+      this.fileContains(projectRoot, hookPath, pattern)
+    );
   }
 
   /** Check that pre-push hook prevents direct pushes to protected branches */
@@ -119,18 +121,33 @@ export class HooksRunner extends BaseProcessToolRunner {
 
     // First check if pre-push hook exists
     if (!this.fileExists(projectRoot, hookPath)) {
-      return [this.createPrePushViolation("pre-push", "Pre-push hook not found. Required for protected branch enforcement.")];
+      return [
+        this.createPrePushViolation(
+          "pre-push",
+          "Pre-push hook not found. Required for protected branch enforcement."
+        ),
+      ];
     }
 
     // Check for branch detection pattern
     if (!this.hasBranchDetection(projectRoot)) {
-      return [this.createPrePushViolation("pre-push.branch-detection", "Pre-push hook does not detect current branch. Expected one of: git rev-parse --abbrev-ref HEAD, git branch --show-current")];
+      return [
+        this.createPrePushViolation(
+          "pre-push.branch-detection",
+          "Pre-push hook does not detect current branch. Expected one of: git rev-parse --abbrev-ref HEAD, git branch --show-current"
+        ),
+      ];
     }
 
     // Check that each protected branch is referenced in the hook
     return protectedBranches
       .filter((branch) => !this.fileContains(projectRoot, hookPath, branch))
-      .map((branch) => this.createPrePushViolation("pre-push.protected-branch", `Pre-push hook does not check for protected branch "${branch}"`));
+      .map((branch) =>
+        this.createPrePushViolation(
+          "pre-push.protected-branch",
+          `Pre-push hook does not check for protected branch "${branch}"`
+        )
+      );
   }
 
   /** Run hooks validation */

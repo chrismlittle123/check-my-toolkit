@@ -80,7 +80,12 @@ function addWorkspaceRoot(ctx: ProcessingContext, normalizedPath: string): void 
 }
 
 /** Add a project to the context */
-function addProject(ctx: ProcessingContext, normalizedPath: string, marker: ProjectMarker, absoluteProjectDir: string): void {
+function addProject(
+  ctx: ProcessingContext,
+  normalizedPath: string,
+  marker: ProjectMarker,
+  absoluteProjectDir: string
+): void {
   ctx.seenPaths.add(normalizedPath);
   ctx.projects.push({
     path: normalizedPath,
@@ -91,7 +96,11 @@ function addProject(ctx: ProcessingContext, normalizedPath: string, marker: Proj
 }
 
 /** Process a single marker file and determine if it's a project or workspace root */
-function processMarkerFile(ctx: ProcessingContext, markerFile: string, marker: ProjectMarker): void {
+function processMarkerFile(
+  ctx: ProcessingContext,
+  markerFile: string,
+  marker: ProjectMarker
+): void {
   const projectDir = path.dirname(markerFile);
   const normalizedPath = projectDir === "." ? "." : projectDir;
 
@@ -102,7 +111,10 @@ function processMarkerFile(ctx: ProcessingContext, markerFile: string, marker: P
   const absoluteMarkerPath = path.join(ctx.searchRoot, markerFile);
   const absoluteProjectDir = path.join(ctx.searchRoot, projectDir);
 
-  if (isMarkerWorkspaceRoot(marker, absoluteMarkerPath) || hasWorkspaceMarkers(absoluteProjectDir)) {
+  if (
+    isMarkerWorkspaceRoot(marker, absoluteMarkerPath) ||
+    hasWorkspaceMarkers(absoluteProjectDir)
+  ) {
     addWorkspaceRoot(ctx, normalizedPath);
     return;
   }
@@ -111,7 +123,11 @@ function processMarkerFile(ctx: ProcessingContext, markerFile: string, marker: P
 }
 
 /** Find all marker files for a project type */
-async function findMarkerFiles(searchRoot: string, marker: ProjectMarker, ignorePatterns: string[]): Promise<string[]> {
+async function findMarkerFiles(
+  searchRoot: string,
+  marker: ProjectMarker,
+  ignorePatterns: string[]
+): Promise<string[]> {
   return glob(`**/${marker.file}`, {
     cwd: searchRoot,
     ignore: ignorePatterns,

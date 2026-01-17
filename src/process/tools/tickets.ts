@@ -86,13 +86,19 @@ export class TicketsRunner extends BaseProcessToolRunner {
       return { valid: false, reason: `Invalid regex pattern: ${this.config.pattern}` };
     }
     if (!this.config.require_in_commits && !this.config.require_in_branch) {
-      return { valid: false, reason: "Neither require_in_commits nor require_in_branch is enabled" };
+      return {
+        valid: false,
+        reason: "Neither require_in_commits nor require_in_branch is enabled",
+      };
     }
     return { valid: true };
   }
 
   /** Validate branch name contains ticket reference */
-  private async validateBranch(projectRoot: string, pattern: string): Promise<{ skip?: string; violation?: Violation }> {
+  private async validateBranch(
+    projectRoot: string,
+    pattern: string
+  ): Promise<{ skip?: string; violation?: Violation }> {
     const branch = await this.getCurrentBranch(projectRoot);
     if (!branch) {
       return { skip: "Not in a git repository or no branch checked out" };
@@ -111,7 +117,10 @@ export class TicketsRunner extends BaseProcessToolRunner {
   }
 
   /** Validate commit message contains ticket reference */
-  private async validateCommit(projectRoot: string, pattern: string): Promise<{ skip?: string; violation?: Violation }> {
+  private async validateCommit(
+    projectRoot: string,
+    pattern: string
+  ): Promise<{ skip?: string; violation?: Violation }> {
     const commitMessage = await this.getHeadCommitMessage(projectRoot);
     if (!commitMessage) {
       return { skip: "Not in a git repository or no commits" };
@@ -175,6 +184,8 @@ export class TicketsRunner extends BaseProcessToolRunner {
     if (skip) {
       return this.skip(skip, elapsed());
     }
-    return violations.length > 0 ? this.fromViolations(violations, elapsed()) : this.pass(elapsed());
+    return violations.length > 0
+      ? this.fromViolations(violations, elapsed())
+      : this.pass(elapsed());
   }
 }

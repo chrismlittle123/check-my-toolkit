@@ -145,11 +145,7 @@ export class DisableCommentsRunner extends BaseToolRunner {
   /**
    * Scan a single file for disable comment patterns
    */
-  private scanFile(
-    relativePath: string,
-    absolutePath: string,
-    patterns: string[]
-  ): Violation[] {
+  private scanFile(relativePath: string, absolutePath: string, patterns: string[]): Violation[] {
     const violations: Violation[] = [];
 
     try {
@@ -186,9 +182,7 @@ export class DisableCommentsRunner extends BaseToolRunner {
     // Trim and truncate the line content for the message
     const trimmedContent = lineContent.trim();
     const displayContent =
-      trimmedContent.length > 60
-        ? `${trimmedContent.substring(0, 60)  }...`
-        : trimmedContent;
+      trimmedContent.length > 60 ? `${trimmedContent.substring(0, 60)}...` : trimmedContent;
 
     return {
       rule: `${this.rule}.${this.toolId}`,

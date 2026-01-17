@@ -9,13 +9,7 @@ interface CheckCommitOptions {
 }
 
 /** Patterns that indicate auto-generated commits that should be skipped */
-const AUTO_COMMIT_PATTERNS = [
-  /^Merge /,
-  /^Revert /,
-  /^fixup! /,
-  /^squash! /,
-  /^amend! /,
-];
+const AUTO_COMMIT_PATTERNS = [/^Merge /, /^Revert /, /^fixup! /, /^squash! /, /^amend! /];
 
 type CommitsConfig = NonNullable<NonNullable<Config["process"]>["commits"]>;
 type TicketsConfig = NonNullable<NonNullable<Config["process"]>["tickets"]>;
@@ -80,7 +74,10 @@ function logViolations(violations: string[]): void {
 }
 
 /** Validate ticket reference in commit message */
-function validateTicketReference(commitMsg: string, ticketsConfig: TicketsConfig | undefined): string[] {
+function validateTicketReference(
+  commitMsg: string,
+  ticketsConfig: TicketsConfig | undefined
+): string[] {
   const ticketsEnabled = ticketsConfig?.enabled && ticketsConfig.require_in_commits;
   if (!ticketsEnabled || !ticketsConfig.pattern) {
     return [];
@@ -93,7 +90,10 @@ function validateTicketReference(commitMsg: string, ticketsConfig: TicketsConfig
 }
 
 /** Get pattern and description for commit format validation */
-function getCommitPattern(commitsConfig: CommitsConfig): { pattern: string | undefined; description: string | undefined } {
+function getCommitPattern(commitsConfig: CommitsConfig): {
+  pattern: string | undefined;
+  description: string | undefined;
+} {
   if (commitsConfig.pattern) {
     return { pattern: commitsConfig.pattern, description: commitsConfig.pattern };
   }
@@ -155,7 +155,10 @@ function validateCommitMessage(
 }
 
 /** Check if any validation is enabled */
-function isValidationEnabled(ticketsConfig: TicketsConfig | undefined, commitsConfig: CommitsConfig | undefined): boolean {
+function isValidationEnabled(
+  ticketsConfig: TicketsConfig | undefined,
+  commitsConfig: CommitsConfig | undefined
+): boolean {
   const ticketsEnabled = Boolean(ticketsConfig?.enabled && ticketsConfig.require_in_commits);
   const commitsEnabled = Boolean(commitsConfig?.enabled);
   return ticketsEnabled || commitsEnabled;

@@ -53,13 +53,19 @@ export class PipAuditRunner extends BaseToolRunner {
     }
   }
 
-  private processResult(result: Awaited<ReturnType<typeof execa>>, elapsed: () => number): CheckResult {
+  private processResult(
+    result: Awaited<ReturnType<typeof execa>>,
+    elapsed: () => number
+  ): CheckResult {
     const output = String(result.stdout ?? result.stderr ?? "");
     const violations = this.parseOutput(output);
 
     if (violations === null) {
       if (result.exitCode !== 0 && result.exitCode !== 1) {
-        return this.fail([this.createErrorViolation(`pip-audit error: ${result.stderr ?? "Unknown error"}`)], elapsed());
+        return this.fail(
+          [this.createErrorViolation(`pip-audit error: ${result.stderr ?? "Unknown error"}`)],
+          elapsed()
+        );
       }
       return this.pass(elapsed());
     }
@@ -170,12 +176,15 @@ export class PipAuditRunner extends BaseToolRunner {
 
     if (!hasPythonDeps) {
       return this.fail(
-        [{
-          rule: `${this.rule}.${this.toolId}`,
-          tool: "audit",
-          message: "No Python dependency file found (requirements.txt, pyproject.toml, or setup.py)",
-          severity: "error",
-        }],
+        [
+          {
+            rule: `${this.rule}.${this.toolId}`,
+            tool: "audit",
+            message:
+              "No Python dependency file found (requirements.txt, pyproject.toml, or setup.py)",
+            severity: "error",
+          },
+        ],
         Date.now() - startTime
       );
     }

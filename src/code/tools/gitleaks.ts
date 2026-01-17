@@ -56,7 +56,16 @@ export class GitleaksRunner extends BaseToolRunner {
 
     try {
       // Use "." as source since cwd is already set to projectRoot
-      const args = ["detect", "--source", ".", "--report-format", "json", "--report-path", "/dev/stdout", "--no-git"];
+      const args = [
+        "detect",
+        "--source",
+        ".",
+        "--report-format",
+        "json",
+        "--report-path",
+        "/dev/stdout",
+        "--no-git",
+      ];
 
       // Use custom config if it exists - use absolute path for reliability
       const configPath = this.findGitleaksConfig(projectRoot);
@@ -79,8 +88,14 @@ export class GitleaksRunner extends BaseToolRunner {
   }
 
   private isBinaryNotFound(result: Awaited<ReturnType<typeof execa>>): boolean {
-    const execaResult = result as Awaited<ReturnType<typeof execa>> & { code?: string; message?: string };
-    return execaResult.code === "ENOENT" || (execaResult.failed && String(execaResult.message ?? "").includes("ENOENT"));
+    const execaResult = result as Awaited<ReturnType<typeof execa>> & {
+      code?: string;
+      message?: string;
+    };
+    return (
+      execaResult.code === "ENOENT" ||
+      (execaResult.failed && String(execaResult.message ?? "").includes("ENOENT"))
+    );
   }
 
   private processResult(
@@ -185,7 +200,10 @@ export class GitleaksRunner extends BaseToolRunner {
       }
 
       const message = error instanceof Error ? error.message : "Unknown error";
-      return this.fail([this.createErrorViolation(`gitleaks audit error: ${message}`)], Date.now() - startTime);
+      return this.fail(
+        [this.createErrorViolation(`gitleaks audit error: ${message}`)],
+        Date.now() - startTime
+      );
     }
   }
 }

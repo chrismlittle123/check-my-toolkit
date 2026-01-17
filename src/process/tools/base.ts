@@ -1,11 +1,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 
-import {
-  CheckResult,
-  type IToolRunner,
-  type Violation,
-} from "../../types/index.js";
+import { CheckResult, type IToolRunner, type Violation } from "../../types/index.js";
 
 /**
  * Abstract base class for process tool runners.
