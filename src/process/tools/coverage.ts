@@ -97,7 +97,12 @@ export class CoverageRunner extends BaseProcessToolRunner {
 
   /** Check for vitest coverage config */
   private checkVitestConfig(projectRoot: string): CoverageConfigResult {
-    const configFiles = ["vitest.config.ts", "vitest.config.js", "vitest.config.mts", "vitest.config.mjs"];
+    const configFiles = [
+      "vitest.config.ts",
+      "vitest.config.js",
+      "vitest.config.mts",
+      "vitest.config.mjs",
+    ];
 
     for (const configFile of configFiles) {
       const configPath = path.join(projectRoot, configFile);
@@ -156,7 +161,11 @@ export class CoverageRunner extends BaseProcessToolRunner {
       return { found: false };
     }
 
-    const threshold = globalThreshold.lines ?? globalThreshold.statements ?? globalThreshold.branches ?? globalThreshold.functions;
+    const threshold =
+      globalThreshold.lines ??
+      globalThreshold.statements ??
+      globalThreshold.branches ??
+      globalThreshold.functions;
     return { found: true, file: "package.json (jest)", threshold };
   }
 
@@ -249,12 +258,19 @@ export class CoverageRunner extends BaseProcessToolRunner {
       return nycResult;
     }
 
-    return { found: false, error: "No coverage threshold config found (checked vitest, jest, nyc)" };
+    return {
+      found: false,
+      error: "No coverage threshold config found (checked vitest, jest, nyc)",
+    };
   }
 
   /** Check if a step has coverage enforcement */
   private stepHasCoverage(run: string): boolean {
-    if (!run.includes("--coverage") && !run.includes("test:coverage") && !run.includes("coverage:check")) {
+    if (
+      !run.includes("--coverage") &&
+      !run.includes("test:coverage") &&
+      !run.includes("coverage:check")
+    ) {
       return false;
     }
     return (
@@ -267,7 +283,11 @@ export class CoverageRunner extends BaseProcessToolRunner {
   }
 
   /** Check a single job for coverage enforcement */
-  private checkJobForCoverage(job: Record<string, unknown>, jobName: string, workflowFile: string): CoverageConfigResult | null {
+  private checkJobForCoverage(
+    job: Record<string, unknown>,
+    jobName: string,
+    workflowFile: string
+  ): CoverageConfigResult | null {
     const steps = job.steps as { run?: string }[] | undefined;
     if (!steps) {
       return null;
@@ -385,6 +405,8 @@ export class CoverageRunner extends BaseProcessToolRunner {
       this.validateCiCoverage(projectRoot, violations);
     }
 
-    return violations.length > 0 ? this.fromViolations(violations, elapsed()) : this.pass(elapsed());
+    return violations.length > 0
+      ? this.fromViolations(violations, elapsed())
+      : this.pass(elapsed());
   }
 }

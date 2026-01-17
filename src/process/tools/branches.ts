@@ -61,22 +61,26 @@ export class BranchesRunner extends BaseProcessToolRunner {
         return this.pass(elapsed());
       }
       return this.fromViolations(
-        [{
-          rule: `${this.rule}.pattern`,
-          tool: this.toolId,
-          message: `Branch '${branch}' does not match pattern: ${pattern}`,
-          severity: "error",
-        }],
+        [
+          {
+            rule: `${this.rule}.pattern`,
+            tool: this.toolId,
+            message: `Branch '${branch}' does not match pattern: ${pattern}`,
+            severity: "error",
+          },
+        ],
         elapsed()
       );
     } catch {
       return this.fromViolations(
-        [{
-          rule: `${this.rule}.pattern`,
-          tool: this.toolId,
-          message: `Invalid regex pattern: ${pattern}`,
-          severity: "error",
-        }],
+        [
+          {
+            rule: `${this.rule}.pattern`,
+            tool: this.toolId,
+            message: `Invalid regex pattern: ${pattern}`,
+            severity: "error",
+          },
+        ],
         elapsed()
       );
     }

@@ -59,9 +59,4 @@ export {
 } from "./process/index.js";
 
 // Output
-export {
-  formatJson,
-  formatOutput,
-  formatText,
-  type OutputFormat,
-} from "./output/index.js";
+export { formatJson, formatOutput, formatText, type OutputFormat } from "./output/index.js";

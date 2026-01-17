@@ -69,10 +69,7 @@ export class PnpmAuditRunner extends BaseToolRunner {
     const elapsed = (): number => Date.now() - startTime;
 
     if (!this.hasLockFile(projectRoot)) {
-      return this.fail(
-        [this.createErrorViolation("No pnpm-lock.yaml found")],
-        elapsed()
-      );
+      return this.fail([this.createErrorViolation("No pnpm-lock.yaml found")], elapsed());
     }
 
     try {
@@ -115,10 +112,7 @@ export class PnpmAuditRunner extends BaseToolRunner {
     return this.fromViolations(violations, elapsed());
   }
 
-  private handleRunError(
-    error: unknown,
-    elapsed: () => number
-  ): CheckResult {
+  private handleRunError(error: unknown, elapsed: () => number): CheckResult {
     if (this.isNotInstalledError(error)) {
       return this.skipNotInstalled(elapsed());
     }
@@ -185,12 +179,14 @@ export class PnpmAuditRunner extends BaseToolRunner {
 
     if (!this.hasLockFile(projectRoot)) {
       return this.fail(
-        [{
-          rule: `${this.rule}.${this.toolId}`,
-          tool: "audit",
-          message: "No pnpm-lock.yaml found",
-          severity: "error",
-        }],
+        [
+          {
+            rule: `${this.rule}.${this.toolId}`,
+            tool: "audit",
+            message: "No pnpm-lock.yaml found",
+            severity: "error",
+          },
+        ],
         Date.now() - startTime
       );
     }

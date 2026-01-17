@@ -16,13 +16,42 @@ interface FieldMapping {
 
 /** All field mappings for branch protection settings */
 const fieldMappings: FieldMapping[] = [
-  { name: "required_reviews", getCurrentValue: (c) => c.requiredReviews, getDesiredValue: (d) => d.required_reviews },
-  { name: "dismiss_stale_reviews", getCurrentValue: (c) => c.dismissStaleReviews, getDesiredValue: (d) => d.dismiss_stale_reviews },
-  { name: "require_code_owner_reviews", getCurrentValue: (c) => c.requireCodeOwnerReviews, getDesiredValue: (d) => d.require_code_owner_reviews },
-  { name: "require_status_checks", getCurrentValue: (c) => c.requiredStatusChecks, getDesiredValue: (d) => d.require_status_checks, isArray: true },
-  { name: "require_branches_up_to_date", getCurrentValue: (c) => c.requireBranchesUpToDate, getDesiredValue: (d) => d.require_branches_up_to_date },
-  { name: "require_signed_commits", getCurrentValue: (c) => c.requireSignedCommits, getDesiredValue: (d) => d.require_signed_commits },
-  { name: "enforce_admins", getCurrentValue: (c) => c.enforceAdmins, getDesiredValue: (d) => d.enforce_admins },
+  {
+    name: "required_reviews",
+    getCurrentValue: (c) => c.requiredReviews,
+    getDesiredValue: (d) => d.required_reviews,
+  },
+  {
+    name: "dismiss_stale_reviews",
+    getCurrentValue: (c) => c.dismissStaleReviews,
+    getDesiredValue: (d) => d.dismiss_stale_reviews,
+  },
+  {
+    name: "require_code_owner_reviews",
+    getCurrentValue: (c) => c.requireCodeOwnerReviews,
+    getDesiredValue: (d) => d.require_code_owner_reviews,
+  },
+  {
+    name: "require_status_checks",
+    getCurrentValue: (c) => c.requiredStatusChecks,
+    getDesiredValue: (d) => d.require_status_checks,
+    isArray: true,
+  },
+  {
+    name: "require_branches_up_to_date",
+    getCurrentValue: (c) => c.requireBranchesUpToDate,
+    getDesiredValue: (d) => d.require_branches_up_to_date,
+  },
+  {
+    name: "require_signed_commits",
+    getCurrentValue: (c) => c.requireSignedCommits,
+    getDesiredValue: (d) => d.require_signed_commits,
+  },
+  {
+    name: "enforce_admins",
+    getCurrentValue: (c) => c.enforceAdmins,
+    getDesiredValue: (d) => d.enforce_admins,
+  },
 ];
 
 /** Compare current settings with desired and generate diffs */
@@ -41,7 +70,10 @@ export function computeDiff(
 }
 
 /** Collect all diffs between current and desired settings */
-function collectDiffs(current: BranchProtectionSettings, desired: DesiredBranchProtection): SettingDiff[] {
+function collectDiffs(
+  current: BranchProtectionSettings,
+  desired: DesiredBranchProtection
+): SettingDiff[] {
   const diffs: SettingDiff[] = [];
 
   for (const mapping of fieldMappings) {
@@ -79,12 +111,17 @@ function compareValue(setting: string, current: unknown, desired: unknown): Sett
 }
 
 /** Compare arrays and return diff if different */
-function compareArrayValue(setting: string, current: string[] | null, desired: string[]): SettingDiff | null {
+function compareArrayValue(
+  setting: string,
+  current: string[] | null,
+  desired: string[]
+): SettingDiff | null {
   const currentArray = current ?? [];
   const sortedCurrent = [...currentArray].sort();
   const sortedDesired = [...desired].sort();
 
-  const areEqual = sortedCurrent.length === sortedDesired.length &&
+  const areEqual =
+    sortedCurrent.length === sortedDesired.length &&
     sortedCurrent.every((v, i) => v === sortedDesired[i]);
 
   if (areEqual) {

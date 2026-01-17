@@ -56,7 +56,9 @@ export class PrRunner extends BaseProcessToolRunner {
   }
 
   /** Get PR data from payload, returns null if not available */
-  private getPrData(payload: GitHubPrEventPayload | null): GitHubPrEventPayload["pull_request"] | null {
+  private getPrData(
+    payload: GitHubPrEventPayload | null
+  ): GitHubPrEventPayload["pull_request"] | null {
     return payload?.pull_request ?? null;
   }
 

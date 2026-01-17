@@ -98,7 +98,10 @@ function countCovered(items: Record<string, number>): { total: number; covered: 
 }
 
 /** Count covered branches */
-function countCoveredBranches(branches: Record<string, number[]>): { total: number; covered: number } {
+function countCoveredBranches(branches: Record<string, number[]>): {
+  total: number;
+  covered: number;
+} {
   let total = 0;
   let covered = 0;
   for (const counts of Object.values(branches)) {
@@ -121,7 +124,11 @@ function computePercentage(total: number, covered: number): number {
 const zeroCounts = { total: 0, covered: 0 };
 
 /** Process a single file's coverage data */
-function processFileCoverage(fileData: FileCoverageData): { statements: { total: number; covered: number }; functions: { total: number; covered: number }; branches: { total: number; covered: number } } {
+function processFileCoverage(fileData: FileCoverageData): {
+  statements: { total: number; covered: number };
+  functions: { total: number; covered: number };
+  branches: { total: number; covered: number };
+} {
   return {
     statements: fileData.s ? countCovered(fileData.s) : zeroCounts,
     functions: fileData.f ? countCovered(fileData.f) : zeroCounts,
@@ -146,7 +153,10 @@ function createEmptyTotals(): CoverageTotals {
 }
 
 /** Add file coverage to totals */
-function addFileCoverage(totals: CoverageTotals, fileCov: ReturnType<typeof processFileCoverage>): void {
+function addFileCoverage(
+  totals: CoverageTotals,
+  fileCov: ReturnType<typeof processFileCoverage>
+): void {
   totals.statements.total += fileCov.statements.total;
   totals.statements.covered += fileCov.statements.covered;
   totals.functions.total += fileCov.functions.total;
@@ -199,7 +209,12 @@ export class CoverageRunRunner extends BaseToolRunner {
   }
 
   private detectRunner(projectRoot: string): "vitest" | "jest" | "pytest" | null {
-    const vitestConfigs = ["vitest.config.ts", "vitest.config.js", "vitest.config.mts", "vitest.config.mjs"];
+    const vitestConfigs = [
+      "vitest.config.ts",
+      "vitest.config.js",
+      "vitest.config.mts",
+      "vitest.config.mjs",
+    ];
     if (findConfig(projectRoot, vitestConfigs)) {
       return "vitest";
     }
@@ -232,7 +247,8 @@ export class CoverageRunRunner extends BaseToolRunner {
       return { cmd: parts[0], args: parts.slice(1) };
     }
 
-    const runner = this.config.runner === "auto" ? this.detectRunner(projectRoot) : this.config.runner;
+    const runner =
+      this.config.runner === "auto" ? this.detectRunner(projectRoot) : this.config.runner;
     if (!runner) {
       return null;
     }
@@ -317,7 +333,10 @@ export class CoverageRunRunner extends BaseToolRunner {
     return 0;
   }
 
-  private async executeTests(testCommand: { cmd: string; args: string[] }, projectRoot: string): Promise<{ exitCode: number | undefined; stderr: string; stdout: string }> {
+  private async executeTests(
+    testCommand: { cmd: string; args: string[] },
+    projectRoot: string
+  ): Promise<{ exitCode: number | undefined; stderr: string; stdout: string }> {
     const result = await execa(testCommand.cmd, testCommand.args, {
       cwd: projectRoot,
       reject: false,
@@ -330,14 +349,28 @@ export class CoverageRunRunner extends BaseToolRunner {
   private checkCoverageThreshold(projectRoot: string): CheckResult | null {
     const coverageData = this.parseCoverageReport(projectRoot);
     if (!coverageData) {
-      return this.fail([this.createViolation("Could not find or parse coverage report. Ensure coverage reporter outputs JSON.")], 0);
+      return this.fail(
+        [
+          this.createViolation(
+            "Could not find or parse coverage report. Ensure coverage reporter outputs JSON."
+          ),
+        ],
+        0
+      );
     }
 
     const coverage = this.getOverallCoverage(coverageData);
     const threshold = this.config.min_threshold ?? 80;
 
     if (coverage < threshold) {
-      return this.fail([this.createViolation(`Coverage ${coverage.toFixed(1)}% is below minimum threshold ${threshold}%`)], 0);
+      return this.fail(
+        [
+          this.createViolation(
+            `Coverage ${coverage.toFixed(1)}% is below minimum threshold ${threshold}%`
+          ),
+        ],
+        0
+      );
     }
 
     return null;
@@ -349,7 +382,10 @@ export class CoverageRunRunner extends BaseToolRunner {
 
     const testCommand = this.getTestCommand(projectRoot);
     if (!testCommand) {
-      return this.fail([this.createViolation("Could not detect test runner. Set runner or command in config.")], elapsed());
+      return this.fail(
+        [this.createViolation("Could not detect test runner. Set runner or command in config.")],
+        elapsed()
+      );
     }
 
     try {
@@ -357,7 +393,14 @@ export class CoverageRunRunner extends BaseToolRunner {
 
       if (result.exitCode !== 0 && result.exitCode !== 1) {
         const errorMsg = result.stderr || result.stdout;
-        return this.fail([this.createViolation(`Test command failed with exit code ${result.exitCode}: ${errorMsg}`)], elapsed());
+        return this.fail(
+          [
+            this.createViolation(
+              `Test command failed with exit code ${result.exitCode}: ${errorMsg}`
+            ),
+          ],
+          elapsed()
+        );
       }
 
       const thresholdResult = this.checkCoverageThreshold(projectRoot);
@@ -387,7 +430,14 @@ export class CoverageRunRunner extends BaseToolRunner {
       return CheckResult.fail(
         `${this.name} Config`,
         this.rule,
-        [{ rule: `${this.rule}.${this.toolId}`, tool: "audit", message: "Could not detect test runner. Configure runner or command in check.toml.", severity: "error" }],
+        [
+          {
+            rule: `${this.rule}.${this.toolId}`,
+            tool: "audit",
+            message: "Could not detect test runner. Configure runner or command in check.toml.",
+            severity: "error",
+          },
+        ],
         Date.now() - startTime
       );
     }

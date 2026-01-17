@@ -52,10 +52,12 @@ export class BackupsRunner extends BaseProcessToolRunner {
 
   private async checkBackups(): Promise<Violation[]> {
     const client = this.getS3Client();
-    const response = await client.send(new ListObjectsV2Command({
-      Bucket: this.config.bucket,
-      Prefix: this.config.prefix,
-    }));
+    const response = await client.send(
+      new ListObjectsV2Command({
+        Bucket: this.config.bucket,
+        Prefix: this.config.prefix,
+      })
+    );
 
     if (!response.Contents || response.Contents.length === 0) {
       return [this.createExistsViolation()];
@@ -65,9 +67,12 @@ export class BackupsRunner extends BaseProcessToolRunner {
   }
 
   private getS3Client(): S3Client {
-    return this.s3Client ?? new S3Client({
-      region: this.config.region ?? process.env.AWS_REGION ?? "us-east-1",
-    });
+    return (
+      this.s3Client ??
+      new S3Client({
+        region: this.config.region ?? process.env.AWS_REGION ?? "us-east-1",
+      })
+    );
   }
 
   private createExistsViolation(): Violation {
@@ -83,25 +88,29 @@ export class BackupsRunner extends BaseProcessToolRunner {
     const mostRecent = this.findMostRecentBackup(contents);
 
     if (!mostRecent?.LastModified) {
-      return [{
-        rule: `${this.rule}.recency`,
-        tool: this.toolId,
-        message: "Could not determine backup age",
-        severity: "error",
-      }];
+      return [
+        {
+          rule: `${this.rule}.recency`,
+          tool: this.toolId,
+          message: "Could not determine backup age",
+          severity: "error",
+        },
+      ];
     }
 
     const maxAgeHours = this.config.max_age_hours ?? 24;
     const ageHours = (Date.now() - mostRecent.LastModified.getTime()) / (1000 * 60 * 60);
 
     if (ageHours > maxAgeHours) {
-      return [{
-        rule: `${this.rule}.recency`,
-        tool: this.toolId,
-        message: `Backup is ${Math.round(ageHours)} hours old (max: ${maxAgeHours} hours)`,
-        severity: "error",
-        file: mostRecent.Key,
-      }];
+      return [
+        {
+          rule: `${this.rule}.recency`,
+          tool: this.toolId,
+          message: `Backup is ${Math.round(ageHours)} hours old (max: ${maxAgeHours} hours)`,
+          severity: "error",
+          file: mostRecent.Key,
+        },
+      ];
     }
 
     return [];

@@ -21,11 +21,7 @@ interface ParsedRule {
 }
 
 /** Common CODEOWNERS file locations */
-const CODEOWNERS_LOCATIONS = [
-  ".github/CODEOWNERS",
-  "CODEOWNERS",
-  "docs/CODEOWNERS",
-];
+const CODEOWNERS_LOCATIONS = [".github/CODEOWNERS", "CODEOWNERS", "docs/CODEOWNERS"];
 
 /**
  * Runner for CODEOWNERS file validation.
@@ -57,7 +53,8 @@ export class CodeownersRunner extends BaseProcessToolRunner {
           {
             rule: `${this.rule}.file`,
             tool: this.toolId,
-            message: "CODEOWNERS file not found (checked .github/CODEOWNERS, CODEOWNERS, docs/CODEOWNERS)",
+            message:
+              "CODEOWNERS file not found (checked .github/CODEOWNERS, CODEOWNERS, docs/CODEOWNERS)",
             severity: "error",
           },
         ],
@@ -101,7 +98,8 @@ export class CodeownersRunner extends BaseProcessToolRunner {
           {
             rule: `${this.rule}.file`,
             tool: this.toolId,
-            message: "CODEOWNERS file not found (checked .github/CODEOWNERS, CODEOWNERS, docs/CODEOWNERS)",
+            message:
+              "CODEOWNERS file not found (checked .github/CODEOWNERS, CODEOWNERS, docs/CODEOWNERS)",
             severity: "error",
           },
         ],

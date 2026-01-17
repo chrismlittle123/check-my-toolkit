@@ -32,7 +32,11 @@ function logDisabled(quiet: boolean | undefined): void {
 }
 
 /** Output failure details */
-function logFailure(violations: { message: string }[], pattern: string | undefined, quiet: boolean | undefined): void {
+function logFailure(
+  violations: { message: string }[],
+  pattern: string | undefined,
+  quiet: boolean | undefined
+): void {
   for (const violation of violations) {
     console.error(`✗ ${violation.message}`);
   }
@@ -55,7 +59,11 @@ async function runBranchValidation(branchesConfig: BranchesConfig): Promise<Chec
 }
 
 /** Handle the result of the branch validation */
-function handleResult(result: CheckResult, branchesConfig: BranchesConfig, quiet: boolean | undefined): number {
+function handleResult(
+  result: CheckResult,
+  branchesConfig: BranchesConfig,
+  quiet: boolean | undefined
+): number {
   if (result.skipped) {
     logSkip(result.skipReason ?? "Check skipped", quiet);
     return 0;

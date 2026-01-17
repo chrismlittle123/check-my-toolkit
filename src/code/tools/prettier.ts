@@ -54,29 +54,15 @@ export class PrettierRunner extends BaseToolRunner {
 
   private async hasFormattableFiles(projectRoot: string): Promise<boolean> {
     try {
-      // Check for JS/TS/JSON/CSS/MD files
-      const result = await execa(
-        "find",
-        [".", "-type", "f", "(",
-          "-name", "*.js", "-o",
-          "-name", "*.jsx", "-o",
-          "-name", "*.ts", "-o",
-          "-name", "*.tsx", "-o",
-          "-name", "*.json", "-o",
-          "-name", "*.css", "-o",
-          "-name", "*.scss", "-o",
-          "-name", "*.md", "-o",
-          "-name", "*.yaml", "-o",
-          "-name", "*.yml",
-          ")",
-          "-not", "-path", "*/node_modules/*",
-          "-not", "-path", "*/.git/*",
-        ],
-        {
-          cwd: projectRoot,
-          reject: false,
-        }
-      );
+      // prettier-ignore
+      const args = [
+        ".", "-type", "f",
+        "(", "-name", "*.js", "-o", "-name", "*.jsx", "-o", "-name", "*.ts", "-o", "-name", "*.tsx",
+        "-o", "-name", "*.json", "-o", "-name", "*.css", "-o", "-name", "*.scss",
+        "-o", "-name", "*.md", "-o", "-name", "*.yaml", "-o", "-name", "*.yml", ")",
+        "-not", "-path", "*/node_modules/*", "-not", "-path", "*/.git/*",
+      ];
+      const result = await execa("find", args, { cwd: projectRoot, reject: false });
       return Boolean(result.stdout.trim());
     } catch {
       return false;

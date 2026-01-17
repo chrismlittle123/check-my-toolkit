@@ -101,7 +101,9 @@ function parseTomlFile(filePath: string): unknown {
 function validateConfig(rawConfig: unknown): Config {
   const result = configSchema.safeParse(rawConfig);
   if (!result.success) {
-    const errors = result.error.errors.map((e) => `  - ${e.path.join(".")}: ${e.message}`).join("\n");
+    const errors = result.error.errors
+      .map((e) => `  - ${e.path.join(".")}: ${e.message}`)
+      .join("\n");
     throw new ConfigError(`Invalid check.toml configuration:\n${errors}`);
   }
   return result.data;
@@ -231,21 +233,42 @@ const defaultHooks: HooksConfig = { enabled: false, require_husky: true };
 const defaultCi: CiConfig = { enabled: false };
 const defaultBranches: BranchesConfig = { enabled: false };
 const defaultCommits: CommitsConfig = { enabled: false, require_scope: false };
-const defaultChangesets: ChangesetsConfig = { enabled: false, validate_format: true, require_description: true };
+const defaultChangesets: ChangesetsConfig = {
+  enabled: false,
+  validate_format: true,
+  require_description: true,
+};
 const defaultPr: PrConfig = { enabled: false };
-const defaultTickets: TicketsConfig = { enabled: false, require_in_commits: true, require_in_branch: false };
+const defaultTickets: TicketsConfig = {
+  enabled: false,
+  require_in_commits: true,
+  require_in_branch: false,
+};
 const defaultCoverage: CoverageConfig = { enabled: false, enforce_in: "config" };
-const defaultRepo: RepoConfig = { enabled: false, require_branch_protection: false, require_codeowners: false };
+const defaultRepo: RepoConfig = {
+  enabled: false,
+  require_branch_protection: false,
+  require_codeowners: false,
+};
 const defaultBackups: BackupsConfig = { enabled: false, max_age_hours: 24 };
 const defaultCodeowners: CodeownersConfig = { enabled: false };
-const defaultDocs: DocsConfig = { enabled: false, path: "docs/", enforcement: "warn", staleness_days: 30, require_docs_in_pr: false };
+const defaultDocs: DocsConfig = {
+  enabled: false,
+  path: "docs/",
+  enforcement: "warn",
+  staleness_days: 30,
+  require_docs_in_pr: false,
+};
 
 /** Merge a single process config section with defaults */
 function mergeProcessSection<T>(defaultVal: T, dcVal: T | undefined, cVal: T | undefined): T {
   return { ...defaultVal, ...dcVal, ...cVal };
 }
 
-function mergeProcessHooks(cp: ProcessConfig | undefined, dcp: ProcessConfig | undefined): HooksConfig {
+function mergeProcessHooks(
+  cp: ProcessConfig | undefined,
+  dcp: ProcessConfig | undefined
+): HooksConfig {
   return mergeProcessSection(defaultHooks, dcp?.hooks, cp?.hooks);
 }
 
@@ -253,15 +276,24 @@ function mergeProcessCi(cp: ProcessConfig | undefined, dcp: ProcessConfig | unde
   return mergeProcessSection(defaultCi, dcp?.ci, cp?.ci);
 }
 
-function mergeProcessBranches(cp: ProcessConfig | undefined, dcp: ProcessConfig | undefined): BranchesConfig {
+function mergeProcessBranches(
+  cp: ProcessConfig | undefined,
+  dcp: ProcessConfig | undefined
+): BranchesConfig {
   return mergeProcessSection(defaultBranches, dcp?.branches, cp?.branches);
 }
 
-function mergeProcessCommits(cp: ProcessConfig | undefined, dcp: ProcessConfig | undefined): CommitsConfig {
+function mergeProcessCommits(
+  cp: ProcessConfig | undefined,
+  dcp: ProcessConfig | undefined
+): CommitsConfig {
   return mergeProcessSection(defaultCommits, dcp?.commits, cp?.commits);
 }
 
-function mergeProcessChangesets(cp: ProcessConfig | undefined, dcp: ProcessConfig | undefined): ChangesetsConfig {
+function mergeProcessChangesets(
+  cp: ProcessConfig | undefined,
+  dcp: ProcessConfig | undefined
+): ChangesetsConfig {
   return mergeProcessSection(defaultChangesets, dcp?.changesets, cp?.changesets);
 }
 
@@ -269,23 +301,38 @@ function mergeProcessPr(cp: ProcessConfig | undefined, dcp: ProcessConfig | unde
   return mergeProcessSection(defaultPr, dcp?.pr, cp?.pr);
 }
 
-function mergeProcessTickets(cp: ProcessConfig | undefined, dcp: ProcessConfig | undefined): TicketsConfig {
+function mergeProcessTickets(
+  cp: ProcessConfig | undefined,
+  dcp: ProcessConfig | undefined
+): TicketsConfig {
   return mergeProcessSection(defaultTickets, dcp?.tickets, cp?.tickets);
 }
 
-function mergeProcessCoverage(cp: ProcessConfig | undefined, dcp: ProcessConfig | undefined): CoverageConfig {
+function mergeProcessCoverage(
+  cp: ProcessConfig | undefined,
+  dcp: ProcessConfig | undefined
+): CoverageConfig {
   return mergeProcessSection(defaultCoverage, dcp?.coverage, cp?.coverage);
 }
 
-function mergeProcessRepo(cp: ProcessConfig | undefined, dcp: ProcessConfig | undefined): RepoConfig {
+function mergeProcessRepo(
+  cp: ProcessConfig | undefined,
+  dcp: ProcessConfig | undefined
+): RepoConfig {
   return mergeProcessSection(defaultRepo, dcp?.repo, cp?.repo);
 }
 
-function mergeProcessBackups(cp: ProcessConfig | undefined, dcp: ProcessConfig | undefined): BackupsConfig {
+function mergeProcessBackups(
+  cp: ProcessConfig | undefined,
+  dcp: ProcessConfig | undefined
+): BackupsConfig {
   return mergeProcessSection(defaultBackups, dcp?.backups, cp?.backups);
 }
 
-function mergeProcessCodeowners(cp: ProcessConfig | undefined, dcp: ProcessConfig | undefined): CodeownersConfig {
+function mergeProcessCodeowners(
+  cp: ProcessConfig | undefined,
+  dcp: ProcessConfig | undefined
+): CodeownersConfig {
   const cco = cp?.codeowners;
   const dco = dcp?.codeowners;
   // Merge rules arrays: registry rules + project rules (deduplicated by pattern)
@@ -308,7 +355,10 @@ function mergeProcessCodeowners(cp: ProcessConfig | undefined, dcp: ProcessConfi
   };
 }
 
-function mergeProcessDocs(cp: ProcessConfig | undefined, dcp: ProcessConfig | undefined): DocsConfig {
+function mergeProcessDocs(
+  cp: ProcessConfig | undefined,
+  dcp: ProcessConfig | undefined
+): DocsConfig {
   return mergeProcessSection(defaultDocs, dcp?.docs, cp?.docs);
 }
 
@@ -334,7 +384,10 @@ type TaggingConfig = NonNullable<InfraConfig["tagging"]>;
 
 const defaultTagging: TaggingConfig = { enabled: false };
 
-function mergeInfraTagging(ci: InfraConfig | undefined, dci: InfraConfig | undefined): TaggingConfig {
+function mergeInfraTagging(
+  ci: InfraConfig | undefined,
+  dci: InfraConfig | undefined
+): TaggingConfig {
   const dc = dci?.tagging;
   const c = ci?.tagging;
   return { ...defaultTagging, ...dc, ...c };

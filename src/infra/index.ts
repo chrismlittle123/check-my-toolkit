@@ -1,9 +1,5 @@
 import { type Config } from "../config/index.js";
-import {
-  type CheckResult,
-  DomainResult,
-  type IToolRunner,
-} from "../types/index.js";
+import { type CheckResult, DomainResult, type IToolRunner } from "../types/index.js";
 import { TaggingRunner } from "./tools/index.js";
 
 /** Tool configuration entry mapping config getter to runner or runner factory */
@@ -49,10 +45,7 @@ function getEnabledTools(config: Config): IToolRunner[] {
 /**
  * Run all infra checks based on configuration
  */
-export async function runInfraChecks(
-  projectRoot: string,
-  config: Config
-): Promise<DomainResult> {
+export async function runInfraChecks(projectRoot: string, config: Config): Promise<DomainResult> {
   const tools = getEnabledTools(config);
   const checks = await runTools(tools, projectRoot, "run");
   return DomainResult.fromChecks("infra", checks);
@@ -61,10 +54,7 @@ export async function runInfraChecks(
 /**
  * Audit infra configuration (check that configs exist without running tools)
  */
-export async function auditInfraConfig(
-  projectRoot: string,
-  config: Config
-): Promise<DomainResult> {
+export async function auditInfraConfig(projectRoot: string, config: Config): Promise<DomainResult> {
   const tools = getEnabledTools(config);
   const checks = await runTools(tools, projectRoot, "audit");
   return DomainResult.fromChecks("infra", checks);
@@ -92,20 +82,20 @@ async function runTools(
 
     // Handle rejected promise - create error result for the tool
     const tool = tools[index];
-    const errorMessage = result.reason instanceof Error
-      ? result.reason.message
-      : "Unknown error";
+    const errorMessage = result.reason instanceof Error ? result.reason.message : "Unknown error";
 
     return {
       name: tool.name,
       rule: tool.rule,
       passed: false,
-      violations: [{
-        rule: tool.rule,
-        tool: tool.toolId,
-        message: `Tool error: ${errorMessage}`,
-        severity: "error" as const,
-      }],
+      violations: [
+        {
+          rule: tool.rule,
+          tool: tool.toolId,
+          message: `Tool error: ${errorMessage}`,
+          severity: "error" as const,
+        },
+      ],
       skipped: false,
       duration: 0,
     };

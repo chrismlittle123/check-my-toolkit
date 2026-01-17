@@ -10,9 +10,8 @@
 enabled = true
 files = ["src/**/*.ts"]
 
-# Disable prettier - not used in this project
 [code.formatting.prettier]
-enabled = false
+enabled = true
 
 # pnpm audit - only check production dependencies
 [code.security.pnpmaudit]

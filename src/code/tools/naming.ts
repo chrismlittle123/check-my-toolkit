@@ -133,9 +133,9 @@ function isSpecialFile(baseName: string): boolean {
  */
 const DYNAMIC_ROUTE_PATTERNS = [
   /^\[\[\.\.\.([^\]]+)\]\]$/, // [[...slug]] - optional catch-all
-  /^\[\.\.\.([^\]]+)\]$/,     // [...slug] - catch-all
-  /^\[([^\]]+)\]$/,           // [id] - dynamic segment
-  /^\(([^)]+)\)$/,            // (group) - route group
+  /^\[\.\.\.([^\]]+)\]$/, // [...slug] - catch-all
+  /^\[([^\]]+)\]$/, // [id] - dynamic segment
+  /^\(([^)]+)\)$/, // (group) - route group
 ];
 
 /**
@@ -213,10 +213,7 @@ export class NamingRunner extends BaseToolRunner {
   /**
    * Check a single naming rule against the project
    */
-  private async checkRule(
-    projectRoot: string,
-    rule: NamingRule
-  ): Promise<Violation[]> {
+  private async checkRule(projectRoot: string, rule: NamingRule): Promise<Violation[]> {
     const pattern = this.buildGlobPattern(rule.extensions);
 
     // Combine default excludes with rule-specific excludes
@@ -232,7 +229,11 @@ export class NamingRunner extends BaseToolRunner {
     });
 
     const { violations: fileViolations, folders } = this.checkFiles(files, rule);
-    const folderViolations = this.checkFolders(folders, rule.folder_case, rule.allow_dynamic_routes);
+    const folderViolations = this.checkFolders(
+      folders,
+      rule.folder_case,
+      rule.allow_dynamic_routes
+    );
 
     return [...fileViolations, ...folderViolations];
   }
@@ -342,11 +343,7 @@ export class NamingRunner extends BaseToolRunner {
     return `**/*.{${extensions.join(",")}}`;
   }
 
-  private createFileViolation(
-    file: string,
-    baseName: string,
-    expectedCase: CaseType
-  ): Violation {
+  private createFileViolation(file: string, baseName: string, expectedCase: CaseType): Violation {
     return {
       rule: `${this.rule}.${this.toolId}`,
       tool: this.toolId,

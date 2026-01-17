@@ -265,7 +265,6 @@ brew bundle
 pnpm install        # Install dependencies
 pnpm run build      # Compile TypeScript
 pnpm test           # Run tests
-pnpm run lint       # Lint
 ```
 
 ## License

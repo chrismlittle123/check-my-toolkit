@@ -192,8 +192,12 @@ export class DocsRunner extends BaseProcessToolRunner {
     const typeConfig = docType ? types[docType] : undefined;
 
     if (typeConfig) {
-      violations.push(...this.validateFrontmatter(file, parsed.frontmatter, typeConfig.frontmatter ?? []));
-      violations.push(...this.validateSections(file, parsed.headings, typeConfig.required_sections ?? []));
+      violations.push(
+        ...this.validateFrontmatter(file, parsed.frontmatter, typeConfig.frontmatter ?? [])
+      );
+      violations.push(
+        ...this.validateSections(file, parsed.headings, typeConfig.required_sections ?? [])
+      );
     }
 
     violations.push(...this.validateInternalLinks(projectRoot, file, parsed.content));
@@ -256,7 +260,11 @@ export class DocsRunner extends BaseProcessToolRunner {
   }
 
   private checkSingleLink(projectRoot: string, file: string, linkTarget: string): Violation | null {
-    if (linkTarget.startsWith("http") || linkTarget.startsWith("#") || linkTarget.startsWith("mailto:")) {
+    if (
+      linkTarget.startsWith("http") ||
+      linkTarget.startsWith("#") ||
+      linkTarget.startsWith("mailto:")
+    ) {
       return null;
     }
 
@@ -375,7 +383,9 @@ export class DocsRunner extends BaseProcessToolRunner {
     }
 
     const allDocsContent = await this.getAllDocsContent(projectRoot);
-    const undocumented = exports.filter((exp) => !this.isExportDocumented(exp.name, allDocsContent));
+    const undocumented = exports.filter(
+      (exp) => !this.isExportDocumented(exp.name, allDocsContent)
+    );
 
     return this.buildCoverageViolations(exports.length, undocumented, minCoverage);
   }

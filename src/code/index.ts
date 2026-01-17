@@ -1,10 +1,21 @@
 import { type Config } from "../config/index.js";
+import { type CheckResult, DomainResult, type IToolRunner } from "../types/index.js";
 import {
-  type CheckResult,
-  DomainResult,
-  type IToolRunner,
-} from "../types/index.js";
-import { CoverageRunRunner, DisableCommentsRunner, ESLintRunner, GitleaksRunner, KnipRunner, NamingRunner, PipAuditRunner, PnpmAuditRunner, PrettierRunner, RuffFormatRunner, RuffRunner, TscRunner, TyRunner, VultureRunner } from "./tools/index.js";
+  CoverageRunRunner,
+  DisableCommentsRunner,
+  ESLintRunner,
+  GitleaksRunner,
+  KnipRunner,
+  NamingRunner,
+  PipAuditRunner,
+  PnpmAuditRunner,
+  PrettierRunner,
+  RuffFormatRunner,
+  RuffRunner,
+  TscRunner,
+  TyRunner,
+  VultureRunner,
+} from "./tools/index.js";
 
 // Tool runner instances (singletons for tools that don't need per-run config)
 const gitleaks = new GitleaksRunner();
@@ -18,7 +29,18 @@ const vulture = new VultureRunner();
 // Note: RuffRunner and TscRunner are created per-run to support config from check.toml
 
 // Export tool runners for direct access
-export { BaseToolRunner, ESLintRunner, KnipRunner, NamingRunner, PrettierRunner, RuffFormatRunner, RuffRunner, TscRunner, TyRunner, VultureRunner } from "./tools/index.js";
+export {
+  BaseToolRunner,
+  ESLintRunner,
+  KnipRunner,
+  NamingRunner,
+  PrettierRunner,
+  RuffFormatRunner,
+  RuffRunner,
+  TscRunner,
+  TyRunner,
+  VultureRunner,
+} from "./tools/index.js";
 
 /** Tool configuration entry mapping config getter to runner or runner factory */
 interface ToolEntry {
@@ -132,7 +154,10 @@ function createPnpmAuditRunner(config: Config): PnpmAuditRunner {
 const toolRegistry: ToolEntry[] = [
   { isEnabled: (c) => isEnabled(c.code?.linting?.eslint), runner: createEslintRunner },
   { isEnabled: (c) => isEnabled(c.code?.linting?.ruff), runner: createRuffRunner },
-  { isEnabled: (c) => isEnabled(c.code?.linting?.ruff) && c.code?.linting?.ruff?.format === true, runner: ruffFormat },
+  {
+    isEnabled: (c) => isEnabled(c.code?.linting?.ruff) && c.code?.linting?.ruff?.format === true,
+    runner: ruffFormat,
+  },
   { isEnabled: (c) => isEnabled(c.code?.formatting?.prettier), runner: prettier },
   { isEnabled: (c) => isEnabled(c.code?.types?.tsc), runner: createTscRunner },
   { isEnabled: (c) => isEnabled(c.code?.types?.ty), runner: ty },
@@ -143,7 +168,10 @@ const toolRegistry: ToolEntry[] = [
   { isEnabled: (c) => isEnabled(c.code?.security?.pipaudit), runner: pipaudit },
   { isEnabled: (c) => isEnabled(c.code?.coverage_run), runner: createCoverageRunRunner },
   { isEnabled: (c) => isEnabled(c.code?.naming), runner: createNamingRunner },
-  { isEnabled: (c) => isEnabled(c.code?.quality?.["disable-comments"]), runner: createDisableCommentsRunner },
+  {
+    isEnabled: (c) => isEnabled(c.code?.quality?.["disable-comments"]),
+    runner: createDisableCommentsRunner,
+  },
 ];
 
 /**
@@ -158,10 +186,7 @@ function getEnabledTools(config: Config): IToolRunner[] {
 /**
  * Run all code checks based on configuration
  */
-export async function runCodeChecks(
-  projectRoot: string,
-  config: Config
-): Promise<DomainResult> {
+export async function runCodeChecks(projectRoot: string, config: Config): Promise<DomainResult> {
   const tools = getEnabledTools(config);
   const checks = await runTools(tools, projectRoot, "run");
   return DomainResult.fromChecks("code", checks);
@@ -170,10 +195,7 @@ export async function runCodeChecks(
 /**
  * Audit code configuration (check that configs exist without running tools)
  */
-export async function auditCodeConfig(
-  projectRoot: string,
-  config: Config
-): Promise<DomainResult> {
+export async function auditCodeConfig(projectRoot: string, config: Config): Promise<DomainResult> {
   const tools = getEnabledTools(config);
   const checks = await runTools(tools, projectRoot, "audit");
   return DomainResult.fromChecks("code", checks);
@@ -201,20 +223,20 @@ async function runTools(
 
     // Handle rejected promise - create error result for the tool
     const tool = tools[index];
-    const errorMessage = result.reason instanceof Error
-      ? result.reason.message
-      : "Unknown error";
+    const errorMessage = result.reason instanceof Error ? result.reason.message : "Unknown error";
 
     return {
       name: tool.name,
       rule: tool.rule,
       passed: false,
-      violations: [{
-        rule: tool.rule,
-        tool: tool.toolId,
-        message: `Tool error: ${errorMessage}`,
-        severity: "error" as const,
-      }],
+      violations: [
+        {
+          rule: tool.rule,
+          tool: tool.toolId,
+          message: `Tool error: ${errorMessage}`,
+          severity: "error" as const,
+        },
+      ],
       skipped: false,
       duration: 0,
     };
