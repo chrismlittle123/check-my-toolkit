@@ -4,10 +4,10 @@ import {
   DomainResult,
   type IToolRunner,
 } from "../types/index.js";
-import { BackupsRunner, BranchesRunner, ChangesetsRunner, CiRunner, CodeownersRunner, CommitsRunner, CoverageRunner, HooksRunner, PrRunner, RepoRunner, TicketsRunner } from "./tools/index.js";
+import { BackupsRunner, BranchesRunner, ChangesetsRunner, CiRunner, CodeownersRunner, CommitsRunner, CoverageRunner, DocsRunner, HooksRunner, PrRunner, RepoRunner, TicketsRunner } from "./tools/index.js";
 
 // Export tool runners for direct access
-export { BackupsRunner, BaseProcessToolRunner, BranchesRunner, ChangesetsRunner, CiRunner, CodeownersRunner, CommitsRunner, CoverageRunner, HooksRunner, PrRunner, RepoRunner, TicketsRunner } from "./tools/index.js";
+export { BackupsRunner, BaseProcessToolRunner, BranchesRunner, ChangesetsRunner, CiRunner, CodeownersRunner, CommitsRunner, CoverageRunner, DocsRunner, HooksRunner, PrRunner, RepoRunner, TicketsRunner } from "./tools/index.js";
 
 /** Tool configuration entry mapping config getter to runner or runner factory */
 interface ToolEntry {
@@ -188,6 +188,31 @@ function createCodeownersRunner(config: Config): CodeownersRunner {
   return runner;
 }
 
+/** Create a configured DocsRunner */
+function createDocsRunner(config: Config): DocsRunner {
+  const runner = new DocsRunner();
+  const docsConfig = config.process?.docs;
+  if (docsConfig) {
+    runner.setConfig({
+      enabled: docsConfig.enabled,
+      path: docsConfig.path,
+      enforcement: docsConfig.enforcement,
+      allowlist: docsConfig.allowlist,
+      max_files: docsConfig.max_files,
+      max_file_lines: docsConfig.max_file_lines,
+      max_total_kb: docsConfig.max_total_kb,
+      staleness_days: docsConfig.staleness_days,
+      stale_mappings: docsConfig.stale_mappings,
+      require_docs_in_pr: docsConfig.require_docs_in_pr,
+      min_coverage: docsConfig.min_coverage,
+      coverage_paths: docsConfig.coverage_paths,
+      exclude_patterns: docsConfig.exclude_patterns,
+      types: docsConfig.types,
+    });
+  }
+  return runner;
+}
+
 /** All available process tools with their config predicates */
 const toolRegistry: ToolEntry[] = [
   { isEnabled: (c) => isEnabled(c.process?.hooks), runner: createHooksRunner },
@@ -201,6 +226,7 @@ const toolRegistry: ToolEntry[] = [
   { isEnabled: (c) => isEnabled(c.process?.repo), runner: createRepoRunner },
   { isEnabled: (c) => isEnabled(c.process?.backups), runner: createBackupsRunner },
   { isEnabled: (c) => isEnabled(c.process?.codeowners), runner: createCodeownersRunner },
+  { isEnabled: (c) => isEnabled(c.process?.docs), runner: createDocsRunner },
 ];
 
 /**
