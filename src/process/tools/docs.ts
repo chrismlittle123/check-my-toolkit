@@ -286,16 +286,12 @@ export class DocsRunner extends BaseProcessToolRunner {
   private async checkFreshness(projectRoot: string): Promise<Violation[]> {
     const docsPath = this.config.path ?? "docs/";
     const docsFiles = await glob(`${docsPath}**/*.md`, { cwd: projectRoot, nodir: true });
-    const violations: Violation[] = [];
 
-    for (const file of docsFiles) {
-      const violation = await this.checkFileFreshness(projectRoot, file, docsPath);
-      if (violation) {
-        violations.push(violation);
-      }
-    }
+    const results = await Promise.all(
+      docsFiles.map((file) => this.checkFileFreshness(projectRoot, file, docsPath))
+    );
 
-    return violations;
+    return results.filter((v): v is Violation => v !== null);
   }
 
   private async getTimestamps(
@@ -387,18 +383,18 @@ export class DocsRunner extends BaseProcessToolRunner {
   private async getSourceFiles(projectRoot: string): Promise<string[]> {
     const coveragePaths = this.config.coverage_paths ?? ["src/**/*.ts"];
     const excludePatterns = this.config.exclude_patterns ?? ["**/*.test.ts", "**/*.spec.ts"];
-    const sourceFiles: string[] = [];
 
-    for (const pattern of coveragePaths) {
-      const files = await glob(pattern, {
-        cwd: projectRoot,
-        ignore: ["node_modules/**", ...excludePatterns],
-        nodir: true,
-      });
-      sourceFiles.push(...files);
-    }
+    const fileArrays = await Promise.all(
+      coveragePaths.map((pattern) =>
+        glob(pattern, {
+          cwd: projectRoot,
+          ignore: ["node_modules/**", ...excludePatterns],
+          nodir: true,
+        })
+      )
+    );
 
-    return sourceFiles;
+    return fileArrays.flat();
   }
 
   private async getAllDocsContent(projectRoot: string): Promise<string> {

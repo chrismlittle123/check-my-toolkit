@@ -48,7 +48,7 @@ export function escapeRegex(str: string): string {
 }
 
 /** Extract heading text from markdown content */
-export function extractHeadings(content: string): string[] {
+function extractHeadings(content: string): string[] {
   const headingRegex = /^#{1,6}\s+(.+)$/gm;
   const headings: string[] = [];
   let match;
@@ -59,13 +59,13 @@ export function extractHeadings(content: string): string[] {
 }
 
 /** Parse named export from a line */
-export function parseNamedExport(line: string): string | null {
+function parseNamedExport(line: string): string | null {
   const match = /^export\s+(?:const|let|var|function|class|interface|type|enum)\s+(\w+)/.exec(line);
   return match ? match[1] : null;
 }
 
 /** Parse default export from a line */
-export function parseDefaultExport(line: string): string | null {
+function parseDefaultExport(line: string): string | null {
   const match = /^export\s+default\s+(\w+)/.exec(line);
   if (match && !["function", "class", "async"].includes(match[1])) {
     return match[1];
@@ -74,7 +74,7 @@ export function parseDefaultExport(line: string): string | null {
 }
 
 /** Parse re-exports from a line */
-export function parseReExports(line: string): string[] {
+function parseReExports(line: string): string[] {
   const match = /^export\s*\{\s*([^}]+)\s*\}/.exec(line);
   if (!match) {
     return [];
