@@ -470,6 +470,38 @@ const codeownersConfigSchema = z
   .strict()
   .optional();
 
+/** Doc type configuration - defines required sections and frontmatter per doc type */
+const docsTypeConfigSchema = z
+  .object({
+    required_sections: z.array(z.string()).optional(), // e.g., ["Overview", "Parameters", "Returns", "Examples"]
+    frontmatter: z.array(z.string()).optional(), // e.g., ["title", "tracks"]
+  })
+  .strict();
+
+/** Documentation enforcement mode */
+const docsEnforcementSchema = z.enum(["block", "warn"]);
+
+/** Documentation governance configuration */
+const docsConfigSchema = z
+  .object({
+    enabled: z.boolean().optional().default(false),
+    path: z.string().optional().default("docs/"), // Documentation directory
+    enforcement: docsEnforcementSchema.optional().default("warn"), // "block" or "warn"
+    allowlist: z.array(z.string()).optional(), // Markdown files allowed outside docs/, e.g., ["README.md", "CLAUDE.md"]
+    max_files: z.number().int().positive().optional(), // Max markdown files in docs/
+    max_file_lines: z.number().int().positive().optional(), // Max lines per markdown file
+    max_total_kb: z.number().int().positive().optional(), // Max total size of docs/
+    staleness_days: z.number().int().positive().optional().default(30), // Days before doc is considered stale
+    stale_mappings: z.record(z.string(), z.string()).optional(), // Override doc-to-source mappings
+    require_docs_in_pr: z.boolean().optional().default(false), // Require docs when changing tracked files
+    min_coverage: z.number().int().min(0).max(100).optional(), // Minimum API coverage percentage
+    coverage_paths: z.array(z.string()).optional(), // Glob patterns for source files, e.g., ["src/**/*.ts"]
+    exclude_patterns: z.array(z.string()).optional(), // Exclude from coverage, e.g., ["**/*.test.ts"]
+    types: z.record(z.string(), docsTypeConfigSchema).optional(), // Per-type config, e.g., { api: {...}, guide: {...} }
+  })
+  .strict()
+  .optional();
+
 /** Process domain configuration */
 const processSchema = z
   .object({
@@ -484,6 +516,7 @@ const processSchema = z
     repo: repoConfigSchema,
     backups: backupsConfigSchema,
     codeowners: codeownersConfigSchema,
+    docs: docsConfigSchema,
   })
   .strict()
   .optional();
@@ -619,6 +652,13 @@ export const defaultConfig: Config = {
     },
     codeowners: {
       enabled: false,
+    },
+    docs: {
+      enabled: false,
+      path: "docs/",
+      enforcement: "warn",
+      staleness_days: 30,
+      require_docs_in_pr: false,
     },
   },
   infra: {

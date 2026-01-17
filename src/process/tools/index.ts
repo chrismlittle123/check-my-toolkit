@@ -6,6 +6,7 @@ export { CiRunner } from "./ci.js";
 export { CodeownersRunner } from "./codeowners.js";
 export { CommitsRunner } from "./commits.js";
 export { CoverageRunner } from "./coverage.js";
+export { DocsRunner } from "./docs.js";
 export { HooksRunner } from "./hooks.js";
 export { PrRunner } from "./pr.js";
 export { RepoRunner } from "./repo.js";
