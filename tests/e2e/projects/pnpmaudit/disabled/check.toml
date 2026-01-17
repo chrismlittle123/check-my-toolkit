@@ -1,0 +1,4 @@
+# Test project: pnpm audit disabled
+
+[code.security.pnpmaudit]
+enabled = false

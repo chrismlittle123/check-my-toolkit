@@ -1087,22 +1087,22 @@ const testCases: TestCase[] = [
   },
 
   // ============================================================
-  // npm audit: Dependency vulnerability scanning
+  // pnpm audit: Dependency vulnerability scanning
   // ============================================================
   {
-    name: "npmaudit/clean passes when no vulnerabilities",
-    config: "tests/e2e/projects/npmaudit/clean/check.toml",
+    name: "pnpmaudit/clean passes when no vulnerabilities",
+    config: "tests/e2e/projects/pnpmaudit/clean/check.toml",
     command: "check",
     expectedExitCode: 0,
-    expectedPatterns: ["✓ npmaudit: passed"],
+    expectedPatterns: ["✓ pnpmaudit: passed"],
   },
   {
-    name: "npmaudit/disabled skips when npm audit is disabled",
-    config: "tests/e2e/projects/npmaudit/disabled/check.toml",
+    name: "pnpmaudit/disabled skips when pnpm audit is disabled",
+    config: "tests/e2e/projects/pnpmaudit/disabled/check.toml",
     command: "check",
     expectedExitCode: 0,
     expectedPatterns: ["CODE"],
-    notExpectedPatterns: ["npmaudit:"], // Check for tool output, not config path
+    notExpectedPatterns: ["pnpmaudit:"], // Check for tool output, not config path
   },
 
   // ============================================================

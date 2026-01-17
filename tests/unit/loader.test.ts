@@ -153,13 +153,13 @@ enabled = true
     fs.writeFileSync(
       configPath,
       `
-[code.security.npmaudit]
+[code.security.pnpmaudit]
 enabled = true
 `
     );
 
     const result = loadConfig(configPath);
-    expect(result.config.code?.security?.npmaudit?.enabled).toBe(true);
+    expect(result.config.code?.security?.pnpmaudit?.enabled).toBe(true);
     expect(result.config.code?.security?.pipaudit?.enabled).toBe(false);
   });
 
@@ -168,7 +168,7 @@ enabled = true
     fs.writeFileSync(
       configPath,
       `
-[code.security.npmaudit]
+[code.security.pnpmaudit]
 enabled = true
 
 [code.security.pipaudit]
@@ -177,7 +177,7 @@ enabled = true
     );
 
     const result = loadConfig(configPath);
-    expect(result.config.code?.security?.npmaudit?.enabled).toBe(true);
+    expect(result.config.code?.security?.pnpmaudit?.enabled).toBe(true);
     expect(result.config.code?.security?.pipaudit?.enabled).toBe(true);
   });
 

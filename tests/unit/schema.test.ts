@@ -278,7 +278,7 @@ describe("defaultConfig", () => {
   });
 
   it("has security tools disabled by default", () => {
-    expect(defaultConfig.code?.security?.npmaudit?.enabled).toBe(false);
+    expect(defaultConfig.code?.security?.pnpmaudit?.enabled).toBe(false);
     expect(defaultConfig.code?.security?.pipaudit?.enabled).toBe(false);
   });
 

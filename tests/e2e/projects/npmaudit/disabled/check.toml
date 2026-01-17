@@ -1,4 +1,0 @@
-# Test project: npm audit disabled
-
-[code.security.npmaudit]
-enabled = false

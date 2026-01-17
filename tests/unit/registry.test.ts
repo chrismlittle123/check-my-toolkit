@@ -285,7 +285,7 @@ foo = "bar"`
           linting: { ruff: { enabled: true } },
           types: { ty: { enabled: true } },
           unused: { vulture: { enabled: true } },
-          security: { npmaudit: { enabled: true }, pipaudit: { enabled: true } },
+          security: { pnpmaudit: { enabled: true }, pipaudit: { enabled: true } },
         },
       };
 
@@ -302,7 +302,7 @@ foo = "bar"`
       expect(result.code?.linting?.ruff?.enabled).toBe(true);
       expect(result.code?.types?.ty?.enabled).toBe(true);
       expect(result.code?.unused?.vulture?.enabled).toBe(true);
-      expect(result.code?.security?.npmaudit?.enabled).toBe(true);
+      expect(result.code?.security?.pnpmaudit?.enabled).toBe(true);
       expect(result.code?.security?.pipaudit?.enabled).toBe(true);
     });
   });

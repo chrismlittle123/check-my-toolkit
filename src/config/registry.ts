@@ -253,7 +253,7 @@ function mergeSecurity(base: CodeConfig["security"], override: CodeConfig["secur
   return {
     ...base,
     secrets: mergeToolConfig(base?.secrets, override.secrets),
-    npmaudit: mergeToolConfig(base?.npmaudit, override.npmaudit),
+    pnpmaudit: mergeToolConfig(base?.pnpmaudit, override.pnpmaudit),
     pipaudit: mergeToolConfig(base?.pipaudit, override.pipaudit),
   };
 }
