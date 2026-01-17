@@ -1,21 +1,23 @@
 # check-my-toolkit configuration
 
-# Extend from community registry
-[extends]
-registry = "github:chrismlittle123/check-my-toolkit-registry-community"
-rulesets = ["typescript-internal"]
+# NOTE: Registry extends temporarily disabled - registry needs update for pnpmaudit
+# [extends]
+# registry = "github:chrismlittle123/check-my-toolkit-registry-community"
+# rulesets = ["typescript-internal"]
 
 # Local overrides
 [code.linting.eslint]
 enabled = true
 files = ["src/**/*.ts"]
 
-# Disable checks inherited from registry that fail in CI
+# Disable prettier - not used in this project
 [code.formatting.prettier]
 enabled = false
 
-[code.security.npmaudit]
-enabled = false
+# pnpm audit - only check production dependencies
+[code.security.pnpmaudit]
+enabled = true
+exclude_dev = true
 
 # Naming conventions (override to exclude test fixtures)
 [code.naming]

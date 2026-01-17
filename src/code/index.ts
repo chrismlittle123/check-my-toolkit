@@ -4,12 +4,11 @@ import {
   DomainResult,
   type IToolRunner,
 } from "../types/index.js";
-import { CoverageRunRunner, DisableCommentsRunner, ESLintRunner, GitleaksRunner, KnipRunner, NamingRunner, NpmAuditRunner, PipAuditRunner, PrettierRunner, RuffFormatRunner, RuffRunner, TscRunner, TyRunner, VultureRunner } from "./tools/index.js";
+import { CoverageRunRunner, DisableCommentsRunner, ESLintRunner, GitleaksRunner, KnipRunner, NamingRunner, PipAuditRunner, PnpmAuditRunner, PrettierRunner, RuffFormatRunner, RuffRunner, TscRunner, TyRunner, VultureRunner } from "./tools/index.js";
 
 // Tool runner instances (singletons for tools that don't need per-run config)
 const gitleaks = new GitleaksRunner();
 const knip = new KnipRunner();
-const npmaudit = new NpmAuditRunner();
 const pipaudit = new PipAuditRunner();
 const prettier = new PrettierRunner();
 const ruffFormat = new RuffFormatRunner();
@@ -116,6 +115,19 @@ function createDisableCommentsRunner(config: Config): DisableCommentsRunner {
   return runner;
 }
 
+/** Create a configured PnpmAuditRunner */
+function createPnpmAuditRunner(config: Config): PnpmAuditRunner {
+  const runner = new PnpmAuditRunner();
+  const pnpmauditConfig = config.code?.security?.pnpmaudit;
+  if (pnpmauditConfig) {
+    runner.setConfig({
+      enabled: pnpmauditConfig.enabled,
+      exclude_dev: pnpmauditConfig.exclude_dev,
+    });
+  }
+  return runner;
+}
+
 /** All available tools with their config predicates */
 const toolRegistry: ToolEntry[] = [
   { isEnabled: (c) => isEnabled(c.code?.linting?.eslint), runner: createEslintRunner },
@@ -127,7 +139,7 @@ const toolRegistry: ToolEntry[] = [
   { isEnabled: (c) => isEnabled(c.code?.unused?.knip), runner: knip },
   { isEnabled: (c) => isEnabled(c.code?.unused?.vulture), runner: vulture },
   { isEnabled: (c) => isEnabled(c.code?.security?.secrets), runner: gitleaks },
-  { isEnabled: (c) => isEnabled(c.code?.security?.npmaudit), runner: npmaudit },
+  { isEnabled: (c) => isEnabled(c.code?.security?.pnpmaudit), runner: createPnpmAuditRunner },
   { isEnabled: (c) => isEnabled(c.code?.security?.pipaudit), runner: pipaudit },
   { isEnabled: (c) => isEnabled(c.code?.coverage_run), runner: createCoverageRunRunner },
   { isEnabled: (c) => isEnabled(c.code?.naming), runner: createNamingRunner },

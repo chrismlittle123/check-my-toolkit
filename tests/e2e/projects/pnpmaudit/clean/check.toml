@@ -1,0 +1,5 @@
+# Test project: pnpm audit with no vulnerabilities
+
+[code.security.pnpmaudit]
+enabled = true
+exclude_dev = true

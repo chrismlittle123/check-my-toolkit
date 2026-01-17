@@ -180,10 +180,11 @@ const secretsConfigSchema = z
   .strict()
   .optional();
 
-/** npm audit configuration */
-const npmauditConfigSchema = z
+/** pnpm audit configuration */
+const pnpmauditConfigSchema = z
   .object({
     enabled: z.boolean().optional().default(false),
+    exclude_dev: z.boolean().optional().default(true),
   })
   .strict()
   .optional();
@@ -200,7 +201,7 @@ const pipauditConfigSchema = z
 const codeSecuritySchema = z
   .object({
     secrets: secretsConfigSchema,
-    npmaudit: npmauditConfigSchema,
+    pnpmaudit: pnpmauditConfigSchema,
     pipaudit: pipauditConfigSchema,
   })
   .strict()
@@ -599,7 +600,7 @@ export const defaultConfig: Config = {
     },
     security: {
       secrets: { enabled: false },
-      npmaudit: { enabled: false },
+      pnpmaudit: { enabled: false, exclude_dev: true },
       pipaudit: { enabled: false },
     },
     naming: {

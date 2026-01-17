@@ -153,7 +153,7 @@ function mergeSecurity(c: Config, dc: Config): CodeConfig["security"] {
   const ds = dc.code?.security;
   return {
     secrets: merge(ds?.secrets, cs?.secrets),
-    npmaudit: merge(ds?.npmaudit, cs?.npmaudit),
+    pnpmaudit: merge(ds?.pnpmaudit, cs?.pnpmaudit),
     pipaudit: merge(ds?.pipaudit, cs?.pipaudit),
   };
 }
