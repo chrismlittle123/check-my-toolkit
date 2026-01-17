@@ -99,32 +99,45 @@ export function parseMarkdownFile(content: string, filePath: string): ParsedDoc 
   };
 }
 
-/** Extract exports from file content */
-export function extractFileExports(file: string, content: string): ExportInfo[] {
-  const exports: ExportInfo[] = [];
-  const lines = content.split("\n");
-
-  for (let i = 0; i < lines.length; i++) {
-    const lineNumber = i + 1;
-    const line = lines[i];
-
-    const named = parseNamedExport(line);
-    if (named) {
-      exports.push({ name: named, file, line: lineNumber });
-      continue;
-    }
-
-    const defaultExp = parseDefaultExport(line);
-    if (defaultExp) {
-      exports.push({ name: defaultExp, file, line: lineNumber });
-      continue;
-    }
-
-    const reExports = parseReExports(line);
-    for (const name of reExports) {
-      exports.push({ name, file, line: lineNumber });
-    }
+/** Process a single line and extract any exports */
+function processLine(line: string, file: string, lineNumber: number): ExportInfo[] {
+  const named = parseNamedExport(line);
+  if (named) {
+    return [{ name: named, file, line: lineNumber }];
   }
 
-  return exports;
+  const defaultExp = parseDefaultExport(line);
+  if (defaultExp) {
+    return [{ name: defaultExp, file, line: lineNumber }];
+  }
+
+  return parseReExports(line).map((name) => ({ name, file, line: lineNumber }));
+}
+
+/** Extract exports from file content */
+export function extractFileExports(file: string, content: string): ExportInfo[] {
+  return content.split("\n").flatMap((line, i) => processLine(line, file, i + 1));
+}
+
+/** Get the source path that a doc file tracks */
+export function getTrackedPath(
+  docFile: string,
+  frontmatter: Record<string, unknown>,
+  staleMappings: Record<string, string>,
+  docsPath: string
+): string | null {
+  if (typeof frontmatter.tracks === "string") {
+    return frontmatter.tracks;
+  }
+  if (Array.isArray(frontmatter.tracks) && frontmatter.tracks.length > 0) {
+    return frontmatter.tracks[0] as string;
+  }
+  if (staleMappings[docFile]) {
+    return staleMappings[docFile];
+  }
+  if (docFile.startsWith(docsPath)) {
+    const baseName = docFile.slice(docsPath.length).replace(/\.md$/, "");
+    return `src/${baseName}/`;
+  }
+  return null;
 }

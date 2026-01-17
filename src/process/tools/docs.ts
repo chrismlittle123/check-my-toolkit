@@ -12,6 +12,7 @@ import {
   escapeRegex,
   type ExportInfo,
   extractFileExports,
+  getTrackedPath,
   type ParsedDoc,
   parseMarkdownFile,
 } from "./docs-helpers.js";
@@ -297,6 +298,29 @@ export class DocsRunner extends BaseProcessToolRunner {
     return violations;
   }
 
+  private async getTimestamps(
+    projectRoot: string,
+    file: string,
+    trackedPath: string
+  ): Promise<{ docTime: number; sourceTime: number } | null> {
+    const docTime = await this.getGitLastModified(projectRoot, file);
+    const sourceTime = await this.getGitLastModified(projectRoot, trackedPath);
+    if (docTime === null || sourceTime === null) {
+      return null;
+    }
+    return { docTime, sourceTime };
+  }
+
+  private createStalenessViolation(file: string, daysDiff: number, trackedPath: string): Violation {
+    return {
+      rule: `${this.rule}.freshness`,
+      tool: this.toolId,
+      file,
+      message: `Doc is ${Math.round(daysDiff)} days behind tracked source: ${trackedPath}`,
+      severity: this.getSeverity(),
+    };
+  }
+
   private async checkFileFreshness(
     projectRoot: string,
     file: string,
@@ -308,57 +332,22 @@ export class DocsRunner extends BaseProcessToolRunner {
     }
 
     const staleMappings = this.config.stale_mappings ?? {};
-    const trackedPath = this.getTrackedPath(file, parsed.frontmatter, staleMappings, docsPath);
-    if (!trackedPath) {
+    const trackedPath = getTrackedPath(file, parsed.frontmatter, staleMappings, docsPath);
+    if (!trackedPath || !fs.existsSync(path.join(projectRoot, trackedPath))) {
       return null;
     }
 
-    const trackedFullPath = path.join(projectRoot, trackedPath);
-    if (!fs.existsSync(trackedFullPath)) {
-      return null;
-    }
-
-    const docTime = await this.getGitLastModified(projectRoot, file);
-    const sourceTime = await this.getGitLastModified(projectRoot, trackedPath);
-    if (docTime === null || sourceTime === null) {
+    const timestamps = await this.getTimestamps(projectRoot, file, trackedPath);
+    if (!timestamps) {
       return null;
     }
 
     const stalenessDays = this.config.staleness_days ?? 30;
-    const daysDiff = (sourceTime - docTime) / (1000 * 60 * 60 * 24);
-    if (daysDiff > stalenessDays) {
-      return {
-        rule: `${this.rule}.freshness`,
-        tool: this.toolId,
-        file,
-        message: `Doc is ${Math.round(daysDiff)} days behind tracked source: ${trackedPath}`,
-        severity: this.getSeverity(),
-      };
-    }
+    const daysDiff = (timestamps.sourceTime - timestamps.docTime) / (1000 * 60 * 60 * 24);
 
-    return null;
-  }
-
-  private getTrackedPath(
-    docFile: string,
-    frontmatter: Record<string, unknown>,
-    staleMappings: Record<string, string>,
-    docsPath: string
-  ): string | null {
-    if (typeof frontmatter.tracks === "string") {
-      return frontmatter.tracks;
-    }
-    if (Array.isArray(frontmatter.tracks) && frontmatter.tracks.length > 0) {
-      return frontmatter.tracks[0] as string;
-    }
-    if (staleMappings[docFile]) {
-      return staleMappings[docFile];
-    }
-    if (docFile.startsWith(docsPath)) {
-      const baseName = docFile.slice(docsPath.length).replace(/\.md$/, "");
-      return `src/${baseName}/`;
-    }
-    return null;
+    return daysDiff > stalenessDays
+      ? this.createStalenessViolation(file, daysDiff, trackedPath)
+      : null;
   }
 
   private async getGitLastModified(projectRoot: string, filePath: string): Promise<number | null> {
