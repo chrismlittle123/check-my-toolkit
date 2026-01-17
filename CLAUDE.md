@@ -25,9 +25,6 @@ This installs Python 3.13, Ruff, Vulture, and pnpm which are required for runnin
 # Development
 pnpm run build          # Compile TypeScript to dist/
 pnpm run dev            # Watch mode compilation
-pnpm run typecheck      # Type check without emitting
-pnpm run lint           # Run ESLint on src/
-pnpm run lint:fix       # Auto-fix lint issues
 
 # Testing
 pnpm test               # Run vitest in watch mode
