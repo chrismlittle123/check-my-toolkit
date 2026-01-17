@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.1
+
+### Patch Changes
+
+- 2bd0701: Fix lint errors in process.docs implementation and make release workflow depend on CI success
+
 ## 1.0.0
 
 ### Major Changes
