@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.0.0
+
+### Major Changes
+
+- 1c28cd4: feat: implement process.docs documentation governance
+
+  Adds documentation governance feature to the PROCESS domain with:
+
+  - Structure enforcement (allowlist, max_files, max_file_lines, max_total_kb)
+  - Content validation (frontmatter, required sections, internal links)
+  - Freshness tracking (git-based staleness detection)
+  - API coverage (regex-based export detection with threshold)
+
 ## 0.37.1
 
 ### Patch Changes
