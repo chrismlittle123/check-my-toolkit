@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.1.0
+
+### Minor Changes
+
+- 24bd7a1: Replace npmaudit with pnpmaudit and add exclude_dev option
+
+  - Remove npm audit support, keep only pnpm audit
+  - Add `exclude_dev` config option (default: true) to skip dev dependencies
+  - Uses `--prod` flag when exclude_dev is enabled
+
 ## 1.0.1
 
 ### Patch Changes
