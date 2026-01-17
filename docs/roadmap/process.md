@@ -18,7 +18,8 @@ The PROCESS domain validates development workflow compliance.
 ├── [process.coverage]   # Coverage enforcement ✅
 ├── [process.repo]       # Branch protection ✅
 ├── [process.codeowners] # CODEOWNERS validation ✅
-└── [process.backups]    # S3 backup verification ✅
+├── [process.backups]    # S3 backup verification ✅
+└── [process.docs]       # Documentation governance 📋
 ```
 
 ---
@@ -208,6 +209,122 @@ mock.on(ListObjectsV2Command).resolves({
 
 ---
 
+## Planned Features
+
+### `[process.docs]` 📋
+Documentation governance - enforce structure, content patterns, freshness, and prevent sprawl.
+
+#### Core Capabilities
+
+**1. Structure Enforcement**
+- Allowlist of markdown files permitted outside `docs/` (e.g., README.md, CLAUDE.md, CONTRIBUTING.md)
+- All other markdown must live in configured docs path
+- Configurable file count and size limits (no defaults, must be explicit)
+
+**2. Content Validation**
+- Required frontmatter schema per doc type (declared via `type:` in frontmatter)
+- Required sections/headings per doc type (api, guide, reference, changelog)
+- Template matching - docs must follow structure for their declared type
+- Warn on broken internal links between docs
+
+**3. Freshness Tracking**
+- Layered docs-to-code mapping:
+  1. **Frontmatter `tracks:`** - explicit file/glob patterns
+  2. **Convention fallback** - `docs/foo.md` → `src/foo/`
+  3. **Config override** - check.toml explicit mappings
+- Staleness warnings when tracked code changes without doc updates
+- PR enforcement: configurable blocking when code changes lack doc updates
+
+**4. API Coverage**
+- Track % of exported functions/types with documentation
+- Detailed report listing undocumented exports with `file:line` locations
+- Configurable minimum coverage threshold
+
+#### Example Configuration
+
+```toml
+[process.docs]
+enabled = true
+path = "docs/"
+enforcement = "block"  # or "warn"
+
+# Files allowed outside docs/
+allowlist = ["README.md", "CLAUDE.md", "CONTRIBUTING.md", "CHANGELOG.md"]
+
+# Limits (all optional, no defaults)
+max_files = 30
+max_file_lines = 800
+max_total_kb = 150
+
+# Freshness
+staleness_days = 30
+require_docs_in_pr = true  # block PRs that touch tracked code without doc updates
+
+# Coverage
+min_coverage = 80
+coverage_paths = ["src/**/*.ts"]
+exclude_patterns = ["**/*.test.ts", "**/internal/**"]
+
+# Doc types and their required sections
+[process.docs.types.api]
+required_sections = ["Overview", "Parameters", "Returns", "Examples"]
+frontmatter = ["title", "tracks"]
+
+[process.docs.types.guide]
+required_sections = ["Overview", "Prerequisites", "Steps"]
+frontmatter = ["title", "difficulty"]
+
+[process.docs.types.reference]
+required_sections = ["Description", "Usage"]
+frontmatter = ["title"]
+```
+
+#### Frontmatter Example
+
+```markdown
+---
+title: Authentication API
+type: api
+tracks:
+  - src/auth/**/*.ts
+  - src/middleware/auth.ts
+---
+
+## Overview
+...
+```
+
+#### Checks
+
+| Check | Description |
+|-------|-------------|
+| Structure | Markdown files only in docs/ or allowlist |
+| Limits | File count, line count, total size within bounds |
+| Frontmatter | Required fields present per doc type |
+| Sections | Required headings present per doc type |
+| Links | Internal links resolve to existing docs |
+| Freshness | Docs updated when tracked code changes |
+| Coverage | Exported APIs have documentation |
+
+#### Output
+
+```
+[process.docs]
+  ✓ Structure: 12 docs in docs/, 3 in allowlist
+  ✓ Limits: 12 files (max 30), 4200 lines, 89KB
+  ✗ Freshness: 2 stale docs
+    - docs/auth.md (src/auth/ changed 45 days ago)
+    - docs/api.md (src/api/ changed 32 days ago)
+  ✓ Coverage: 87% (52/60 exports documented)
+    Missing:
+    - src/utils/helpers.ts:23 formatDate
+    - src/utils/helpers.ts:45 parseConfig
+
+process.docs: failed (2 violations)
+```
+
+---
+
 ## Implementation Status
 
 | Feature | Status |
@@ -224,3 +341,4 @@ mock.on(ListObjectsV2Command).resolves({
 | `[process.codeowners]` | ✅ Done |
 | `cm process sync` | ✅ Done |
 | `[process.backups]` | ✅ Done |
+| `[process.docs]` | 📋 Planned |
