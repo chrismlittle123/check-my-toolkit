@@ -1,0 +1,10 @@
+# Test fixtures that should not be formatted
+tests/e2e/projects/config-errors/
+tests/e2e/projects/prettier/unformatted/
+tests/e2e/projects/prettier/disabled/
+
+# Build output
+dist/
+
+# Dependencies
+node_modules/
