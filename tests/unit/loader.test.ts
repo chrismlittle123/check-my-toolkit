@@ -255,9 +255,7 @@ node = ">=18"
 
   it("throws ConfigError for missing config file", () => {
     expect(() => loadConfig("/nonexistent/check.toml")).toThrow(ConfigError);
-    expect(() => loadConfig("/nonexistent/check.toml")).toThrow(
-      "Config file not found"
-    );
+    expect(() => loadConfig("/nonexistent/check.toml")).toThrow("Config file not found");
   });
 
   it("throws ConfigError when no config file found", () => {

@@ -49,6 +49,7 @@ Unit test added in `tests/unit/gitleaks.test.ts`. E2E test fixture created in `t
 The naming rules should support an `allow_dynamic_routes` option for Next.js/Remix dynamic route folders like `[id]`, `[...slug]`, `[[...slug]]`, `(group)`, and `@slot`.
 
 **Expected Behavior:**
+
 ```toml
 [[code.naming.rules]]
 extensions = ["tsx"]
@@ -58,6 +59,7 @@ allow_dynamic_routes = true
 ```
 
 **Actual Behavior:**
+
 ```
 Config error: Invalid check.toml configuration:
   - code.naming.rules.0: Unrecognized key(s) in object: 'allow_dynamic_routes'
@@ -116,6 +118,7 @@ Added `splitPatterns()` helper function that splits comma-separated patterns at 
 Symlinks with mismatched extensions (e.g., `linked-from-typescript.py` pointing to `original.ts`) cause parse errors in Python tools.
 
 **Actual Behavior:**
+
 - Ruff Format: `Failed to parse test-scenarios/edge-cases/symlinks/linked-from-typescript.py`
 - ty: Multiple `invalid-syntax` errors
 
@@ -153,9 +156,11 @@ The `process/repo-codeowners-fail` e2e test passes locally but fails in CI.
 Test should fail with exit code 1 when CODEOWNERS is missing.
 
 **Actual Behavior in CI:**
+
 ```
 ✓ Repository: skipped - Could not determine GitHub repository from git remote
 ```
+
 Test exits with code 0 (skip) instead of code 1 (fail).
 
 **Root Cause:**
@@ -237,13 +242,13 @@ Fix was already in main (commit 233b7fc). Patch release v0.28.1 published with c
 
 ## Issue Statistics
 
-| Severity | Open | Resolved | Won't Fix |
-|----------|------|----------|-----------|
-| Critical | 0    | 1        | 0         |
-| High     | 0    | 1        | 0         |
-| Medium   | 4    | 0        | 0         |
-| Low      | 2    | 0        | 1         |
-| **Total**| **6**| **2**    | **1**     |
+| Severity  | Open  | Resolved | Won't Fix |
+| --------- | ----- | -------- | --------- |
+| Critical  | 0     | 1        | 0         |
+| High      | 0     | 1        | 0         |
+| Medium    | 4     | 0        | 0         |
+| Low       | 2     | 0        | 1         |
+| **Total** | **6** | **2**    | **1**     |
 
 ---
 
@@ -251,23 +256,23 @@ Fix was already in main (commit 233b7fc). Patch release v0.28.1 published with c
 
 First full `cm code check` execution completed with the following results:
 
-| Tool | Violations | Status | Notes |
-|------|------------|--------|-------|
-| ESLint | 3 | Working | Console statements in index.ts |
-| Ruff | 43 | Working | Import sorting, deprecated typing |
-| Ruff Format | 1 | Issue | Symlink parse error |
-| Prettier | 9 | Working | Formatting violations |
-| TypeScript | 0 | Passed | No type errors |
-| ty | 43 | Working | Type errors + symlink issue |
-| Knip | 18 | Working | Unused test fixture files |
-| Vulture | 64 | Issue | Scanning .venv directory |
-| gitleaks | 5 | Working | Detected all test secrets |
-| npmaudit | 4 | Working | Vitest vulnerabilities |
-| pipaudit | 0 | Passed | No Python vulnerabilities |
-| Tests | 1 | Issue | Pattern not matching |
-| Naming | 10 | Working | Detecting naming violations |
-| Disable Comments | 32 | Working | Detecting all comment types |
-| **TOTAL** | **233** | - | - |
+| Tool             | Violations | Status  | Notes                             |
+| ---------------- | ---------- | ------- | --------------------------------- |
+| ESLint           | 3          | Working | Console statements in index.ts    |
+| Ruff             | 43         | Working | Import sorting, deprecated typing |
+| Ruff Format      | 1          | Issue   | Symlink parse error               |
+| Prettier         | 9          | Working | Formatting violations             |
+| TypeScript       | 0          | Passed  | No type errors                    |
+| ty               | 43         | Working | Type errors + symlink issue       |
+| Knip             | 18         | Working | Unused test fixture files         |
+| Vulture          | 64         | Issue   | Scanning .venv directory          |
+| gitleaks         | 5          | Working | Detected all test secrets         |
+| npmaudit         | 4          | Working | Vitest vulnerabilities            |
+| pipaudit         | 0          | Passed  | No Python vulnerabilities         |
+| Tests            | 1          | Issue   | Pattern not matching              |
+| Naming           | 10         | Working | Detecting naming violations       |
+| Disable Comments | 32         | Working | Detecting all comment types       |
+| **TOTAL**        | **233**    | -       | -                                 |
 
 ### Key Observations
 
@@ -282,17 +287,21 @@ First full `cm code check` execution completed with the following results:
 ## Additional Test Results (2026-01-15 - Second Run)
 
 ### OUT-MIX-002: JSON Output Test
+
 **Status:** PASSED
 
 JSON output (`cm code check -f json`) produces well-structured output:
+
 - Includes version, configPath, domains
 - Each check has: name, rule, passed, violations[], skipped, duration
 - Violations include: rule, tool, file, line, column, message, code, severity
 
 ### MONO-001 to MONO-003: Monorepo Tests
+
 **Status:** PASSED (with notes)
 
 Running `cm code check` in test-scenarios/monorepo/:
+
 - MONO-001: Separate packages work - TypeScript, Ruff, ty, gitleaks all ran correctly
 - MONO-002: Root-level package.json and pyproject.toml are used
 - MONO-003: Root-level check.toml is correctly detected and used
@@ -300,27 +309,34 @@ Running `cm code check` in test-scenarios/monorepo/:
 **Note:** ESLint requires TypeScript parser to be installed (`npm install`) for full functionality.
 
 ### AUD-MIX-002: Missing TypeScript Config
+
 **Status:** PASSED
 
 When tsconfig.json is removed:
+
 ```
 ✗ TypeScript: 1 violation(s)
     error  Config not found. Expected one of: tsconfig.json
 ```
+
 All other tools continue to run normally.
 
 ### AUD-MIX-003: Missing Python Config
+
 **Status:** PASSED (Expected Behavior)
 
 When pyproject.toml is removed:
+
 - Ruff still runs with default settings
 - Violations reduced from 43 to 24 (stricter rules from config not applied)
 - This is expected - Ruff works without configuration
 
 ### AUD-MIX-004: Partial Configuration
+
 **Status:** PASSED
 
 When eslint.config.js is removed:
+
 - ESLint reports config not found
 - All other tools (Ruff, Prettier, TypeScript, ty, etc.) continue running
 - Graceful degradation confirmed

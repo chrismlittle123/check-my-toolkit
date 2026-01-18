@@ -291,10 +291,7 @@ More info
             noImplicitAny: true,
           },
         };
-        fs.writeFileSync(
-          path.join(tempDir, "tsconfig.json"),
-          JSON.stringify(tsconfig)
-        );
+        fs.writeFileSync(path.join(tempDir, "tsconfig.json"), JSON.stringify(tsconfig));
 
         const result = await runner.audit(tempDir);
 
@@ -308,10 +305,7 @@ More info
             // noImplicitAny is missing
           },
         };
-        fs.writeFileSync(
-          path.join(tempDir, "tsconfig.json"),
-          JSON.stringify(tsconfig)
-        );
+        fs.writeFileSync(path.join(tempDir, "tsconfig.json"), JSON.stringify(tsconfig));
 
         const result = await runner.audit(tempDir);
 
@@ -329,10 +323,7 @@ More info
             noImplicitAny: true,
           },
         };
-        fs.writeFileSync(
-          path.join(tempDir, "tsconfig.json"),
-          JSON.stringify(tsconfig)
-        );
+        fs.writeFileSync(path.join(tempDir, "tsconfig.json"), JSON.stringify(tsconfig));
 
         const result = await runner.audit(tempDir);
 
@@ -349,10 +340,7 @@ More info
             // Both options missing
           },
         };
-        fs.writeFileSync(
-          path.join(tempDir, "tsconfig.json"),
-          JSON.stringify(tsconfig)
-        );
+        fs.writeFileSync(path.join(tempDir, "tsconfig.json"), JSON.stringify(tsconfig));
 
         const result = await runner.audit(tempDir);
 
@@ -370,10 +358,7 @@ More info
       });
 
       it("handles malformed JSON", async () => {
-        fs.writeFileSync(
-          path.join(tempDir, "tsconfig.json"),
-          "{ invalid json }"
-        );
+        fs.writeFileSync(path.join(tempDir, "tsconfig.json"), "{ invalid json }");
 
         const result = await runner.audit(tempDir);
 
@@ -404,10 +389,7 @@ More info
             strict: false,
           },
         };
-        fs.writeFileSync(
-          path.join(tempDir, "tsconfig.json"),
-          JSON.stringify(tsconfig)
-        );
+        fs.writeFileSync(path.join(tempDir, "tsconfig.json"), JSON.stringify(tsconfig));
 
         const result = await runner.audit(tempDir);
 

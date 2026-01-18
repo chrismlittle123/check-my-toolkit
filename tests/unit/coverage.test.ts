@@ -315,7 +315,12 @@ jobs:
       - run: npm run test:coverage
 `
         );
-        runner.setConfig({ enabled: true, enforce_in: "ci", ci_workflow: "ci.yml", ci_job: "test" });
+        runner.setConfig({
+          enabled: true,
+          enforce_in: "ci",
+          ci_workflow: "ci.yml",
+          ci_job: "test",
+        });
 
         const result = await runner.run(tempDir);
         expect(result.passed).toBe(true);

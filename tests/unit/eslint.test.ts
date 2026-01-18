@@ -508,7 +508,16 @@ describe("ESLintRunner", () => {
 
       expect(mockedExeca).toHaveBeenCalledWith(
         "npx",
-        ["eslint", ".", "--format", "json", "--ignore-pattern", "dist/**", "--ignore-pattern", "node_modules/**"],
+        [
+          "eslint",
+          ".",
+          "--format",
+          "json",
+          "--ignore-pattern",
+          "dist/**",
+          "--ignore-pattern",
+          "node_modules/**",
+        ],
         expect.any(Object)
       );
     });
@@ -550,7 +559,16 @@ describe("ESLintRunner", () => {
 
       expect(mockedExeca).toHaveBeenCalledWith(
         "npx",
-        ["eslint", "src/**/*.ts", "--format", "json", "--ignore-pattern", "**/*.test.ts", "--max-warnings", "5"],
+        [
+          "eslint",
+          "src/**/*.ts",
+          "--format",
+          "json",
+          "--ignore-pattern",
+          "**/*.test.ts",
+          "--max-warnings",
+          "5",
+        ],
         expect.any(Object)
       );
     });

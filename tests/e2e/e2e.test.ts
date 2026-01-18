@@ -1178,13 +1178,18 @@ describe("E2E Tests", () => {
 
       // Check expected patterns
       for (const pattern of tc.expectedPatterns) {
-        expect(stdout, `Expected output to contain "${pattern}"\nOutput:\n${stdout}`).toContain(pattern);
+        expect(stdout, `Expected output to contain "${pattern}"\nOutput:\n${stdout}`).toContain(
+          pattern
+        );
       }
 
       // Check patterns that should NOT be present
       if (tc.notExpectedPatterns) {
         for (const pattern of tc.notExpectedPatterns) {
-          expect(stdout, `Expected output to NOT contain "${pattern}"\nOutput:\n${stdout}`).not.toContain(pattern);
+          expect(
+            stdout,
+            `Expected output to NOT contain "${pattern}"\nOutput:\n${stdout}`
+          ).not.toContain(pattern);
         }
       }
     });

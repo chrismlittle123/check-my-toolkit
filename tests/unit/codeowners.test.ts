@@ -124,10 +124,7 @@ describe("CodeownersRunner", () => {
       });
 
       it("fails when a configured rule is missing", async () => {
-        fs.writeFileSync(
-          path.join(tempDir, ".github/CODEOWNERS"),
-          `/check.toml @platform-team`
-        );
+        fs.writeFileSync(path.join(tempDir, ".github/CODEOWNERS"), `/check.toml @platform-team`);
         runner.setConfig({
           enabled: true,
           rules: [
@@ -144,10 +141,7 @@ describe("CodeownersRunner", () => {
       });
 
       it("fails when owners do not match", async () => {
-        fs.writeFileSync(
-          path.join(tempDir, ".github/CODEOWNERS"),
-          `/check.toml @wrong-team`
-        );
+        fs.writeFileSync(path.join(tempDir, ".github/CODEOWNERS"), `/check.toml @wrong-team`);
         runner.setConfig({
           enabled: true,
           rules: [{ pattern: "/check.toml", owners: ["@platform-team"] }],
@@ -162,10 +156,7 @@ describe("CodeownersRunner", () => {
       });
 
       it("passes when owners match regardless of order", async () => {
-        fs.writeFileSync(
-          path.join(tempDir, ".github/CODEOWNERS"),
-          `/check.toml @team-b @team-a`
-        );
+        fs.writeFileSync(path.join(tempDir, ".github/CODEOWNERS"), `/check.toml @team-b @team-a`);
         runner.setConfig({
           enabled: true,
           rules: [{ pattern: "/check.toml", owners: ["@team-a", "@team-b"] }],
@@ -191,10 +182,7 @@ describe("CodeownersRunner", () => {
       });
 
       it("fails when owners are missing", async () => {
-        fs.writeFileSync(
-          path.join(tempDir, ".github/CODEOWNERS"),
-          `/check.toml @team-a`
-        );
+        fs.writeFileSync(path.join(tempDir, ".github/CODEOWNERS"), `/check.toml @team-a`);
         runner.setConfig({
           enabled: true,
           rules: [{ pattern: "/check.toml", owners: ["@team-a", "@team-b"] }],
@@ -230,10 +218,7 @@ describe("CodeownersRunner", () => {
       });
 
       it("passes when all CODEOWNERS rules are in config", async () => {
-        fs.writeFileSync(
-          path.join(tempDir, ".github/CODEOWNERS"),
-          `/check.toml @platform-team`
-        );
+        fs.writeFileSync(path.join(tempDir, ".github/CODEOWNERS"), `/check.toml @platform-team`);
         runner.setConfig({
           enabled: true,
           rules: [{ pattern: "/check.toml", owners: ["@platform-team"] }],
@@ -315,10 +300,7 @@ describe("CodeownersRunner", () => {
       });
 
       it("handles tabs as separators", async () => {
-        fs.writeFileSync(
-          path.join(tempDir, ".github/CODEOWNERS"),
-          `/check.toml\t@platform-team`
-        );
+        fs.writeFileSync(path.join(tempDir, ".github/CODEOWNERS"), `/check.toml\t@platform-team`);
         runner.setConfig({
           enabled: true,
           rules: [{ pattern: "/check.toml", owners: ["@platform-team"] }],
@@ -329,10 +311,7 @@ describe("CodeownersRunner", () => {
       });
 
       it("handles multiple spaces as separators", async () => {
-        fs.writeFileSync(
-          path.join(tempDir, ".github/CODEOWNERS"),
-          `/check.toml    @platform-team`
-        );
+        fs.writeFileSync(path.join(tempDir, ".github/CODEOWNERS"), `/check.toml    @platform-team`);
         runner.setConfig({
           enabled: true,
           rules: [{ pattern: "/check.toml", owners: ["@platform-team"] }],
@@ -370,10 +349,7 @@ describe("CodeownersRunner", () => {
       });
 
       it("fails when CODEOWNERS has rules but config has none", async () => {
-        fs.writeFileSync(
-          path.join(tempDir, ".github/CODEOWNERS"),
-          `/check.toml @platform-team`
-        );
+        fs.writeFileSync(path.join(tempDir, ".github/CODEOWNERS"), `/check.toml @platform-team`);
         runner.setConfig({
           enabled: true,
           rules: [],

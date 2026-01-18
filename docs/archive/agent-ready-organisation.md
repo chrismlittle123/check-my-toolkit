@@ -1,6 +1,6 @@
 The Agent-Ready Software Organisation
 
-*A Vision for AI-Native Software Development*
+_A Vision for AI-Native Software Development_
 
 The Big Idea
 
@@ -72,7 +72,6 @@ Known Gaps to Solve
 
 6.  **Observability.** Need dashboards showing agent throughput, quality metrics, escalation rates, and cost per ticket.
 
-
-____
+---
 
 "The entire organisation — specs, decisions, standards, processes, business rules, infrastructure — should be TypeScript objects in Git, validated by Zod, enforced by CI, rendered by React for humans, and queryable by agents."

@@ -41,14 +41,7 @@ describe("applyBranchProtection", () => {
     expect(result.failed).toHaveLength(0);
     expect(mockedExeca).toHaveBeenCalledWith(
       "gh",
-      [
-        "api",
-        "repos/test-owner/test-repo/branches/main/protection",
-        "-X",
-        "PUT",
-        "--input",
-        "-",
-      ],
+      ["api", "repos/test-owner/test-repo/branches/main/protection", "-X", "PUT", "--input", "-"],
       expect.objectContaining({
         input: expect.any(String),
       })
@@ -146,12 +139,7 @@ describe("applyBranchProtection", () => {
       { setting: "required_reviews", current: 1, desired: 2, action: "change" },
     ];
 
-    const result = await applyBranchProtection(
-      repoInfo,
-      branch,
-      { required_reviews: 2 },
-      diffs
-    );
+    const result = await applyBranchProtection(repoInfo, branch, { required_reviews: 2 }, diffs);
 
     expect(result.success).toBe(false);
     expect(result.applied).toHaveLength(0);

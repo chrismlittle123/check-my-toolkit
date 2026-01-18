@@ -91,7 +91,9 @@ describe("TicketsRunner", () => {
 
         const result = await runner.run(tempDir);
         expect(result.skipped).toBe(true);
-        expect(result.skipReason).toContain("Neither require_in_commits nor require_in_branch is enabled");
+        expect(result.skipReason).toContain(
+          "Neither require_in_commits nor require_in_branch is enabled"
+        );
       });
     });
 

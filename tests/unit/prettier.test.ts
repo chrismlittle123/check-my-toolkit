@@ -92,10 +92,7 @@ describe("PrettierRunner", () => {
     });
 
     it("returns false when package.json exists without prettier key", async () => {
-      fs.writeFileSync(
-        path.join(tempDir, "package.json"),
-        JSON.stringify({ name: "test" })
-      );
+      fs.writeFileSync(path.join(tempDir, "package.json"), JSON.stringify({ name: "test" }));
       fs.writeFileSync(path.join(tempDir, "test.ts"), "");
 
       mockedExeca.mockResolvedValueOnce({
@@ -213,7 +210,8 @@ describe("PrettierRunner", () => {
         exitCode: 0,
       } as never);
       mockedExeca.mockResolvedValueOnce({
-        stdout: "Checking formatting...\n[warn] src/main.ts\n[warn] lib/utils.js\n[warn] Code style issues found.",
+        stdout:
+          "Checking formatting...\n[warn] src/main.ts\n[warn] lib/utils.js\n[warn] Code style issues found.",
         stderr: "",
         exitCode: 1,
       } as never);
@@ -267,9 +265,7 @@ describe("PrettierRunner", () => {
 
       expect(result.passed).toBe(false);
       expect(result.violations).toHaveLength(1);
-      expect(result.violations[0].message).toContain(
-        "Some files are not formatted correctly"
-      );
+      expect(result.violations[0].message).toContain("Some files are not formatted correctly");
     });
 
     it("skips when prettier not installed", async () => {
@@ -346,10 +342,7 @@ describe("PrettierRunner", () => {
     });
 
     it("passes when prettier.config.js exists", async () => {
-      fs.writeFileSync(
-        path.join(tempDir, "prettier.config.js"),
-        "module.exports = {};"
-      );
+      fs.writeFileSync(path.join(tempDir, "prettier.config.js"), "module.exports = {};");
       const result = await runner.audit(tempDir);
 
       expect(result.passed).toBe(true);

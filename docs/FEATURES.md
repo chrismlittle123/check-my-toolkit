@@ -14,11 +14,11 @@ check-my-toolkit (`cm`) provides a single CLI to run multiple code quality, proc
 
 ## Quick Reference
 
-| Domain | Tools | Config |
-|--------|-------|--------|
-| CODE | ESLint, Ruff, Prettier, tsc, ty, Knip, Vulture, Gitleaks, pnpm-audit, pip-audit | `[code.*]` |
+| Domain  | Tools                                                                                            | Config        |
+| ------- | ------------------------------------------------------------------------------------------------ | ------------- |
+| CODE    | ESLint, Ruff, Prettier, tsc, ty, Knip, Vulture, Gitleaks, pnpm-audit, pip-audit                  | `[code.*]`    |
 | PROCESS | Hooks, CI, Branches, Commits, Changesets, PR, Tickets, Coverage, Repo, Backups, CODEOWNERS, Docs | `[process.*]` |
-| INFRA | AWS Tagging | `[infra.*]` |
+| INFRA   | AWS Tagging                                                                                      | `[infra.*]`   |
 
 ---
 
@@ -28,12 +28,13 @@ check-my-toolkit (`cm`) provides a single CLI to run multiple code quality, proc
 
 Run all domains at once:
 
-| Command | Description |
-|---------|-------------|
-| `cm check` | Run all checks (code + process + infra) |
+| Command    | Description                                       |
+| ---------- | ------------------------------------------------- |
+| `cm check` | Run all checks (code + process + infra)           |
 | `cm audit` | Verify all configs exist (code + process + infra) |
 
 These are equivalent to running each domain command separately:
+
 - `cm check` = `cm code check` + `cm process check` + `cm infra check`
 - `cm audit` = `cm code audit` + `cm process audit` + `cm infra audit`
 
@@ -41,28 +42,28 @@ These are equivalent to running each domain command separately:
 
 Run checks for a specific domain:
 
-| Command | Description |
-|---------|-------------|
-| `cm code check` | Run code quality checks |
-| `cm code audit` | Verify code tool configs |
-| `cm process check` | Run workflow validation |
-| `cm process audit` | Verify workflow configs |
-| `cm process diff` | Show branch protection differences |
-| `cm process sync --apply` | Sync branch protection to GitHub |
-| `cm process check-branch` | Validate branch name (for pre-push hook) |
+| Command                          | Description                                   |
+| -------------------------------- | --------------------------------------------- |
+| `cm code check`                  | Run code quality checks                       |
+| `cm code audit`                  | Verify code tool configs                      |
+| `cm process check`               | Run workflow validation                       |
+| `cm process audit`               | Verify workflow configs                       |
+| `cm process diff`                | Show branch protection differences            |
+| `cm process sync --apply`        | Sync branch protection to GitHub              |
+| `cm process check-branch`        | Validate branch name (for pre-push hook)      |
 | `cm process check-commit <file>` | Validate commit message (for commit-msg hook) |
-| `cm infra check` | Run infrastructure checks |
-| `cm infra audit` | Verify infrastructure configs |
+| `cm infra check`                 | Run infrastructure checks                     |
+| `cm infra audit`                 | Verify infrastructure configs                 |
 
 ### Utility Commands
 
-| Command | Description |
-|---------|-------------|
-| `cm validate config` | Validate check.toml syntax and schema |
-| `cm validate registry` | Validate registry structure |
-| `cm schema config` | Output JSON schema for check.toml |
-| `cm projects detect` | Discover projects in monorepo |
-| `cm projects detect --fix` | Create missing check.toml files |
+| Command                    | Description                           |
+| -------------------------- | ------------------------------------- |
+| `cm validate config`       | Validate check.toml syntax and schema |
+| `cm validate registry`     | Validate registry structure           |
+| `cm schema config`         | Output JSON schema for check.toml     |
+| `cm projects detect`       | Discover projects in monorepo         |
+| `cm projects detect --fix` | Create missing check.toml files       |
 
 ### Output Formats
 
@@ -73,12 +74,12 @@ cm check -f json      # JSON output for CI
 
 ### Exit Codes
 
-| Code | Meaning |
-|------|---------|
-| 0 | All checks passed |
-| 1 | Violations found |
-| 2 | Configuration error |
-| 3 | Runtime error |
+| Code | Meaning             |
+| ---- | ------------------- |
+| 0    | All checks passed   |
+| 1    | Violations found    |
+| 2    | Configuration error |
+| 3    | Runtime error       |
 
 ---
 
@@ -104,12 +105,12 @@ max-warnings = 0
 "complexity" = { severity = "error", max = 10 }
 ```
 
-| Property | Value |
-|----------|-------|
-| Tool | ESLint |
-| Languages | JavaScript, TypeScript |
-| Config Files | `eslint.config.js`, `.eslintrc.*` |
-| Audit | Verifies rules match check.toml requirements |
+| Property     | Value                                        |
+| ------------ | -------------------------------------------- |
+| Tool         | ESLint                                       |
+| Languages    | JavaScript, TypeScript                       |
+| Config Files | `eslint.config.js`, `.eslintrc.*`            |
+| Audit        | Verifies rules match check.toml requirements |
 
 ---
 
@@ -128,10 +129,10 @@ select = ["E", "F", "W"]
 ignore = ["E501"]
 ```
 
-| Property | Value |
-|----------|-------|
-| Tool | Ruff |
-| Languages | Python |
+| Property     | Value                         |
+| ------------ | ----------------------------- |
+| Tool         | Ruff                          |
+| Languages    | Python                        |
 | Config Files | `ruff.toml`, `pyproject.toml` |
 
 ---
@@ -147,10 +148,10 @@ JavaScript/TypeScript/CSS/JSON formatting.
 enabled = true
 ```
 
-| Property | Value |
-|----------|-------|
-| Tool | Prettier |
-| Languages | JS, TS, JSON, CSS, etc. |
+| Property     | Value                               |
+| ------------ | ----------------------------------- |
+| Tool         | Prettier                            |
+| Languages    | JS, TS, JSON, CSS, etc.             |
 | Config Files | `.prettierrc`, `prettier.config.js` |
 
 ---
@@ -183,12 +184,12 @@ noImplicitAny = true
 strictNullChecks = true
 ```
 
-| Property | Value |
-|----------|-------|
-| Tool | tsc |
-| Languages | TypeScript |
-| Config Files | `tsconfig.json` |
-| Audit | Verifies compiler options match requirements |
+| Property     | Value                                        |
+| ------------ | -------------------------------------------- |
+| Tool         | tsc                                          |
+| Languages    | TypeScript                                   |
+| Config Files | `tsconfig.json`                              |
+| Audit        | Verifies compiler options match requirements |
 
 **Auditable Options:** `strict`, `noImplicitAny`, `strictNullChecks`, `noUnusedLocals`, `noUnusedParameters`, `noImplicitReturns`, `esModuleInterop`, `skipLibCheck`, `forceConsistentCasingInFileNames`
 
@@ -203,11 +204,11 @@ Python type checking (Astral's fast type checker).
 enabled = true
 ```
 
-| Property | Value |
-|----------|-------|
-| Tool | ty |
-| Languages | Python |
-| Command | `uvx ty check` |
+| Property  | Value          |
+| --------- | -------------- |
+| Tool      | ty             |
+| Languages | Python         |
+| Command   | `uvx ty check` |
 
 ---
 
@@ -252,14 +253,15 @@ min_threshold = 80
 command = "pnpm test:coverage"  # Optional: auto-detects if not specified
 ```
 
-| Property | Value |
-|----------|-------|
+| Property        | Value                                        |
+| --------------- | -------------------------------------------- |
 | `min_threshold` | Minimum coverage percentage required (0-100) |
-| `command` | Custom test command (optional) |
+| `command`       | Custom test command (optional)               |
 
 **Auto-detected runners:** vitest, jest, pytest
 
 **How it works:**
+
 - Runs tests with coverage enabled
 - Parses coverage output to extract percentage
 - Fails if coverage is below `min_threshold`
@@ -291,8 +293,8 @@ enabled = true
 exclude_dev = true  # Only check production dependencies (default)
 ```
 
-| Property | Value |
-|----------|-------|
+| Property      | Value                                |
+| ------------- | ------------------------------------ |
 | `exclude_dev` | Skip devDependencies (default: true) |
 
 Requires `pnpm-lock.yaml` in project root.
@@ -373,11 +375,11 @@ pre-commit = ["lint-staged"]
 pre-push = ["npm test"]
 ```
 
-| Property | Value |
-|----------|-------|
-| `require_husky` | Require `.husky/` directory exists |
+| Property        | Value                                                                      |
+| --------------- | -------------------------------------------------------------------------- |
+| `require_husky` | Require `.husky/` directory exists                                         |
 | `require_hooks` | List of required hook files (e.g., `pre-commit`, `pre-push`, `commit-msg`) |
-| `commands` | Map of hook name to required commands in that hook file |
+| `commands`      | Map of hook name to required commands in that hook file                    |
 
 **Violations detected:** Missing husky installation, missing hook files, hooks missing required commands.
 
@@ -399,11 +401,11 @@ require_workflows = ["ci.yml", "release.yml"]
 "ci.yml" = ["actions/checkout", "actions/setup-node"]
 ```
 
-| Property | Value |
-|----------|-------|
+| Property            | Value                                                   |
+| ------------------- | ------------------------------------------------------- |
 | `require_workflows` | List of required workflow files in `.github/workflows/` |
-| `jobs` | Map of workflow file to required job names |
-| `actions` | Map of workflow file to required action uses |
+| `jobs`              | Map of workflow file to required job names              |
+| `actions`           | Map of workflow file to required action uses            |
 
 **Violations detected:** Missing workflow files, missing jobs, missing actions.
 
@@ -420,9 +422,9 @@ pattern = "^(feature|fix|hotfix|docs)/v[0-9]+\\.[0-9]+\\.[0-9]+/.+"
 exclude = ["main", "master", "develop"]
 ```
 
-| Property | Value |
-|----------|-------|
-| `pattern` | Regex pattern for valid branch names |
+| Property  | Value                                                     |
+| --------- | --------------------------------------------------------- |
+| `pattern` | Regex pattern for valid branch names                      |
 | `exclude` | Branch names to skip validation (e.g., `main`, `develop`) |
 
 **Tip:** Use `cm process check-branch` in pre-push hooks for local enforcement.
@@ -440,9 +442,9 @@ max_files = 20
 max_lines = 500
 ```
 
-| Property | Value |
-|----------|-------|
-| `max_files` | Maximum number of files changed in a PR |
+| Property    | Value                                               |
+| ----------- | --------------------------------------------------- |
+| `max_files` | Maximum number of files changed in a PR             |
 | `max_lines` | Maximum total lines changed (additions + deletions) |
 
 **Note:** Reads PR data from `GITHUB_EVENT_PATH` environment variable. Skips gracefully when not in a PR context.
@@ -461,11 +463,11 @@ require_in_commits = true
 require_in_branch = false
 ```
 
-| Property | Value |
-|----------|-------|
-| `pattern` | Regex pattern for ticket IDs (e.g., `JIRA-123`, `GH-456`) |
-| `require_in_commits` | Require ticket reference in commit messages |
-| `require_in_branch` | Require ticket reference in branch name |
+| Property             | Value                                                     |
+| -------------------- | --------------------------------------------------------- |
+| `pattern`            | Regex pattern for ticket IDs (e.g., `JIRA-123`, `GH-456`) |
+| `require_in_commits` | Require ticket reference in commit messages               |
+| `require_in_branch`  | Require ticket reference in branch name                   |
 
 **Tip:** Use `cm process check-commit` in commit-msg hooks for local enforcement.
 
@@ -484,12 +486,12 @@ ci_workflow = "ci.yml"
 ci_job = "test"
 ```
 
-| Property | Value |
-|----------|-------|
-| `min_threshold` | Minimum coverage percentage required (0-100) |
-| `enforce_in` | Where to check: `config`, `ci`, or `both` |
-| `ci_workflow` | Workflow file to check (when `enforce_in` includes `ci`) |
-| `ci_job` | Job name to check for coverage commands |
+| Property        | Value                                                    |
+| --------------- | -------------------------------------------------------- |
+| `min_threshold` | Minimum coverage percentage required (0-100)             |
+| `enforce_in`    | Where to check: `config`, `ci`, or `both`                |
+| `ci_workflow`   | Workflow file to check (when `enforce_in` includes `ci`) |
+| `ci_job`        | Job name to check for coverage commands                  |
 
 **Config locations checked:** vitest.config.ts, jest.config.js, .nycrc, package.json
 
@@ -553,14 +555,15 @@ require_scope = false
 max_subject_length = 72
 ```
 
-| Property | Value |
-|----------|-------|
-| `types` | Allowed commit types (conventional commits) |
-| `pattern` | Custom regex pattern (alternative to types) |
-| `require_scope` | Require scope like `feat(api): ...` |
-| `max_subject_length` | Maximum subject line length |
+| Property             | Value                                       |
+| -------------------- | ------------------------------------------- |
+| `types`              | Allowed commit types (conventional commits) |
+| `pattern`            | Custom regex pattern (alternative to types) |
+| `require_scope`      | Require scope like `feat(api): ...`         |
+| `max_subject_length` | Maximum subject line length                 |
 
 **Supported Formats:**
+
 - Conventional commits: `feat: add login`, `fix(auth): resolve token issue`
 - Custom regex patterns via `pattern` option
 
@@ -581,14 +584,14 @@ require_description = true
 min_description_length = 10
 ```
 
-| Property | Value |
-|----------|-------|
-| `require_for_paths` | Glob patterns that require changesets when modified |
-| `exclude_paths` | Paths exempt from changeset requirement |
-| `validate_format` | Validate frontmatter structure |
-| `allowed_bump_types` | Restrict to specific bump types (`patch`, `minor`, `major`) |
-| `require_description` | Require non-empty description |
-| `min_description_length` | Minimum description character count |
+| Property                 | Value                                                       |
+| ------------------------ | ----------------------------------------------------------- |
+| `require_for_paths`      | Glob patterns that require changesets when modified         |
+| `exclude_paths`          | Paths exempt from changeset requirement                     |
+| `validate_format`        | Validate frontmatter structure                              |
+| `allowed_bump_types`     | Restrict to specific bump types (`patch`, `minor`, `major`) |
+| `require_description`    | Require non-empty description                               |
+| `min_description_length` | Minimum description character count                         |
 
 **Detects:** Missing changesets for code changes, invalid format, missing descriptions, disallowed bump types.
 
@@ -615,13 +618,14 @@ pattern = "*.ts"
 owners = ["@myorg/typescript-team"]
 ```
 
-| Property | Value |
-|----------|-------|
-| `rules` | Array of required CODEOWNERS rules |
-| `rules[].pattern` | File pattern (e.g., `*`, `/src/*`, `*.ts`) |
-| `rules[].owners` | Required owners (e.g., `@user`, `@org/team`) |
+| Property          | Value                                        |
+| ----------------- | -------------------------------------------- |
+| `rules`           | Array of required CODEOWNERS rules           |
+| `rules[].pattern` | File pattern (e.g., `*`, `/src/*`, `*.ts`)   |
+| `rules[].owners`  | Required owners (e.g., `@user`, `@org/team`) |
 
 **Validation:**
+
 - Checks CODEOWNERS file exists (`.github/CODEOWNERS`, `CODEOWNERS`, or `docs/CODEOWNERS`)
 - Validates all configured rules exist with exact owner match
 - Reports rules in CODEOWNERS not defined in config
@@ -665,22 +669,23 @@ frontmatter = ["title"]
 required_sections = ["Introduction", "Getting Started"]
 ```
 
-| Property | Value |
-|----------|-------|
-| `path` | Documentation directory (default: `docs/`) |
-| `enforcement` | `warn` or `block` - violation severity |
-| `staleness_days` | Days before doc is considered stale vs tracked source |
-| `allowlist` | Markdown files allowed outside docs/ |
-| `max_files` | Maximum markdown files in docs/ |
-| `max_file_lines` | Maximum lines per file |
-| `max_total_kb` | Maximum total size of docs/ |
-| `min_coverage` | Minimum API documentation coverage (0-100) |
-| `coverage_paths` | Glob patterns for source files to check coverage |
-| `exclude_patterns` | Patterns to exclude from coverage |
-| `stale_mappings` | Override doc-to-source mappings for freshness |
-| `types` | Per-type validation rules (frontmatter, sections) |
+| Property           | Value                                                 |
+| ------------------ | ----------------------------------------------------- |
+| `path`             | Documentation directory (default: `docs/`)            |
+| `enforcement`      | `warn` or `block` - violation severity                |
+| `staleness_days`   | Days before doc is considered stale vs tracked source |
+| `allowlist`        | Markdown files allowed outside docs/                  |
+| `max_files`        | Maximum markdown files in docs/                       |
+| `max_file_lines`   | Maximum lines per file                                |
+| `max_total_kb`     | Maximum total size of docs/                           |
+| `min_coverage`     | Minimum API documentation coverage (0-100)            |
+| `coverage_paths`   | Glob patterns for source files to check coverage      |
+| `exclude_patterns` | Patterns to exclude from coverage                     |
+| `stale_mappings`   | Override doc-to-source mappings for freshness         |
+| `types`            | Per-type validation rules (frontmatter, sections)     |
 
 **Validations:**
+
 - Structure: Markdown files outside docs/ not in allowlist
 - Content: Required frontmatter fields and sections per doc type
 - Freshness: Docs not updated after tracked source changes
@@ -716,12 +721,14 @@ cm process check-commit .git/COMMIT_EDITMSG --quiet
 **Configuration:** Uses `[process.commits]` and `[process.tickets]` settings.
 
 **Git Hook Example (.husky/commit-msg):**
+
 ```bash
 #!/bin/sh
 cm process check-commit "$1" --quiet
 ```
 
 **Git Hook Example (.husky/pre-push):**
+
 ```bash
 #!/bin/sh
 cm process check-branch --quiet
@@ -789,10 +796,12 @@ enabled = true
 ```
 
 **Registry Formats:**
+
 - GitHub: `github:owner/repo` or `github:owner/repo@v1.0.0`
 - Local: `/path/to/registry`
 
 **Registry Structure:**
+
 ```
 registry/
 ├── rulesets/
@@ -979,44 +988,44 @@ Environment = ["dev", "stag", "prod"]
 
 ## CODE Domain (14 tools)
 
-| Category | Tool | Languages | Config |
-|----------|------|-----------|--------|
-| Linting | ESLint | JS/TS | `[code.linting.eslint]` |
-| Linting | Ruff | Python | `[code.linting.ruff]` |
-| Formatting | Prettier | JS/TS/CSS/JSON | `[code.formatting.prettier]` |
-| Formatting | Ruff Format | Python | `[code.linting.ruff] format = true` |
-| Types | tsc | TypeScript | `[code.types.tsc]` |
-| Types | ty | Python | `[code.types.ty]` |
-| Unused | Knip | JS/TS | `[code.unused.knip]` |
-| Unused | Vulture | Python | `[code.unused.vulture]` |
-| Coverage | Coverage Run | Any | `[code.coverage_run]` |
-| Security | Gitleaks | Any | `[code.security.secrets]` |
-| Security | pnpm audit | JS/TS | `[code.security.pnpmaudit]` |
-| Security | pip-audit | Python | `[code.security.pipaudit]` |
-| Naming | Built-in | Any | `[code.naming]` |
-| Quality | Disable Comments | JS/TS/Python | `[code.quality.disable-comments]` |
+| Category   | Tool             | Languages      | Config                              |
+| ---------- | ---------------- | -------------- | ----------------------------------- |
+| Linting    | ESLint           | JS/TS          | `[code.linting.eslint]`             |
+| Linting    | Ruff             | Python         | `[code.linting.ruff]`               |
+| Formatting | Prettier         | JS/TS/CSS/JSON | `[code.formatting.prettier]`        |
+| Formatting | Ruff Format      | Python         | `[code.linting.ruff] format = true` |
+| Types      | tsc              | TypeScript     | `[code.types.tsc]`                  |
+| Types      | ty               | Python         | `[code.types.ty]`                   |
+| Unused     | Knip             | JS/TS          | `[code.unused.knip]`                |
+| Unused     | Vulture          | Python         | `[code.unused.vulture]`             |
+| Coverage   | Coverage Run     | Any            | `[code.coverage_run]`               |
+| Security   | Gitleaks         | Any            | `[code.security.secrets]`           |
+| Security   | pnpm audit       | JS/TS          | `[code.security.pnpmaudit]`         |
+| Security   | pip-audit        | Python         | `[code.security.pipaudit]`          |
+| Naming     | Built-in         | Any            | `[code.naming]`                     |
+| Quality    | Disable Comments | JS/TS/Python   | `[code.quality.disable-comments]`   |
 
 ## PROCESS Domain (12 checks)
 
-| Check | Purpose | Config |
-|-------|---------|--------|
-| Hooks | Git hooks (Husky) | `[process.hooks]` |
-| CI | GitHub workflows | `[process.ci]` |
-| Branches | Naming patterns | `[process.branches]` |
-| Commits | Message format | `[process.commits]` |
-| Changesets | Changeset validation | `[process.changesets]` |
-| PR | Size limits | `[process.pr]` |
-| Tickets | Reference validation | `[process.tickets]` |
-| Coverage | Threshold enforcement | `[process.coverage]` |
-| Repo | Branch protection | `[process.repo]` |
-| Backups | S3 backup verification | `[process.backups]` |
-| CODEOWNERS | CODEOWNERS validation | `[process.codeowners]` |
-| Docs | Documentation governance | `[process.docs]` |
+| Check      | Purpose                  | Config                 |
+| ---------- | ------------------------ | ---------------------- |
+| Hooks      | Git hooks (Husky)        | `[process.hooks]`      |
+| CI         | GitHub workflows         | `[process.ci]`         |
+| Branches   | Naming patterns          | `[process.branches]`   |
+| Commits    | Message format           | `[process.commits]`    |
+| Changesets | Changeset validation     | `[process.changesets]` |
+| PR         | Size limits              | `[process.pr]`         |
+| Tickets    | Reference validation     | `[process.tickets]`    |
+| Coverage   | Threshold enforcement    | `[process.coverage]`   |
+| Repo       | Branch protection        | `[process.repo]`       |
+| Backups    | S3 backup verification   | `[process.backups]`    |
+| CODEOWNERS | CODEOWNERS validation    | `[process.codeowners]` |
+| Docs       | Documentation governance | `[process.docs]`       |
 
 ## INFRA Domain (1 check)
 
-| Check | Purpose | Config |
-|-------|---------|--------|
+| Check   | Purpose           | Config            |
+| ------- | ----------------- | ----------------- |
 | Tagging | AWS resource tags | `[infra.tagging]` |
 
 ---
@@ -1025,15 +1034,16 @@ Environment = ["dev", "stag", "prod"]
 
 Some features require environment variables to be set:
 
-| Variable | Used By | Purpose |
-|----------|---------|---------|
-| `GITHUB_TOKEN` | `process.repo`, `process diff/sync` | GitHub API access for branch protection |
-| `GITHUB_EVENT_PATH` | `process.pr` | PR context in GitHub Actions |
-| `AWS_REGION` | `infra.tagging`, `process.backups` | AWS region (can also use config) |
-| `AWS_ACCESS_KEY_ID` | `infra.tagging`, `process.backups` | AWS credentials |
-| `AWS_SECRET_ACCESS_KEY` | `infra.tagging`, `process.backups` | AWS credentials |
+| Variable                | Used By                             | Purpose                                 |
+| ----------------------- | ----------------------------------- | --------------------------------------- |
+| `GITHUB_TOKEN`          | `process.repo`, `process diff/sync` | GitHub API access for branch protection |
+| `GITHUB_EVENT_PATH`     | `process.pr`                        | PR context in GitHub Actions            |
+| `AWS_REGION`            | `infra.tagging`, `process.backups`  | AWS region (can also use config)        |
+| `AWS_ACCESS_KEY_ID`     | `infra.tagging`, `process.backups`  | AWS credentials                         |
+| `AWS_SECRET_ACCESS_KEY` | `infra.tagging`, `process.backups`  | AWS credentials                         |
 
 **GitHub Actions example:**
+
 ```yaml
 - name: Run checks
   env:

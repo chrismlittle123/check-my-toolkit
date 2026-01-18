@@ -156,8 +156,18 @@ describe("PipAuditRunner", () => {
             name: "pkg",
             version: "1.0.0",
             vulns: [
-              { id: "PYSEC-2021-001", fix_versions: ["1.0.1"], aliases: ["CVE-2021-001"], description: "Vuln 1" },
-              { id: "PYSEC-2021-002", fix_versions: [], aliases: ["CVE-2021-002"], description: "Vuln 2" },
+              {
+                id: "PYSEC-2021-001",
+                fix_versions: ["1.0.1"],
+                aliases: ["CVE-2021-001"],
+                description: "Vuln 1",
+              },
+              {
+                id: "PYSEC-2021-002",
+                fix_versions: [],
+                aliases: ["CVE-2021-002"],
+                description: "Vuln 2",
+              },
             ],
           },
         ]),
@@ -179,12 +189,16 @@ describe("PipAuditRunner", () => {
           {
             name: "pkg1",
             version: "1.0.0",
-            vulns: [{ id: "PYSEC-2021-001", fix_versions: ["1.0.1"], aliases: [], description: "Vuln 1" }],
+            vulns: [
+              { id: "PYSEC-2021-001", fix_versions: ["1.0.1"], aliases: [], description: "Vuln 1" },
+            ],
           },
           {
             name: "pkg2",
             version: "2.0.0",
-            vulns: [{ id: "PYSEC-2021-002", fix_versions: ["2.0.1"], aliases: [], description: "Vuln 2" }],
+            vulns: [
+              { id: "PYSEC-2021-002", fix_versions: ["2.0.1"], aliases: [], description: "Vuln 2" },
+            ],
           },
         ]),
         stderr: "",
@@ -240,8 +254,18 @@ describe("PipAuditRunner", () => {
       const result = await runner.run(tempDir);
 
       expect(mockedExeca).toHaveBeenCalledTimes(2);
-      expect(mockedExeca).toHaveBeenNthCalledWith(1, "uvx", ["pip-audit", "--format", "json", "-r", "requirements.txt"], expect.anything());
-      expect(mockedExeca).toHaveBeenNthCalledWith(2, "pip-audit", ["--format", "json", "-r", "requirements.txt"], expect.anything());
+      expect(mockedExeca).toHaveBeenNthCalledWith(
+        1,
+        "uvx",
+        ["pip-audit", "--format", "json", "-r", "requirements.txt"],
+        expect.anything()
+      );
+      expect(mockedExeca).toHaveBeenNthCalledWith(
+        2,
+        "pip-audit",
+        ["--format", "json", "-r", "requirements.txt"],
+        expect.anything()
+      );
       expect(result.passed).toBe(true);
     });
 
@@ -280,12 +304,8 @@ describe("PipAuditRunner", () => {
       fs.writeFileSync(path.join(tempDir, "requirements.txt"), "requests==2.28.0");
 
       // Both uvx and pip-audit fail with ENOENT
-      mockedExeca.mockRejectedValueOnce(
-        Object.assign(new Error("ENOENT"), { code: "ENOENT" })
-      );
-      mockedExeca.mockRejectedValueOnce(
-        Object.assign(new Error("ENOENT"), { code: "ENOENT" })
-      );
+      mockedExeca.mockRejectedValueOnce(Object.assign(new Error("ENOENT"), { code: "ENOENT" }));
+      mockedExeca.mockRejectedValueOnce(Object.assign(new Error("ENOENT"), { code: "ENOENT" }));
 
       const result = await runner.run(tempDir);
 
@@ -302,7 +322,12 @@ describe("PipAuditRunner", () => {
             name: "pkg",
             version: "1.0.0",
             vulns: [
-              { id: "GHSA-abc-123", fix_versions: ["1.0.1"], aliases: [], description: "Description" },
+              {
+                id: "GHSA-abc-123",
+                fix_versions: ["1.0.1"],
+                aliases: [],
+                description: "Description",
+              },
             ],
           },
         ]),

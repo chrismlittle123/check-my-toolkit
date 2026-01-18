@@ -59,9 +59,7 @@ describe("NamingRunner", () => {
       it("passes for kebab-case TypeScript files", async () => {
         runner.setConfig({
           enabled: true,
-          rules: [
-            { extensions: ["ts"], file_case: "kebab-case", folder_case: "kebab-case" },
-          ],
+          rules: [{ extensions: ["ts"], file_case: "kebab-case", folder_case: "kebab-case" }],
         });
 
         fs.mkdirSync(path.join(tempDir, "src"));
@@ -77,9 +75,7 @@ describe("NamingRunner", () => {
       it("fails for PascalCase when kebab-case expected", async () => {
         runner.setConfig({
           enabled: true,
-          rules: [
-            { extensions: ["ts"], file_case: "kebab-case", folder_case: "kebab-case" },
-          ],
+          rules: [{ extensions: ["ts"], file_case: "kebab-case", folder_case: "kebab-case" }],
         });
 
         fs.mkdirSync(path.join(tempDir, "src"));
@@ -97,9 +93,7 @@ describe("NamingRunner", () => {
       it("passes for numeric filenames like 404.tsx (Next.js pages)", async () => {
         runner.setConfig({
           enabled: true,
-          rules: [
-            { extensions: ["tsx"], file_case: "kebab-case", folder_case: "kebab-case" },
-          ],
+          rules: [{ extensions: ["tsx"], file_case: "kebab-case", folder_case: "kebab-case" }],
         });
 
         fs.mkdirSync(path.join(tempDir, "pages"));
@@ -115,9 +109,7 @@ describe("NamingRunner", () => {
       it("passes for snake_case Python files", async () => {
         runner.setConfig({
           enabled: true,
-          rules: [
-            { extensions: ["py"], file_case: "snake_case", folder_case: "snake_case" },
-          ],
+          rules: [{ extensions: ["py"], file_case: "snake_case", folder_case: "snake_case" }],
         });
 
         fs.mkdirSync(path.join(tempDir, "src"));
@@ -132,9 +124,7 @@ describe("NamingRunner", () => {
       it("fails for kebab-case when snake_case expected", async () => {
         runner.setConfig({
           enabled: true,
-          rules: [
-            { extensions: ["py"], file_case: "snake_case", folder_case: "snake_case" },
-          ],
+          rules: [{ extensions: ["py"], file_case: "snake_case", folder_case: "snake_case" }],
         });
 
         fs.mkdirSync(path.join(tempDir, "src"));
@@ -150,9 +140,7 @@ describe("NamingRunner", () => {
       it("passes for PascalCase files", async () => {
         runner.setConfig({
           enabled: true,
-          rules: [
-            { extensions: ["tsx"], file_case: "PascalCase", folder_case: "kebab-case" },
-          ],
+          rules: [{ extensions: ["tsx"], file_case: "PascalCase", folder_case: "kebab-case" }],
         });
 
         fs.mkdirSync(path.join(tempDir, "src"));
@@ -167,9 +155,7 @@ describe("NamingRunner", () => {
       it("passes for camelCase files", async () => {
         runner.setConfig({
           enabled: true,
-          rules: [
-            { extensions: ["js"], file_case: "camelCase", folder_case: "camelCase" },
-          ],
+          rules: [{ extensions: ["js"], file_case: "camelCase", folder_case: "camelCase" }],
         });
 
         fs.mkdirSync(path.join(tempDir, "src"));
@@ -186,9 +172,7 @@ describe("NamingRunner", () => {
       it("passes for kebab-case folders", async () => {
         runner.setConfig({
           enabled: true,
-          rules: [
-            { extensions: ["ts"], file_case: "kebab-case", folder_case: "kebab-case" },
-          ],
+          rules: [{ extensions: ["ts"], file_case: "kebab-case", folder_case: "kebab-case" }],
         });
 
         fs.mkdirSync(path.join(tempDir, "my-component"), { recursive: true });
@@ -202,9 +186,7 @@ describe("NamingRunner", () => {
       it("fails for PascalCase folder when kebab-case expected", async () => {
         runner.setConfig({
           enabled: true,
-          rules: [
-            { extensions: ["ts"], file_case: "kebab-case", folder_case: "kebab-case" },
-          ],
+          rules: [{ extensions: ["ts"], file_case: "kebab-case", folder_case: "kebab-case" }],
         });
 
         fs.mkdirSync(path.join(tempDir, "MyComponent"), { recursive: true });
@@ -220,9 +202,7 @@ describe("NamingRunner", () => {
       it("passes for snake_case Python folders", async () => {
         runner.setConfig({
           enabled: true,
-          rules: [
-            { extensions: ["py"], file_case: "snake_case", folder_case: "snake_case" },
-          ],
+          rules: [{ extensions: ["py"], file_case: "snake_case", folder_case: "snake_case" }],
         });
 
         fs.mkdirSync(path.join(tempDir, "my_module"), { recursive: true });
@@ -236,9 +216,7 @@ describe("NamingRunner", () => {
       it("checks nested folder names", async () => {
         runner.setConfig({
           enabled: true,
-          rules: [
-            { extensions: ["ts"], file_case: "kebab-case", folder_case: "kebab-case" },
-          ],
+          rules: [{ extensions: ["ts"], file_case: "kebab-case", folder_case: "kebab-case" }],
         });
 
         fs.mkdirSync(path.join(tempDir, "src", "MyComponent"), { recursive: true });
@@ -314,9 +292,7 @@ describe("NamingRunner", () => {
       it("excludes node_modules by default", async () => {
         runner.setConfig({
           enabled: true,
-          rules: [
-            { extensions: ["ts"], file_case: "kebab-case", folder_case: "kebab-case" },
-          ],
+          rules: [{ extensions: ["ts"], file_case: "kebab-case", folder_case: "kebab-case" }],
         });
 
         fs.mkdirSync(path.join(tempDir, "node_modules", "some-package"), { recursive: true });
@@ -330,9 +306,7 @@ describe("NamingRunner", () => {
       it("excludes dist by default", async () => {
         runner.setConfig({
           enabled: true,
-          rules: [
-            { extensions: ["ts"], file_case: "kebab-case", folder_case: "kebab-case" },
-          ],
+          rules: [{ extensions: ["ts"], file_case: "kebab-case", folder_case: "kebab-case" }],
         });
 
         fs.mkdirSync(path.join(tempDir, "dist"), { recursive: true });
@@ -348,9 +322,7 @@ describe("NamingRunner", () => {
       it("fails for [id] folder when allow_dynamic_routes is not set", async () => {
         runner.setConfig({
           enabled: true,
-          rules: [
-            { extensions: ["tsx"], file_case: "kebab-case", folder_case: "kebab-case" },
-          ],
+          rules: [{ extensions: ["tsx"], file_case: "kebab-case", folder_case: "kebab-case" }],
         });
 
         fs.mkdirSync(path.join(tempDir, "app", "[id]"), { recursive: true });
@@ -366,7 +338,12 @@ describe("NamingRunner", () => {
         runner.setConfig({
           enabled: true,
           rules: [
-            { extensions: ["tsx"], file_case: "kebab-case", folder_case: "kebab-case", allow_dynamic_routes: true },
+            {
+              extensions: ["tsx"],
+              file_case: "kebab-case",
+              folder_case: "kebab-case",
+              allow_dynamic_routes: true,
+            },
           ],
         });
 
@@ -382,7 +359,12 @@ describe("NamingRunner", () => {
         runner.setConfig({
           enabled: true,
           rules: [
-            { extensions: ["tsx"], file_case: "kebab-case", folder_case: "kebab-case", allow_dynamic_routes: true },
+            {
+              extensions: ["tsx"],
+              file_case: "kebab-case",
+              folder_case: "kebab-case",
+              allow_dynamic_routes: true,
+            },
           ],
         });
 
@@ -398,7 +380,12 @@ describe("NamingRunner", () => {
         runner.setConfig({
           enabled: true,
           rules: [
-            { extensions: ["tsx"], file_case: "kebab-case", folder_case: "kebab-case", allow_dynamic_routes: true },
+            {
+              extensions: ["tsx"],
+              file_case: "kebab-case",
+              folder_case: "kebab-case",
+              allow_dynamic_routes: true,
+            },
           ],
         });
 
@@ -415,7 +402,12 @@ describe("NamingRunner", () => {
         runner.setConfig({
           enabled: true,
           rules: [
-            { extensions: ["tsx"], file_case: "kebab-case", folder_case: "kebab-case", allow_dynamic_routes: true },
+            {
+              extensions: ["tsx"],
+              file_case: "kebab-case",
+              folder_case: "kebab-case",
+              allow_dynamic_routes: true,
+            },
           ],
         });
 
@@ -431,7 +423,12 @@ describe("NamingRunner", () => {
         runner.setConfig({
           enabled: true,
           rules: [
-            { extensions: ["tsx"], file_case: "kebab-case", folder_case: "kebab-case", allow_dynamic_routes: true },
+            {
+              extensions: ["tsx"],
+              file_case: "kebab-case",
+              folder_case: "kebab-case",
+              allow_dynamic_routes: true,
+            },
           ],
         });
 
@@ -447,7 +444,12 @@ describe("NamingRunner", () => {
         runner.setConfig({
           enabled: true,
           rules: [
-            { extensions: ["tsx"], file_case: "kebab-case", folder_case: "kebab-case", allow_dynamic_routes: true },
+            {
+              extensions: ["tsx"],
+              file_case: "kebab-case",
+              folder_case: "kebab-case",
+              allow_dynamic_routes: true,
+            },
           ],
         });
 
@@ -463,7 +465,12 @@ describe("NamingRunner", () => {
         runner.setConfig({
           enabled: true,
           rules: [
-            { extensions: ["tsx"], file_case: "kebab-case", folder_case: "kebab-case", allow_dynamic_routes: true },
+            {
+              extensions: ["tsx"],
+              file_case: "kebab-case",
+              folder_case: "kebab-case",
+              allow_dynamic_routes: true,
+            },
           ],
         });
 
@@ -479,7 +486,12 @@ describe("NamingRunner", () => {
         runner.setConfig({
           enabled: true,
           rules: [
-            { extensions: ["tsx"], file_case: "kebab-case", folder_case: "kebab-case", allow_dynamic_routes: true },
+            {
+              extensions: ["tsx"],
+              file_case: "kebab-case",
+              folder_case: "kebab-case",
+              allow_dynamic_routes: true,
+            },
           ],
         });
 
@@ -495,7 +507,12 @@ describe("NamingRunner", () => {
         runner.setConfig({
           enabled: true,
           rules: [
-            { extensions: ["tsx"], file_case: "kebab-case", folder_case: "kebab-case", allow_dynamic_routes: true },
+            {
+              extensions: ["tsx"],
+              file_case: "kebab-case",
+              folder_case: "kebab-case",
+              allow_dynamic_routes: true,
+            },
           ],
         });
 
@@ -511,7 +528,12 @@ describe("NamingRunner", () => {
         runner.setConfig({
           enabled: true,
           rules: [
-            { extensions: ["tsx"], file_case: "kebab-case", folder_case: "kebab-case", allow_dynamic_routes: true },
+            {
+              extensions: ["tsx"],
+              file_case: "kebab-case",
+              folder_case: "kebab-case",
+              allow_dynamic_routes: true,
+            },
           ],
         });
 
@@ -528,12 +550,22 @@ describe("NamingRunner", () => {
         runner.setConfig({
           enabled: true,
           rules: [
-            { extensions: ["tsx"], file_case: "kebab-case", folder_case: "kebab-case", allow_dynamic_routes: true },
+            {
+              extensions: ["tsx"],
+              file_case: "kebab-case",
+              folder_case: "kebab-case",
+              allow_dynamic_routes: true,
+            },
           ],
         });
 
-        fs.mkdirSync(path.join(tempDir, "app", "(dashboard)", "[team-id]", "settings"), { recursive: true });
-        fs.writeFileSync(path.join(tempDir, "app", "(dashboard)", "[team-id]", "settings", "page.tsx"), "");
+        fs.mkdirSync(path.join(tempDir, "app", "(dashboard)", "[team-id]", "settings"), {
+          recursive: true,
+        });
+        fs.writeFileSync(
+          path.join(tempDir, "app", "(dashboard)", "[team-id]", "settings", "page.tsx"),
+          ""
+        );
 
         const result = await runner.run(tempDir);
 
@@ -544,7 +576,12 @@ describe("NamingRunner", () => {
         runner.setConfig({
           enabled: true,
           rules: [
-            { extensions: ["tsx"], file_case: "kebab-case", folder_case: "kebab-case", allow_dynamic_routes: true },
+            {
+              extensions: ["tsx"],
+              file_case: "kebab-case",
+              folder_case: "kebab-case",
+              allow_dynamic_routes: true,
+            },
           ],
         });
 
@@ -562,9 +599,7 @@ describe("NamingRunner", () => {
       it("handles single-word file names", async () => {
         runner.setConfig({
           enabled: true,
-          rules: [
-            { extensions: ["ts"], file_case: "kebab-case", folder_case: "kebab-case" },
-          ],
+          rules: [{ extensions: ["ts"], file_case: "kebab-case", folder_case: "kebab-case" }],
         });
 
         fs.mkdirSync(path.join(tempDir, "src"));
@@ -579,9 +614,7 @@ describe("NamingRunner", () => {
       it("handles files with multiple extensions", async () => {
         runner.setConfig({
           enabled: true,
-          rules: [
-            { extensions: ["ts"], file_case: "kebab-case", folder_case: "kebab-case" },
-          ],
+          rules: [{ extensions: ["ts"], file_case: "kebab-case", folder_case: "kebab-case" }],
         });
 
         fs.mkdirSync(path.join(tempDir, "src"));
@@ -595,9 +628,7 @@ describe("NamingRunner", () => {
       it("skips files with empty base name", async () => {
         runner.setConfig({
           enabled: true,
-          rules: [
-            { extensions: ["ts"], file_case: "kebab-case", folder_case: "kebab-case" },
-          ],
+          rules: [{ extensions: ["ts"], file_case: "kebab-case", folder_case: "kebab-case" }],
         });
 
         // Files starting with . like .eslintrc.ts
@@ -623,9 +654,7 @@ describe("NamingRunner", () => {
     it("passes when config is valid", async () => {
       runner.setConfig({
         enabled: true,
-        rules: [
-          { extensions: ["ts"], file_case: "kebab-case", folder_case: "kebab-case" },
-        ],
+        rules: [{ extensions: ["ts"], file_case: "kebab-case", folder_case: "kebab-case" }],
       });
 
       const result = await runner.audit(tempDir);
@@ -645,9 +674,7 @@ describe("NamingRunner", () => {
     it("fails when rule has no extensions", async () => {
       runner.setConfig({
         enabled: true,
-        rules: [
-          { extensions: [], file_case: "kebab-case", folder_case: "kebab-case" },
-        ],
+        rules: [{ extensions: [], file_case: "kebab-case", folder_case: "kebab-case" }],
       });
 
       const result = await runner.audit(tempDir);

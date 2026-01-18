@@ -1,10 +1,7 @@
-import tseslint from 'typescript-eslint';
+import tseslint from "typescript-eslint";
 
-export default tseslint.config(
-  ...tseslint.configs.recommended,
-  {
-    rules: {
-      'no-var': 'error',
-    },
-  }
-);
+export default tseslint.config(...tseslint.configs.recommended, {
+  rules: {
+    "no-var": "error",
+  },
+});

@@ -34,10 +34,10 @@ Environment = ["dev", "stag", "prod"]
 
 ### Checks
 
-| Check | Description |
-|-------|-------------|
-| Required tags | All resources have required tags |
-| Tag values | Tags match allowed values (if specified) |
+| Check         | Description                              |
+| ------------- | ---------------------------------------- |
+| Required tags | All resources have required tags         |
+| Tag values    | Tags match allowed values (if specified) |
 
 ### Output
 
@@ -63,7 +63,10 @@ infra: 3 violation(s) found
 Uses AWS Resource Groups Tagging API:
 
 ```typescript
-import { ResourceGroupsTaggingAPIClient, GetResourcesCommand } from "@aws-sdk/client-resource-groups-tagging-api";
+import {
+  ResourceGroupsTaggingAPIClient,
+  GetResourcesCommand,
+} from "@aws-sdk/client-resource-groups-tagging-api";
 
 const client = new ResourceGroupsTaggingAPIClient({ region });
 const response = await client.send(new GetResourcesCommand({}));
@@ -87,13 +90,16 @@ const response = await client.send(new GetResourcesCommand({}));
 ```typescript
 // Unit test example
 import { mockClient } from "@aws-sdk/client-mock";
-import { ResourceGroupsTaggingAPIClient, GetResourcesCommand } from "@aws-sdk/client-resource-groups-tagging-api";
+import {
+  ResourceGroupsTaggingAPIClient,
+  GetResourcesCommand,
+} from "@aws-sdk/client-resource-groups-tagging-api";
 
 const mock = mockClient(ResourceGroupsTaggingAPIClient);
 mock.on(GetResourcesCommand).resolves({
   ResourceTagMappingList: [
-    { ResourceARN: "arn:aws:s3:::my-bucket", Tags: [{ Key: "Environment", Value: "prod" }] }
-  ]
+    { ResourceARN: "arn:aws:s3:::my-bucket", Tags: [{ Key: "Environment", Value: "prod" }] },
+  ],
 });
 ```
 
@@ -119,4 +125,3 @@ cm infra check
 # Audit - verify tagging config exists
 cm infra audit
 ```
-

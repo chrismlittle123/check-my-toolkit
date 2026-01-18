@@ -105,7 +105,12 @@ describe("Violation builder", () => {
 
   describe("warning", () => {
     it("creates warning violation with code", () => {
-      const violation = Violation.warning("code.linting", "eslint", "Warning message", "prefer-const");
+      const violation = Violation.warning(
+        "code.linting",
+        "eslint",
+        "Warning message",
+        "prefer-const"
+      );
 
       expect(violation).toEqual({
         rule: "code.linting",

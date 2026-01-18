@@ -1,8 +1,8 @@
 export default [
   {
-    files: ['**/*.ts', '**/*.js'],
+    files: ["**/*.ts", "**/*.js"],
     rules: {
-      'no-var': 'error',
+      "no-var": "error",
     },
   },
 ];

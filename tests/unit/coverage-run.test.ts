@@ -168,11 +168,7 @@ describe("CoverageRunRunner", () => {
 
       await runner.run(tempDir);
 
-      expect(mockExeca).toHaveBeenCalledWith(
-        "npm",
-        ["run", "test:cov"],
-        expect.any(Object)
-      );
+      expect(mockExeca).toHaveBeenCalledWith("npm", ["run", "test:cov"], expect.any(Object));
     });
   });
 

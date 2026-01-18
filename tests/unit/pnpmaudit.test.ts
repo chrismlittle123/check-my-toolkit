@@ -295,9 +295,7 @@ describe("PnpmAuditRunner", () => {
     it("skips when pnpm is not installed", async () => {
       fs.writeFileSync(path.join(tempDir, "pnpm-lock.yaml"), "lockfileVersion: 6.0");
 
-      mockedExeca.mockRejectedValueOnce(
-        Object.assign(new Error("ENOENT"), { code: "ENOENT" })
-      );
+      mockedExeca.mockRejectedValueOnce(Object.assign(new Error("ENOENT"), { code: "ENOENT" }));
 
       const result = await runner.run(tempDir);
 

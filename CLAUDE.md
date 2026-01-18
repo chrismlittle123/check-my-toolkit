@@ -5,6 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with th
 ## Project Overview
 
 check-my-toolkit is a unified CLI tool (`cm`) for project health checks. It implements three domains:
+
 - **CODE** - 14 tools for linting, formatting, type checking, security, and code quality
 - **PROCESS** - 12 workflow checks for git hooks, CI, PRs, branches, commits, documentation, and repository settings
 - **INFRA** - AWS resource tagging validation
@@ -89,9 +90,11 @@ enabled = true
 ### Creating a Feature/Fix
 
 1. **Create a branch** following the naming convention:
+
    ```
    (feature|fix|hotfix|docs)/vX.Y.Z/description
    ```
+
    Examples:
    - `feature/v0.2.0/add-knip-integration`
    - `fix/v0.1.3/eslint-parsing-error`
@@ -100,6 +103,7 @@ enabled = true
 2. **Make your changes** on the branch
 
 3. **Create a changeset** (required for any code changes):
+
    ```bash
    # Creates .changeset/<random-name>.md
    pnpm exec changeset
@@ -117,12 +121,12 @@ enabled = true
 
 Format: `(feature|fix|hotfix|docs)/vX.Y.Z/description`
 
-| Prefix | Use For |
-|--------|---------|
-| `feature/` | New functionality |
-| `fix/` | Bug fixes |
-| `hotfix/` | Critical production fixes |
-| `docs/` | Documentation only |
+| Prefix     | Use For                   |
+| ---------- | ------------------------- |
+| `feature/` | New functionality         |
+| `fix/`     | Bug fixes                 |
+| `hotfix/`  | Critical production fixes |
+| `docs/`    | Documentation only        |
 
 The version should be the target version this change will be included in.
 
@@ -133,6 +137,7 @@ Uses changesets for versioning and automated npm publishing.
 ### Creating a New Version/Patch
 
 1. **Create a changeset** describing your changes:
+
    ```bash
    # Option 1: Interactive mode
    pnpm exec changeset
@@ -145,19 +150,23 @@ Uses changesets for versioning and automated npm publishing.
    ```
 
 2. **Update CHANGELOG.md** with your changes under `[Unreleased]`:
+
    ```markdown
    ## [Unreleased]
 
    ### Added
+
    - Your new feature
 
    ### Fixed
+
    - Bug you fixed
    ```
 
 3. **Update version in src/cli.ts** (the VERSION constant)
 
 4. **Commit and push** your changes:
+
    ```bash
    git add .
    git commit -m "feat: your change description"
@@ -182,6 +191,7 @@ Uses changesets for versioning and automated npm publishing.
 **If npm publish doesn't trigger after merging to main, you probably forgot to create a changeset.**
 
 How changesets work:
+
 1. You create a `.changeset/*.md` file describing your change
 2. The Release workflow runs `pnpm exec changeset publish`
 3. If there are pending changesets → version bump + npm publish

@@ -239,7 +239,9 @@ describe("RepoRunner", () => {
 
         const result = await runner.run(tempDir);
         expect(result.passed).toBe(false);
-        expect(result.violations.some((v) => v.rule.includes("require_code_owner_reviews"))).toBe(true);
+        expect(result.violations.some((v) => v.rule.includes("require_code_owner_reviews"))).toBe(
+          true
+        );
       });
 
       it("fails when required status checks are missing", async () => {
@@ -287,7 +289,9 @@ describe("RepoRunner", () => {
 
         const result = await runner.run(tempDir);
         expect(result.passed).toBe(false);
-        expect(result.violations.some((v) => v.rule.includes("require_branches_up_to_date"))).toBe(true);
+        expect(result.violations.some((v) => v.rule.includes("require_branches_up_to_date"))).toBe(
+          true
+        );
       });
 
       it("fails when require_signed_commits not enabled", async () => {
@@ -338,9 +342,7 @@ describe("RepoRunner", () => {
         // Verify the API was called with the custom branch
         expect(mockedExeca).toHaveBeenCalledWith(
           "gh",
-          expect.arrayContaining([
-            expect.stringContaining("develop/protection"),
-          ])
+          expect.arrayContaining([expect.stringContaining("develop/protection")])
         );
       });
     });

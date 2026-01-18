@@ -60,7 +60,16 @@ describe("GitleaksRunner", () => {
 
       expect(mockedExeca).toHaveBeenCalledWith(
         "gitleaks",
-        ["detect", "--source", ".", "--report-format", "json", "--report-path", "/dev/stdout", "--no-git"],
+        [
+          "detect",
+          "--source",
+          ".",
+          "--report-format",
+          "json",
+          "--report-path",
+          "/dev/stdout",
+          "--no-git",
+        ],
         expect.objectContaining({
           cwd: tempDir,
           reject: false,

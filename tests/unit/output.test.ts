@@ -1,11 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  formatJson,
-  formatOutput,
-  formatText,
-  type OutputFormat,
-} from "../../src/output/index.js";
+import { formatJson, formatOutput, formatText, type OutputFormat } from "../../src/output/index.js";
 import type { DomainResult, FullResult, Violation } from "../../src/types/index.js";
 
 function createFullResult(overrides: Partial<FullResult> = {}): FullResult {

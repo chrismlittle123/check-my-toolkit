@@ -38,13 +38,15 @@ describe("TaggingRunner", () => {
 
   it("passes when all resources have required tags", async () => {
     taggingMock.on(GetResourcesCommand).resolves({
-      ResourceTagMappingList: [{
-        ResourceARN: "arn:aws:s3:::my-bucket",
-        Tags: [
-          { Key: "Environment", Value: "prod" },
-          { Key: "Owner", Value: "team-a" },
-        ],
-      }],
+      ResourceTagMappingList: [
+        {
+          ResourceARN: "arn:aws:s3:::my-bucket",
+          Tags: [
+            { Key: "Environment", Value: "prod" },
+            { Key: "Owner", Value: "team-a" },
+          ],
+        },
+      ],
     });
 
     runner.setConfig({ enabled: true, required: ["Environment", "Owner"] });
@@ -70,10 +72,12 @@ describe("TaggingRunner", () => {
 
   it("fails when resources are missing required tags", async () => {
     taggingMock.on(GetResourcesCommand).resolves({
-      ResourceTagMappingList: [{
-        ResourceARN: "arn:aws:s3:::my-bucket",
-        Tags: [{ Key: "Environment", Value: "prod" }],
-      }],
+      ResourceTagMappingList: [
+        {
+          ResourceARN: "arn:aws:s3:::my-bucket",
+          Tags: [{ Key: "Environment", Value: "prod" }],
+        },
+      ],
     });
 
     runner.setConfig({ enabled: true, required: ["Environment", "Owner", "CostCenter"] });
@@ -90,10 +94,12 @@ describe("TaggingRunner", () => {
 
   it("fails when tag value is not in allowed list", async () => {
     taggingMock.on(GetResourcesCommand).resolves({
-      ResourceTagMappingList: [{
-        ResourceARN: "arn:aws:s3:::my-bucket",
-        Tags: [{ Key: "Environment", Value: "production" }],
-      }],
+      ResourceTagMappingList: [
+        {
+          ResourceARN: "arn:aws:s3:::my-bucket",
+          Tags: [{ Key: "Environment", Value: "production" }],
+        },
+      ],
     });
 
     runner.setConfig({
@@ -113,10 +119,12 @@ describe("TaggingRunner", () => {
 
   it("passes when tag value is in allowed list", async () => {
     taggingMock.on(GetResourcesCommand).resolves({
-      ResourceTagMappingList: [{
-        ResourceARN: "arn:aws:s3:::my-bucket",
-        Tags: [{ Key: "Environment", Value: "prod" }],
-      }],
+      ResourceTagMappingList: [
+        {
+          ResourceARN: "arn:aws:s3:::my-bucket",
+          Tags: [{ Key: "Environment", Value: "prod" }],
+        },
+      ],
     });
 
     runner.setConfig({
@@ -162,17 +170,21 @@ describe("TaggingRunner", () => {
     taggingMock
       .on(GetResourcesCommand)
       .resolvesOnce({
-        ResourceTagMappingList: [{
-          ResourceARN: "arn:aws:s3:::bucket-1",
-          Tags: [{ Key: "Environment", Value: "prod" }],
-        }],
+        ResourceTagMappingList: [
+          {
+            ResourceARN: "arn:aws:s3:::bucket-1",
+            Tags: [{ Key: "Environment", Value: "prod" }],
+          },
+        ],
         PaginationToken: "token-1",
       })
       .resolvesOnce({
-        ResourceTagMappingList: [{
-          ResourceARN: "arn:aws:s3:::bucket-2",
-          Tags: [{ Key: "Environment", Value: "prod" }],
-        }],
+        ResourceTagMappingList: [
+          {
+            ResourceARN: "arn:aws:s3:::bucket-2",
+            Tags: [{ Key: "Environment", Value: "prod" }],
+          },
+        ],
       });
 
     runner.setConfig({ enabled: true, required: ["Environment"] });
@@ -197,10 +209,12 @@ describe("TaggingRunner", () => {
 
   it("handles resource with undefined ARN", async () => {
     taggingMock.on(GetResourcesCommand).resolves({
-      ResourceTagMappingList: [{
-        // No ResourceARN
-        Tags: [],
-      }],
+      ResourceTagMappingList: [
+        {
+          // No ResourceARN
+          Tags: [],
+        },
+      ],
     });
 
     runner.setConfig({ enabled: true, required: ["Environment"] });
@@ -213,10 +227,12 @@ describe("TaggingRunner", () => {
 
   it("audit delegates to run", async () => {
     taggingMock.on(GetResourcesCommand).resolves({
-      ResourceTagMappingList: [{
-        ResourceARN: "arn:aws:s3:::my-bucket",
-        Tags: [{ Key: "Environment", Value: "prod" }],
-      }],
+      ResourceTagMappingList: [
+        {
+          ResourceARN: "arn:aws:s3:::my-bucket",
+          Tags: [{ Key: "Environment", Value: "prod" }],
+        },
+      ],
     });
 
     runner.setConfig({ enabled: true, required: ["Environment"] });

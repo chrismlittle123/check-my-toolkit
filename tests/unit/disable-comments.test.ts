@@ -39,10 +39,7 @@ describe("DisableCommentsRunner", () => {
 
   describe("run with default patterns", () => {
     it("passes when no disable comments exist", async () => {
-      fs.writeFileSync(
-        path.join(tempDir, "clean.ts"),
-        `const x = 1;\nconsole.log(x);\n`
-      );
+      fs.writeFileSync(path.join(tempDir, "clean.ts"), `const x = 1;\nconsole.log(x);\n`);
 
       const result = await runner.run(tempDir);
 
@@ -51,10 +48,7 @@ describe("DisableCommentsRunner", () => {
     });
 
     it("detects eslint-disable comment", async () => {
-      fs.writeFileSync(
-        path.join(tempDir, "bad.ts"),
-        `// eslint-disable\nconst x = 1;\n`
-      );
+      fs.writeFileSync(path.join(tempDir, "bad.ts"), `// eslint-disable\nconst x = 1;\n`);
 
       const result = await runner.run(tempDir);
 
@@ -66,10 +60,7 @@ describe("DisableCommentsRunner", () => {
     });
 
     it("detects eslint-disable-line comment", async () => {
-      fs.writeFileSync(
-        path.join(tempDir, "bad.ts"),
-        `const x = 1; // eslint-disable-line\n`
-      );
+      fs.writeFileSync(path.join(tempDir, "bad.ts"), `const x = 1; // eslint-disable-line\n`);
 
       const result = await runner.run(tempDir);
 
@@ -79,10 +70,7 @@ describe("DisableCommentsRunner", () => {
     });
 
     it("detects eslint-disable-next-line comment", async () => {
-      fs.writeFileSync(
-        path.join(tempDir, "bad.ts"),
-        `// eslint-disable-next-line\nconst x = 1;\n`
-      );
+      fs.writeFileSync(path.join(tempDir, "bad.ts"), `// eslint-disable-next-line\nconst x = 1;\n`);
 
       const result = await runner.run(tempDir);
 
@@ -92,10 +80,7 @@ describe("DisableCommentsRunner", () => {
     });
 
     it("detects @ts-ignore comment", async () => {
-      fs.writeFileSync(
-        path.join(tempDir, "bad.ts"),
-        `// @ts-ignore\nconst x: string = 1;\n`
-      );
+      fs.writeFileSync(path.join(tempDir, "bad.ts"), `// @ts-ignore\nconst x: string = 1;\n`);
 
       const result = await runner.run(tempDir);
 
@@ -105,10 +90,7 @@ describe("DisableCommentsRunner", () => {
     });
 
     it("detects @ts-expect-error comment", async () => {
-      fs.writeFileSync(
-        path.join(tempDir, "bad.ts"),
-        `// @ts-expect-error\nconst x: string = 1;\n`
-      );
+      fs.writeFileSync(path.join(tempDir, "bad.ts"), `// @ts-expect-error\nconst x: string = 1;\n`);
 
       const result = await runner.run(tempDir);
 
@@ -118,10 +100,7 @@ describe("DisableCommentsRunner", () => {
     });
 
     it("detects @ts-nocheck comment", async () => {
-      fs.writeFileSync(
-        path.join(tempDir, "bad.ts"),
-        `// @ts-nocheck\nconst x = 1;\n`
-      );
+      fs.writeFileSync(path.join(tempDir, "bad.ts"), `// @ts-nocheck\nconst x = 1;\n`);
 
       const result = await runner.run(tempDir);
 
@@ -131,10 +110,7 @@ describe("DisableCommentsRunner", () => {
     });
 
     it("detects # noqa comment in Python", async () => {
-      fs.writeFileSync(
-        path.join(tempDir, "bad.py"),
-        `x = 1  # noqa\n`
-      );
+      fs.writeFileSync(path.join(tempDir, "bad.py"), `x = 1  # noqa\n`);
 
       const result = await runner.run(tempDir);
 
@@ -145,10 +121,7 @@ describe("DisableCommentsRunner", () => {
     });
 
     it("detects # type: ignore comment in Python", async () => {
-      fs.writeFileSync(
-        path.join(tempDir, "bad.py"),
-        `x: str = 1  # type: ignore\n`
-      );
+      fs.writeFileSync(path.join(tempDir, "bad.py"), `x: str = 1  # type: ignore\n`);
 
       const result = await runner.run(tempDir);
 
@@ -158,10 +131,7 @@ describe("DisableCommentsRunner", () => {
     });
 
     it("detects # pylint: disable comment", async () => {
-      fs.writeFileSync(
-        path.join(tempDir, "bad.py"),
-        `# pylint: disable=C0111\ndef foo(): pass\n`
-      );
+      fs.writeFileSync(path.join(tempDir, "bad.py"), `# pylint: disable=C0111\ndef foo(): pass\n`);
 
       const result = await runner.run(tempDir);
 
@@ -171,10 +141,7 @@ describe("DisableCommentsRunner", () => {
     });
 
     it("detects prettier-ignore comment", async () => {
-      fs.writeFileSync(
-        path.join(tempDir, "bad.ts"),
-        `// prettier-ignore\nconst x={a:1,b:2};\n`
-      );
+      fs.writeFileSync(path.join(tempDir, "bad.ts"), `// prettier-ignore\nconst x={a:1,b:2};\n`);
 
       const result = await runner.run(tempDir);
 
@@ -206,10 +173,7 @@ describe("DisableCommentsRunner", () => {
     });
 
     it("reports only first pattern per line", async () => {
-      fs.writeFileSync(
-        path.join(tempDir, "bad.ts"),
-        `// eslint-disable @ts-ignore\n`
-      );
+      fs.writeFileSync(path.join(tempDir, "bad.ts"), `// eslint-disable @ts-ignore\n`);
 
       const result = await runner.run(tempDir);
 
@@ -272,10 +236,7 @@ describe("DisableCommentsRunner", () => {
   describe("exclude patterns", () => {
     it("excludes node_modules by default", async () => {
       fs.mkdirSync(path.join(tempDir, "node_modules"));
-      fs.writeFileSync(
-        path.join(tempDir, "node_modules", "bad.ts"),
-        `// @ts-ignore\n`
-      );
+      fs.writeFileSync(path.join(tempDir, "node_modules", "bad.ts"), `// @ts-ignore\n`);
 
       const result = await runner.run(tempDir);
 
@@ -408,10 +369,7 @@ describe("DisableCommentsRunner", () => {
 
     it("handles files in subdirectories", async () => {
       fs.mkdirSync(path.join(tempDir, "src", "components"), { recursive: true });
-      fs.writeFileSync(
-        path.join(tempDir, "src", "components", "bad.ts"),
-        `// @ts-ignore\n`
-      );
+      fs.writeFileSync(path.join(tempDir, "src", "components", "bad.ts"), `// @ts-ignore\n`);
 
       const result = await runner.run(tempDir);
 

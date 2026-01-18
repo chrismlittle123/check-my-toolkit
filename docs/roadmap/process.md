@@ -27,12 +27,15 @@ The PROCESS domain validates development workflow compliance.
 ## Implemented Features
 
 ### `[process.hooks]` ✅
+
 Verify Husky git hooks are installed and configured.
 
 ### `[process.ci]` ✅
+
 Verify GitHub workflows exist with required jobs and actions.
 
 ### `[process.branches]` ✅
+
 Enforce branch naming conventions via regex patterns.
 
 ```toml
@@ -43,6 +46,7 @@ exclude = ["main", "master", "develop"]
 ```
 
 ### `[process.commits]` ✅
+
 Enforce commit message format (conventional commits or custom patterns).
 
 ```toml
@@ -59,6 +63,7 @@ max_subject_length = 72
 **Git hook command:** `cm process check-commit .git/COMMIT_EDITMSG`
 
 ### `[process.changesets]` ✅
+
 Validate changeset files for versioning.
 
 ```toml
@@ -73,21 +78,26 @@ min_description_length = 10
 ```
 
 **Checks:**
+
 - Frontmatter format is valid
 - Package names exist in workspace
 - Bump types are allowed
 - Description meets requirements
 
 ### `[process.pr]` ✅
+
 Enforce PR size limits (files and lines changed).
 
 ### `[process.tickets]` ✅
+
 Require ticket references (Linear, Jira) in PRs.
 
 ### `[process.coverage]` ✅
+
 Verify coverage thresholds are configured.
 
 ### `[process.repo]` ✅
+
 Verify branch protection is configured via GitHub API.
 
 ```toml
@@ -106,6 +116,7 @@ enforce_admins = true
 ```
 
 ### `[process.codeowners]` ✅
+
 Validate CODEOWNERS file contains required rules.
 
 ```toml
@@ -126,11 +137,13 @@ owners = ["@myorg/typescript-team"]
 ```
 
 **Checks:**
+
 - CODEOWNERS file exists (`.github/CODEOWNERS`, `CODEOWNERS`, or `docs/CODEOWNERS`)
 - All configured rules exist with exact owner match
 - Reports rules in CODEOWNERS not defined in config
 
 ### `cm process sync` ✅
+
 Sync branch protection settings from check.toml to GitHub.
 
 ```bash
@@ -139,6 +152,7 @@ cm process sync --apply  # Apply changes
 ```
 
 ### `[process.backups]` ✅
+
 Verify repository backups exist in S3 and are recent.
 
 ```toml
@@ -151,9 +165,9 @@ max_age_hours = 24
 
 ### Checks
 
-| Check | Description |
-|-------|-------------|
-| Backup exists | Files exist at S3 location |
+| Check          | Description                              |
+| -------------- | ---------------------------------------- |
+| Backup exists  | Files exist at S3 location               |
 | Backup recency | Most recent file is within max_age_hours |
 
 ### Output
@@ -174,10 +188,12 @@ Uses AWS S3 SDK:
 import { S3Client, ListObjectsV2Command } from "@aws-sdk/client-s3";
 
 const client = new S3Client({ region });
-const response = await client.send(new ListObjectsV2Command({
-  Bucket: bucket,
-  Prefix: prefix,
-}));
+const response = await client.send(
+  new ListObjectsV2Command({
+    Bucket: bucket,
+    Prefix: prefix,
+  })
+);
 // Check most recent object's LastModified
 ```
 
@@ -203,7 +219,7 @@ import { S3Client, ListObjectsV2Command } from "@aws-sdk/client-s3";
 
 const mock = mockClient(S3Client);
 mock.on(ListObjectsV2Command).resolves({
-  Contents: [{ Key: "backup.tar.gz", LastModified: new Date() }]
+  Contents: [{ Key: "backup.tar.gz", LastModified: new Date() }],
 });
 ```
 
@@ -212,22 +228,26 @@ mock.on(ListObjectsV2Command).resolves({
 ## Planned Features
 
 ### `[process.docs]` 📋
+
 Documentation governance - enforce structure, content patterns, freshness, and prevent sprawl.
 
 #### Core Capabilities
 
 **1. Structure Enforcement**
+
 - Allowlist of markdown files permitted outside `docs/` (e.g., README.md, CLAUDE.md, CONTRIBUTING.md)
 - All other markdown must live in configured docs path
 - Configurable file count and size limits (no defaults, must be explicit)
 
 **2. Content Validation**
+
 - Required frontmatter schema per doc type (declared via `type:` in frontmatter)
 - Required sections/headings per doc type (api, guide, reference, changelog)
 - Template matching - docs must follow structure for their declared type
 - Warn on broken internal links between docs
 
 **3. Freshness Tracking**
+
 - Layered docs-to-code mapping:
   1. **Frontmatter `tracks:`** - explicit file/glob patterns
   2. **Convention fallback** - `docs/foo.md` → `src/foo/`
@@ -236,6 +256,7 @@ Documentation governance - enforce structure, content patterns, freshness, and p
 - PR enforcement: configurable blocking when code changes lack doc updates
 
 **4. API Coverage**
+
 - Track % of exported functions/types with documentation
 - Detailed report listing undocumented exports with `file:line` locations
 - Configurable minimum coverage threshold
@@ -291,20 +312,21 @@ tracks:
 ---
 
 ## Overview
+
 ...
 ```
 
 #### Checks
 
-| Check | Description |
-|-------|-------------|
-| Structure | Markdown files only in docs/ or allowlist |
-| Limits | File count, line count, total size within bounds |
-| Frontmatter | Required fields present per doc type |
-| Sections | Required headings present per doc type |
-| Links | Internal links resolve to existing docs |
-| Freshness | Docs updated when tracked code changes |
-| Coverage | Exported APIs have documentation |
+| Check       | Description                                      |
+| ----------- | ------------------------------------------------ |
+| Structure   | Markdown files only in docs/ or allowlist        |
+| Limits      | File count, line count, total size within bounds |
+| Frontmatter | Required fields present per doc type             |
+| Sections    | Required headings present per doc type           |
+| Links       | Internal links resolve to existing docs          |
+| Freshness   | Docs updated when tracked code changes           |
+| Coverage    | Exported APIs have documentation                 |
 
 #### Output
 
@@ -327,18 +349,18 @@ process.docs: failed (2 violations)
 
 ## Implementation Status
 
-| Feature | Status |
-|---------|--------|
-| `[process.hooks]` | ✅ Done |
-| `[process.ci]` | ✅ Done |
-| `[process.branches]` | ✅ Done |
-| `[process.commits]` | ✅ Done |
-| `[process.changesets]` | ✅ Done |
-| `[process.pr]` | ✅ Done |
-| `[process.tickets]` | ✅ Done |
-| `[process.coverage]` | ✅ Done |
-| `[process.repo]` | ✅ Done |
-| `[process.codeowners]` | ✅ Done |
-| `cm process sync` | ✅ Done |
-| `[process.backups]` | ✅ Done |
-| `[process.docs]` | 📋 Planned |
+| Feature                | Status     |
+| ---------------------- | ---------- |
+| `[process.hooks]`      | ✅ Done    |
+| `[process.ci]`         | ✅ Done    |
+| `[process.branches]`   | ✅ Done    |
+| `[process.commits]`    | ✅ Done    |
+| `[process.changesets]` | ✅ Done    |
+| `[process.pr]`         | ✅ Done    |
+| `[process.tickets]`    | ✅ Done    |
+| `[process.coverage]`   | ✅ Done    |
+| `[process.repo]`       | ✅ Done    |
+| `[process.codeowners]` | ✅ Done    |
+| `cm process sync`      | ✅ Done    |
+| `[process.backups]`    | ✅ Done    |
+| `[process.docs]`       | 📋 Planned |

@@ -11,7 +11,6 @@
 ### Minor Changes
 
 - 24bd7a1: Replace npmaudit with pnpmaudit and add exclude_dev option
-
   - Remove npm audit support, keep only pnpm audit
   - Add `exclude_dev` config option (default: true) to skip dev dependencies
   - Uses `--prod` flag when exclude_dev is enabled
@@ -29,7 +28,6 @@
 - 1c28cd4: feat: implement process.docs documentation governance
 
   Adds documentation governance feature to the PROCESS domain with:
-
   - Structure enforcement (allowlist, max_files, max_file_lines, max_total_kb)
   - Content validation (frontmatter, required sections, internal links)
   - Freshness tracking (git-based staleness detection)
@@ -40,7 +38,6 @@
 ### Patch Changes
 
 - f827bdc: Remove unused exports flagged by knip
-
   - Remove unused export `CoverageRunRunner` from src/code/index.ts
   - Remove unused re-exports `detectProjects` and `DetectedProject` from src/projects/index.ts
   - Remove unused export `AuthMethod` from src/config/registry.ts
@@ -72,13 +69,11 @@
   **Breaking Change**: The `[code.tests]` configuration is no longer supported. Use `[code.coverage_run]` instead, which actually runs tests and validates coverage thresholds.
 
   **Test workflow improvements**:
-
   - CI now runs unit and e2e tests as separate steps for better visibility
   - Pre-push hook no longer runs tests (faster local workflow)
   - Default `pnpm test` now runs only unit tests (~43s vs ~7min)
 
   New test scripts:
-
   - `pnpm test` - Unit tests only (fast, for local dev)
   - `pnpm test:watch` - Unit tests in watch mode
   - `pnpm test:e2e` - E2E tests only
@@ -95,7 +90,6 @@
 ### Minor Changes
 
 - 0b41030: Add private registry support for configuration inheritance. You can now use private GitHub repositories as config registries:
-
   - **Token authentication**: Set `GITHUB_TOKEN` or `CM_REGISTRY_TOKEN` environment variable, or use `github+token:owner/repo` URL
   - **SSH authentication**: Use `github+ssh:owner/repo` URL or auto-detect via SSH agent (`SSH_AUTH_SOCK`)
   - **Auto-detection**: When using `github:owner/repo`, authentication method is automatically detected based on available credentials
@@ -111,7 +105,6 @@
 ### Minor Changes
 
 - 446a2c0: Add protected branch push prevention hook validation
-
   - Add `protected_branches` config option to `process.hooks` section
   - Validates that pre-push hook exists when protected branches are configured
   - Verifies hook contains branch detection logic (git rev-parse, git branch --show-current, etc.)
@@ -123,7 +116,6 @@
 ### Minor Changes
 
 - caae2d2: Add test location validation with `required_dir` option
-
   - Add `required_dir` config option to `code.tests` section
   - Validates that the required directory exists
   - Scopes test file search to only the required directory
@@ -135,7 +127,6 @@
 ### Minor Changes
 
 - 172bb1f: Add test coverage verification feature (`code.coverage_run`)
-
   - Runs actual test suite with coverage during `cm code check`
   - Supports vitest, jest, and pytest (auto-detected or configurable)
   - Verifies coverage meets a configurable minimum threshold (default 80%)
@@ -159,7 +150,6 @@
 ### Minor Changes
 
 - f08b2f9: Add CODEOWNERS validation with registry inheritance
-
   - New `[process.codeowners]` config section for defining required CODEOWNERS rules
   - Validates CODEOWNERS file contains all configured rules with exact owner match
   - Fails if CODEOWNERS has rules not defined in config
@@ -171,7 +161,6 @@
 ### Patch Changes
 
 - 78f6d89: Dogfood hook commands in project's own git hooks
-
   - Add commit-msg hook using `cm process check-commit`
   - Add check-branch to pre-push hook
   - Update check.toml to require these hooks
@@ -181,7 +170,6 @@
 ### Minor Changes
 
 - ea95bfb: Add hook-specific commands for git workflow validation
-
   - `cm process check-branch` - Validates current branch name against configured pattern (for pre-push hooks)
   - `cm process check-commit <file>` - Validates commit message format and ticket references (for commit-msg hooks)
 
@@ -218,7 +206,6 @@
 - ad3c045: Add infra.tagging for AWS resource tag validation
 
   New INFRA domain with AWS resource tagging enforcement:
-
   - Uses AWS Resource Groups Tagging API to verify resources have required tags
   - Supports allowed values validation for specific tags
   - New CLI commands: `cm infra check` and `cm infra audit`
@@ -229,7 +216,6 @@
 ### Minor Changes
 
 - 3a61bba: Add `[process.backups]` for S3 backup verification
-
   - Verify backups exist at configured S3 location
   - Check most recent backup is within `max_age_hours` threshold
   - Configuration: `bucket`, `prefix`, `max_age_hours`, `region`
@@ -241,7 +227,6 @@
 ### Minor Changes
 
 - 87f9cdc: Add `cm process diff` and `cm process sync` commands for GitHub branch protection synchronization
-
   - `cm process diff` shows differences between current GitHub settings and check.toml config
   - `cm process sync` previews changes (requires `--apply` flag to actually apply)
   - Supports configuring: required_reviews, dismiss_stale_reviews, require_code_owner_reviews, require_status_checks, require_branches_up_to_date, require_signed_commits, enforce_admins
@@ -268,7 +253,6 @@
 ### Minor Changes
 
 - 2cb2fc2: Add process.tickets feature for commit message ticket reference validation
-
   - Validates commit messages contain ticket references matching a pattern
   - Optionally validates branch names contain ticket references
   - Configuration: `[process.tickets]` with `pattern`, `require_in_commits`, `require_in_branch`
@@ -278,7 +262,6 @@
 ### Minor Changes
 
 - ba6577f: Add process.pr feature for PR size validation
-
   - New `[process.pr]` configuration to enforce PR size limits
   - `max_files`: Maximum number of files changed in a PR
   - `max_lines`: Maximum total lines changed (additions + deletions)
@@ -291,7 +274,6 @@
 ### Minor Changes
 
 - 0359fd5: Add process.branches validation for branch naming conventions
-
   - Validate current branch name against a regex pattern
   - Support exclude list for branches like main/master/develop
   - Uses git CLI for universal compatibility (works with any git host)
@@ -301,7 +283,6 @@
 ### Minor Changes
 
 - e100771: Add process.ci validation for GitHub Actions workflows
-
   - Check that required workflow files exist in `.github/workflows/`
   - Validate required jobs exist in workflow YAML files
   - Validate required actions are used in workflow steps
@@ -316,13 +297,11 @@
   Introduces the PROCESS domain for workflow enforcement, starting with git hooks validation:
 
   **New Features:**
-
   - `cm process check` - Run workflow validation (hooks, CI, etc.)
   - `cm process audit` - Verify workflow configs exist
   - `cm check` now runs both CODE and PROCESS domains
 
   **Git Hooks Configuration (`[process.hooks]`):**
-
   - `require_husky` - Verify .husky/ directory exists
   - `require_hooks` - List of required hook files (e.g., pre-commit, pre-push)
   - `commands` - Verify hooks contain specific commands
@@ -341,7 +320,6 @@
   ```
 
   **Violations Detected:**
-
   - Missing husky installation
   - Missing required hook files
   - Hook files missing required commands
@@ -355,14 +333,12 @@
   New check under `[code.quality.disable-comments]` that detects and reports disable comments across multiple linters:
 
   **Default patterns detected:**
-
   - ESLint: `eslint-disable`, `eslint-disable-line`, `eslint-disable-next-line`
   - TypeScript: `@ts-ignore`, `@ts-expect-error`, `@ts-nocheck`
   - Python: `# noqa`, `# type: ignore`, `# pylint: disable`, `# pragma: no cover`
   - Prettier: `prettier-ignore`
 
   **Configuration options:**
-
   - `patterns` - Override default patterns to detect
   - `extensions` - File extensions to scan (default: ts, tsx, js, jsx, py)
   - `exclude` - Glob patterns to exclude from scanning
@@ -380,9 +356,7 @@
 ### Patch Changes
 
 - d667914: fix: documentation and schema validation bugs
-
   - **README.md**: Fixed incorrect config names in documentation
-
     - `[code.security.gitleaks]` → `[code.security.secrets]`
     - `[code.security.npm-audit]` → `[code.security.npmaudit]`
     - `[code.security.pip-audit]` → `[code.security.pipaudit]`
@@ -392,7 +366,6 @@
   - **Schema**: Changed `min_test_files` from `.positive()` to `.nonnegative()` to allow 0
 
 - d667914: fix: resolve three real bugs
-
   - Fix numeric filenames (e.g., 404.tsx, 500.tsx) failing naming validation - common for Next.js error pages
   - Fix tsconfig.json with comments (JSONC) failing to parse during audit
   - Fix gitleaks custom config files (.gitleaks.toml, gitleaks.toml) being ignored
@@ -402,7 +375,6 @@
 ### Minor Changes
 
 - 5253124: feat: add pnpm support for dependency audit
-
   - Auto-detect package manager by checking for lock files (pnpm-lock.yaml, package-lock.json)
   - Run appropriate audit command (`pnpm audit` or `npm audit`) based on detected package manager
   - Parse both npm and pnpm audit output formats
@@ -417,7 +389,6 @@
   Added eslint-plugin-import and configured 8 high-signal rules that catch real bugs:
 
   **Bug Prevention:**
-
   - `import/no-cycle` - Detect circular dependencies (architecture rot)
   - `array-callback-return` - Catch missing returns in .map(), .filter(), etc.
   - `no-template-curly-in-string` - Catch wrong quotes on template literals
@@ -427,7 +398,6 @@
   - `@typescript-eslint/no-non-null-assertion` - Prevent false confidence from ! assertions
 
   **Code Quality:**
-
   - `max-params` - Force better function design (max 4 parameters)
 
   All rules are now audited via `cm code audit` to ensure eslint.config.js matches requirements.
@@ -490,7 +460,6 @@
 ### Patch Changes
 
 - a09220b: Add e2e tests for ESLint rules audit feature
-
   - Added 4 e2e test fixtures for ESLint rules audit scenarios
   - Tests cover: rules matching, missing rules, wrong severity, multiple violations
 
@@ -499,7 +468,6 @@
 ### Minor Changes
 
 - d7f1e9c: Add ESLint rules audit to `cm code audit` command
-
   - Added `rules` option to ESLint config in check.toml schema
   - `cm code audit` now verifies that ESLint rules match the required rules from check.toml
   - Uses `eslint --print-config` to get effective config and compare severities
@@ -531,7 +499,6 @@
 ### Patch Changes
 
 - eb26008: Bug fixes:
-
   - **pip-audit**: Now uses `-r requirements.txt` to audit project dependencies instead of the current environment
   - **Registry timeout**: Git clone now has a 30-second timeout to prevent hanging on network issues
   - **README**: Fixed incorrect config format in documentation examples
@@ -547,7 +514,6 @@
 ### Patch Changes
 
 - 2bbffc0: Fix bugs in v0.8.0+ features:
-
   - **Config Validation**: `cm validate config` now validates extends registry paths and ruleset references exist
   - **Skip Messages**: Improved clarity by showing actual missing file names (e.g., "package-lock.json not found" instead of "No npmaudit config found")
 
@@ -558,7 +524,6 @@
 - c6441a4: Add naming conventions validation for file and folder names.
 
   Features:
-
   - Support for kebab-case, snake_case, camelCase, PascalCase
   - Configure rules per file extension (e.g., .ts, .py, .tsx)
   - Validates both file names and containing folder names
@@ -588,7 +553,6 @@
 - af31ddf: Add config value auditing for tsconfig.json
 
   **Config Audit (`cm code audit`):**
-
   - Audit tsconfig.json compiler options against expected values from check.toml
   - Support `[code.types.tsc.require]` section to specify required compiler options
   - Reports violations with "expected X, got Y" messages for mismatched values
@@ -613,20 +577,17 @@
 - d552bdb: Add registry validation and extends functionality
 
   **Registry Validation (`cm validate registry`):**
-
   - Validates registry structure with `rulesets/*.toml` and `prompts/*.md`
   - Checks all TOML files conform to check.toml schema
   - Checks all prompt files have `.md` extension
 
   **Registry Extends (`[extends]` in check.toml):**
-
   - Extend configuration from remote registries
   - Support GitHub (`github:owner/repo` or `github:owner/repo@ref`) and local paths
   - Merge multiple rulesets in order with local overrides
   - Cache GitHub repositories in `/tmp/cm-registry-cache/`
 
   **Command changes:**
-
   - `cm validate` → `cm validate config` (validate check.toml)
   - `cm validate registry` (new - validate registry structure)
 
@@ -646,7 +607,6 @@
 ### Patch Changes
 
 - 505186a: Fix bugs reported in v0.7.5:
-
   - Remove process and stack domains from schema (not implemented, were misleading)
   - Fix ty audit false positive: now properly checks for [tool.ty] section in pyproject.toml instead of just checking if pyproject.toml exists
   - Fix tests audit performance: use iterator with early termination to avoid scanning all files
@@ -656,7 +616,6 @@
 ### Patch Changes
 
 - fa27a12: Fix multiple bugs reported in v0.7.4:
-
   - Fix VERSION constant to read dynamically from package.json instead of hardcoded value
   - Update CLI description to accurately reflect current functionality (code quality only)
   - Remove TSC compiler options from schema (cannot override tsconfig.json via CLI)
@@ -675,7 +634,6 @@
 ### Patch Changes
 
 - 1069d80: Fix multiple reported bugs:
-
   - Fix VERSION constant mismatch (was showing 0.2.0 instead of 0.7.2)
   - Detect and report broken symlinks for check.toml instead of silently ignoring
   - Handle tsc not installed error with clean message instead of garbled ANSI output
@@ -694,7 +652,6 @@
 ### Patch Changes
 
 - 5011869: Fix validation and tool detection bugs
-
   - Add strict mode to all Zod schemas to reject unknown configuration keys
   - Add --format option validation with choices (text, json)
   - Fix ruff/vulture binary detection when not installed (now correctly reports "skipped")
@@ -705,7 +662,6 @@
 ### Minor Changes
 
 - b0a3aac: Add Gitleaks integration for hardcoded secrets detection, completing v0.3 security features.
-
   - New `[code.security.secrets]` configuration option
   - Detects hardcoded secrets using Gitleaks
   - Skips gracefully when Gitleaks is not installed
@@ -740,7 +696,6 @@
 ### Patch Changes
 
 - 6a01bb0: Add Vulture integration for Python dead code detection
-
   - New `[code.unused.vulture]` configuration option
   - Detects unused functions, classes, variables, imports, methods, attributes, and unreachable code
   - Supports Vulture 2.9+ (uses exit code 3 for dead code found)
@@ -751,7 +706,6 @@
 ### Minor Changes
 
 - 021eda7: Add Knip integration for unused code detection
-
   - Add `[code.unused.knip]` configuration section
   - Detect unused files, dependencies, exports, and types
   - Support for unlisted dependencies and unresolved imports
@@ -762,7 +716,6 @@
 ### Patch Changes
 
 - f571e5b: Add top-level CLI commands and colored output
-
   - Add `cm check` as alias for `cm code check` (runs all domain checks)
   - Add `cm audit` as alias for `cm code audit` (verifies all configs exist)
   - Add `cm init` to create check.toml with default configuration
@@ -774,7 +727,6 @@
 ### Patch Changes
 
 - cadb4ff: Add CI/CD workflows and improve documentation
-
   - Add GitHub Actions CI workflow for testing across Node 18, 20, 22
   - Add release workflow with changesets for automated npm publishing
   - Add PR checks workflow for branch naming and changelog reminders

@@ -8,6 +8,7 @@ binary name: cm
 ```
 
 When users install:
+
 ```bash
 npm install -g check-my-toolkit
 # or
@@ -26,20 +27,20 @@ The natural hierarchy is:
 cm <domain> <action> [options]
 ```
 
-| Domain | What it covers |
-|--------|----------------|
-| `code` | Linting, security, unused code, conventions |
-| `process` | GitHub settings, Linear rules, CI/CD, docs |
-| `stack` | Local env, versions, services, connections |
+| Domain    | What it covers                              |
+| --------- | ------------------------------------------- |
+| `code`    | Linting, security, unused code, conventions |
+| `process` | GitHub settings, Linear rules, CI/CD, docs  |
+| `stack`   | Local env, versions, services, connections  |
 
-| Action | What it does |
-|--------|--------------|
-| `check` | Validate / report issues (read-only) |
-| `fix` | Auto-fix what's possible |
-| `sync` | Push your TOML config to external tools (generate configs, update GitHub settings, etc.) |
-| `audit` | Deep inspection with detailed report |
-| `init` | Generate starter TOML config |
-| `diff` | Show what would change (dry-run for sync/fix) |
+| Action  | What it does                                                                             |
+| ------- | ---------------------------------------------------------------------------------------- |
+| `check` | Validate / report issues (read-only)                                                     |
+| `fix`   | Auto-fix what's possible                                                                 |
+| `sync`  | Push your TOML config to external tools (generate configs, update GitHub settings, etc.) |
+| `audit` | Deep inspection with detailed report                                                     |
+| `init`  | Generate starter TOML config                                                             |
+| `diff`  | Show what would change (dry-run for sync/fix)                                            |
 
 ---
 
@@ -53,7 +54,7 @@ cm code audit      # Deep report: complexity, duplication, coverage, deps health
 cm code sync       # Generate .eslintrc, .mega-linter.yml, knip.json from TOML
 cm code diff       # Show what sync would change
 
-# PROCESS  
+# PROCESS
 cm process check   # Validate GitHub settings, Linear config, required files
 cm process fix     # Auto-fix what's possible (create missing files, etc.)
 cm process audit   # Full compliance report

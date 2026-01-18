@@ -69,10 +69,7 @@ describe("RuffFormatRunner", () => {
     });
 
     it("returns true when pyproject.toml has [tool.ruff]", async () => {
-      fs.writeFileSync(
-        path.join(tempDir, "pyproject.toml"),
-        "[tool.ruff]\nline-length = 100"
-      );
+      fs.writeFileSync(path.join(tempDir, "pyproject.toml"), "[tool.ruff]\nline-length = 100");
       fs.writeFileSync(path.join(tempDir, "test.py"), "");
 
       mockedExeca.mockResolvedValueOnce({
@@ -264,9 +261,7 @@ describe("RuffFormatRunner", () => {
 
       expect(result.passed).toBe(false);
       expect(result.violations).toHaveLength(1);
-      expect(result.violations[0].message).toContain(
-        "Some files are not formatted correctly"
-      );
+      expect(result.violations[0].message).toContain("Some files are not formatted correctly");
     });
 
     it("skips when ruff not installed", async () => {
@@ -343,10 +338,7 @@ describe("RuffFormatRunner", () => {
     });
 
     it("passes when pyproject.toml has [tool.ruff]", async () => {
-      fs.writeFileSync(
-        path.join(tempDir, "pyproject.toml"),
-        "[tool.ruff]\nline-length = 100"
-      );
+      fs.writeFileSync(path.join(tempDir, "pyproject.toml"), "[tool.ruff]\nline-length = 100");
       const result = await runner.audit(tempDir);
 
       expect(result.passed).toBe(true);

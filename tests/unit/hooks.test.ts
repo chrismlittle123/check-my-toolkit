@@ -256,10 +256,7 @@ describe("HooksRunner", () => {
     });
 
     it("fails when pre-push hook does not detect current branch", async () => {
-      fs.writeFileSync(
-        path.join(tempDir, ".husky/pre-push"),
-        "#!/bin/sh\necho 'Hello'\n"
-      );
+      fs.writeFileSync(path.join(tempDir, ".husky/pre-push"), "#!/bin/sh\necho 'Hello'\n");
       runner.setConfig({
         enabled: true,
         require_husky: true,

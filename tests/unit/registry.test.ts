@@ -108,7 +108,9 @@ describe("Registry", () => {
         expect(result.type).toBe("github");
         expect(result.owner).toBe("myorg");
         expect(result.repo).toBe("private-standards");
-        expect(result.path).toBe("https://x-access-token:ghp_test123@github.com/myorg/private-standards.git");
+        expect(result.path).toBe(
+          "https://x-access-token:ghp_test123@github.com/myorg/private-standards.git"
+        );
         expect(result.auth).toBe("token");
       });
 
@@ -116,7 +118,9 @@ describe("Registry", () => {
         process.env.GITHUB_TOKEN = "ghp_github";
         process.env.CM_REGISTRY_TOKEN = "ghp_cm_registry";
         const result = parseRegistryUrl("github+token:myorg/private-standards");
-        expect(result.path).toBe("https://x-access-token:ghp_cm_registry@github.com/myorg/private-standards.git");
+        expect(result.path).toBe(
+          "https://x-access-token:ghp_cm_registry@github.com/myorg/private-standards.git"
+        );
       });
 
       it("falls back to HTTPS when token auth requested but no token found", () => {
@@ -128,7 +132,9 @@ describe("Registry", () => {
       it("auto-detects token auth when GITHUB_TOKEN is set", () => {
         process.env.GITHUB_TOKEN = "ghp_auto123";
         const result = parseRegistryUrl("github:myorg/standards");
-        expect(result.path).toBe("https://x-access-token:ghp_auto123@github.com/myorg/standards.git");
+        expect(result.path).toBe(
+          "https://x-access-token:ghp_auto123@github.com/myorg/standards.git"
+        );
         expect(result.auth).toBe("token");
       });
 
@@ -314,9 +320,9 @@ foo = "bar"`
     });
 
     it("throws for missing local registry", async () => {
-      await expect(
-        fetchRegistry({ type: "local", path: "/nonexistent/path" })
-      ).rejects.toThrow(ConfigError);
+      await expect(fetchRegistry({ type: "local", path: "/nonexistent/path" })).rejects.toThrow(
+        ConfigError
+      );
     });
 
     it("clones GitHub registry", async () => {

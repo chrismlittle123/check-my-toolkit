@@ -10,9 +10,13 @@ const mockStdoutWrite = vi.spyOn(process.stdout, "write").mockImplementation(() 
 const mockConsoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
 
 // Mock commander to capture action handlers
-let checkActionHandler: ((options: { config?: string; format: string }) => Promise<void>) | null = null;
-let auditActionHandler: ((options: { config?: string; format: string }) => Promise<void>) | null = null;
-let validateConfigActionHandler: ((options: { config?: string; format: string }) => Promise<void>) | null = null;
+let checkActionHandler: ((options: { config?: string; format: string }) => Promise<void>) | null =
+  null;
+let auditActionHandler: ((options: { config?: string; format: string }) => Promise<void>) | null =
+  null;
+let validateConfigActionHandler:
+  | ((options: { config?: string; format: string }) => Promise<void>)
+  | null = null;
 let validateRegistryActionHandler: ((options: { format: string }) => Promise<void>) | null = null;
 let schemaConfigActionHandler: (() => void) | null = null;
 
@@ -147,9 +151,7 @@ enabled = true`
       const eslintOutput = JSON.stringify([
         {
           filePath: path.join(tempDir, "src/index.ts"),
-          messages: [
-            { ruleId: "no-var", severity: 2, message: "Error", line: 1, column: 1 },
-          ],
+          messages: [{ ruleId: "no-var", severity: 2, message: "Error", line: 1, column: 1 }],
         },
       ]);
 
@@ -333,7 +335,9 @@ enabled = true`
       );
 
       const codeModule = await import("../../src/code/index.js");
-      vi.spyOn(codeModule, "auditCodeConfig").mockRejectedValueOnce(new Error("Audit runtime error"));
+      vi.spyOn(codeModule, "auditCodeConfig").mockRejectedValueOnce(
+        new Error("Audit runtime error")
+      );
 
       await auditActionHandler!({ config: configPath, format: "text" });
 
@@ -426,11 +430,15 @@ enabled = true`
 
       // Mock loadConfigAsync to throw a regular Error (not ConfigError)
       const configModule = await import("../../src/config/index.js");
-      vi.spyOn(configModule, "loadConfigAsync").mockRejectedValueOnce(new Error("Validate runtime error"));
+      vi.spyOn(configModule, "loadConfigAsync").mockRejectedValueOnce(
+        new Error("Validate runtime error")
+      );
 
       await validateConfigActionHandler!({ config: configPath, format: "text" });
 
-      expect(mockConsoleError).toHaveBeenCalledWith(expect.stringContaining("Validate runtime error"));
+      expect(mockConsoleError).toHaveBeenCalledWith(
+        expect.stringContaining("Validate runtime error")
+      );
       expect(mockExit).toHaveBeenCalledWith(3);
     });
   });

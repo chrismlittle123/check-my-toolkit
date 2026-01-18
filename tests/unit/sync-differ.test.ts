@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import { computeDiff, formatValue } from "../../src/process/sync/differ.js";
-import type { BranchProtectionSettings, DesiredBranchProtection } from "../../src/process/sync/types.js";
+import type {
+  BranchProtectionSettings,
+  DesiredBranchProtection,
+} from "../../src/process/sync/types.js";
 
 describe("computeDiff", () => {
   const repoInfo = { owner: "test-owner", repo: "test-repo" };
@@ -64,7 +67,10 @@ describe("computeDiff", () => {
 
   describe("boolean settings", () => {
     it("detects difference in dismiss_stale_reviews", () => {
-      const current: BranchProtectionSettings = { ...createEmptySettings(), dismissStaleReviews: false };
+      const current: BranchProtectionSettings = {
+        ...createEmptySettings(),
+        dismissStaleReviews: false,
+      };
       const desired: DesiredBranchProtection = { dismiss_stale_reviews: true };
 
       const result = computeDiff(repoInfo, current, desired);
@@ -126,7 +132,10 @@ describe("computeDiff", () => {
     });
 
     it("detects difference when values differ", () => {
-      const current: BranchProtectionSettings = { ...createEmptySettings(), requiredStatusChecks: ["ci"] };
+      const current: BranchProtectionSettings = {
+        ...createEmptySettings(),
+        requiredStatusChecks: ["ci"],
+      };
       const desired: DesiredBranchProtection = { require_status_checks: ["ci", "lint", "test"] };
 
       const result = computeDiff(repoInfo, current, desired);
@@ -136,7 +145,10 @@ describe("computeDiff", () => {
     });
 
     it("no diff when arrays match (different order)", () => {
-      const current: BranchProtectionSettings = { ...createEmptySettings(), requiredStatusChecks: ["test", "ci"] };
+      const current: BranchProtectionSettings = {
+        ...createEmptySettings(),
+        requiredStatusChecks: ["test", "ci"],
+      };
       const desired: DesiredBranchProtection = { require_status_checks: ["ci", "test"] };
 
       const result = computeDiff(repoInfo, current, desired);

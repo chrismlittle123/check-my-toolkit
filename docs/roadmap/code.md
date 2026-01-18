@@ -30,10 +30,10 @@ Registry (org standards) → check.toml [extends] → validates project configs
 
 ### Linting: `[code.linting]`
 
-| Check | Description | Tool |
-|-------|-------------|------|
+| Check  | Description                   | Tool   |
+| ------ | ----------------------------- | ------ |
 | ESLint | JavaScript/TypeScript linting | ESLint |
-| Ruff | Python linting | Ruff |
+| Ruff   | Python linting                | Ruff   |
 
 ```toml
 [code.linting.eslint]
@@ -48,9 +48,9 @@ lint.ignore = ["E501"]
 
 ### Formatting: `[code.formatting]`
 
-| Check | Description | Tool |
-|-------|-------------|------|
-| Prettier | JS/TS formatting | Prettier |
+| Check       | Description       | Tool                 |
+| ----------- | ----------------- | -------------------- |
+| Prettier    | JS/TS formatting  | Prettier             |
 | Ruff Format | Python formatting | Ruff (`ruff format`) |
 
 ```toml
@@ -64,10 +64,10 @@ format = true  # Also check formatting
 
 ### Type Checking: `[code.types]`
 
-| Check | Description | Tool |
-|-------|-------------|------|
-| tsc | TypeScript type checking | tsc |
-| ty | Python type checking | ty (Astral) |
+| Check | Description              | Tool        |
+| ----- | ------------------------ | ----------- |
+| tsc   | TypeScript type checking | tsc         |
+| ty    | Python type checking     | ty (Astral) |
 
 ```toml
 [code.types.tsc]
@@ -83,10 +83,10 @@ enabled = true
 
 ### Unused Code: `[code.unused]`
 
-| Check | Description | Tool |
-|-------|-------------|------|
-| Knip | Unused exports, files, dependencies | Knip |
-| Vulture | Python dead code detection | Vulture |
+| Check   | Description                         | Tool    |
+| ------- | ----------------------------------- | ------- |
+| Knip    | Unused exports, files, dependencies | Knip    |
+| Vulture | Python dead code detection          | Vulture |
 
 ```toml
 [code.unused.knip]
@@ -100,8 +100,8 @@ enabled = true
 
 Run tests with coverage and validate against thresholds.
 
-| Check | Description |
-|-------|-------------|
+| Check              | Description                                 |
+| ------------------ | ------------------------------------------- |
 | Coverage threshold | Run tests and verify coverage meets minimum |
 
 ```toml
@@ -112,6 +112,7 @@ command = "pnpm test:coverage"  # Optional: custom command
 ```
 
 **How it works:**
+
 - Auto-detects test runner (vitest, jest, pytest) if no command specified
 - Runs tests with coverage enabled
 - Parses coverage output and validates against `min_threshold`
@@ -119,11 +120,11 @@ command = "pnpm test:coverage"  # Optional: custom command
 
 ### Security: `[code.security]`
 
-| Check | Description | Tool |
-|-------|-------------|------|
-| Secrets | Hardcoded secrets detection | Gitleaks |
-| Dependency audit (JS) | npm vulnerability scanning | npm-audit |
-| Dependency audit (Python) | pip vulnerability scanning | pip-audit |
+| Check                     | Description                 | Tool      |
+| ------------------------- | --------------------------- | --------- |
+| Secrets                   | Hardcoded secrets detection | Gitleaks  |
+| Dependency audit (JS)     | npm vulnerability scanning  | npm-audit |
+| Dependency audit (Python) | pip vulnerability scanning  | pip-audit |
 
 ```toml
 [code.security.secrets]
@@ -151,6 +152,7 @@ enabled = true
 ```
 
 Registry structure:
+
 - `rulesets/*.toml` - Check.toml configuration files
 - `prompts/*.md` - Markdown prompt files
 
@@ -173,11 +175,11 @@ noImplicitAny = true
 
 Enforce file and folder naming conventions based on file extensions.
 
-| Case | Example |
-|------|---------|
+| Case         | Example           |
+| ------------ | ----------------- |
 | `kebab-case` | `my-component.ts` |
-| `snake_case` | `my_module.py` |
-| `camelCase` | `myHelper.ts` |
+| `snake_case` | `my_module.py`    |
+| `camelCase`  | `myHelper.ts`     |
 | `PascalCase` | `MyComponent.tsx` |
 
 ```toml
@@ -198,6 +200,7 @@ folder_case = "snake_case"
 ```
 
 **How it works:**
+
 - Files are validated against `file_case` based on their extension
 - Folders containing files with matching extensions are validated against `folder_case`
 - Common directories (`node_modules`, `.git`, `dist`, `__pycache__`) are automatically excluded
@@ -206,8 +209,8 @@ folder_case = "snake_case"
 
 Detect linter/type-checker disable comments in code.
 
-| Check | Description |
-|-------|-------------|
+| Check            | Description                                    |
+| ---------------- | ---------------------------------------------- |
 | Disable comments | Detects eslint-disable, @ts-ignore, noqa, etc. |
 
 ```toml
@@ -221,6 +224,7 @@ patterns = ["eslint-disable", "@ts-ignore", "@ts-expect-error", "noqa", "type: i
 ```
 
 **Default patterns detected:**
+
 - `eslint-disable`, `eslint-disable-next-line`
 - `@ts-ignore`, `@ts-expect-error`
 - `# noqa`, `# type: ignore`
@@ -230,12 +234,12 @@ patterns = ["eslint-disable", "@ts-ignore", "@ts-expect-error", "noqa", "type: i
 
 ## Commands
 
-| Command | Description |
-|---------|-------------|
-| `cm code check` | Run all enabled checks |
-| `cm code audit` | Verify tool configs exist and match requirements |
-| `cm validate config` | Validate check.toml syntax and schema |
-| `cm validate registry` | Validate registry structure |
+| Command                | Description                                      |
+| ---------------------- | ------------------------------------------------ |
+| `cm code check`        | Run all enabled checks                           |
+| `cm code audit`        | Verify tool configs exist and match requirements |
+| `cm validate config`   | Validate check.toml syntax and schema            |
+| `cm validate registry` | Validate registry structure                      |
 
 ---
 
@@ -245,30 +249,31 @@ Detect and initialize check.toml files across monorepos and multi-project reposi
 
 ### Commands
 
-| Command | Description |
-|---------|-------------|
-| `cm projects detect` | Discover all projects, show which have/don't have check.toml |
-| `cm projects detect --fix` | Create missing check.toml files |
+| Command                    | Description                                                  |
+| -------------------------- | ------------------------------------------------------------ |
+| `cm projects detect`       | Discover all projects, show which have/don't have check.toml |
+| `cm projects detect --fix` | Create missing check.toml files                              |
 
 ### Project Detection Rules
 
-| Marker File | Project Type |
-|-------------|--------------|
-| `package.json` | typescript (skip if has `"workspaces"` field) |
-| `pyproject.toml` | python |
+| Marker File      | Project Type                                  |
+| ---------------- | --------------------------------------------- |
+| `package.json`   | typescript (skip if has `"workspaces"` field) |
+| `pyproject.toml` | python                                        |
 
 ### Flags
 
-| Flag | Description |
-|------|-------------|
-| `--fix` | Create missing check.toml files |
-| `--registry <path>` | Create shared registry and extend from it |
-| `--dry-run` | Show what would be created without creating |
-| `--json` | Output as JSON (for tooling/CI) |
+| Flag                | Description                                 |
+| ------------------- | ------------------------------------------- |
+| `--fix`             | Create missing check.toml files             |
+| `--registry <path>` | Create shared registry and extend from it   |
+| `--dry-run`         | Show what would be created without creating |
+| `--json`            | Output as JSON (for tooling/CI)             |
 
 ### Example Usage
 
 **Detect projects:**
+
 ```bash
 $ cm projects detect
 
@@ -284,6 +289,7 @@ Detected 4 projects:
 ```
 
 **Create missing check.toml files:**
+
 ```bash
 $ cm projects detect --fix
 
@@ -296,6 +302,7 @@ Done. 2 files created.
 ```
 
 **Create with shared registry:**
+
 ```bash
 $ cm projects detect --fix --registry .cm
 
@@ -311,6 +318,7 @@ Creating check.toml files (extending from registry)...
 ### Skipped Directories
 
 The following directories are automatically skipped during detection:
+
 - `node_modules/`
 - `.git/`
 - `venv/`, `.venv/`
@@ -320,6 +328,6 @@ The following directories are automatically skipped during detection:
 ### Workspace Root Detection
 
 Workspace roots are identified but not treated as projects:
+
 - `package.json` with `"workspaces"` field
 - Presence of `turbo.json`, `pnpm-workspace.yaml`, `lerna.json`
-

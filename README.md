@@ -42,36 +42,36 @@ cm check
 
 Static analysis, formatting, type checking, and security.
 
-| Category | Tools |
-|----------|-------|
-| Linting | ESLint, Ruff |
-| Formatting | Prettier, Ruff Format |
-| Type Checking | tsc, ty |
-| Unused Code | Knip, Vulture |
-| Security | Gitleaks, npm-audit, pip-audit |
-| Other | Tests, Naming, Disable Comments |
+| Category      | Tools                           |
+| ------------- | ------------------------------- |
+| Linting       | ESLint, Ruff                    |
+| Formatting    | Prettier, Ruff Format           |
+| Type Checking | tsc, ty                         |
+| Unused Code   | Knip, Vulture                   |
+| Security      | Gitleaks, npm-audit, pip-audit  |
+| Other         | Tests, Naming, Disable Comments |
 
 ### PROCESS — 8 Checks
 
 Workflow and policy enforcement.
 
-| Check | Purpose |
-|-------|---------|
-| Hooks | Git hooks (Husky) validation |
-| CI | GitHub workflow requirements |
-| Branches | Branch naming patterns |
-| PR | Size limits (files, lines) |
-| Tickets | Jira/Linear references |
-| Coverage | Threshold enforcement |
-| Repo | Branch protection, CODEOWNERS |
-| Backups | S3 backup verification |
+| Check    | Purpose                       |
+| -------- | ----------------------------- |
+| Hooks    | Git hooks (Husky) validation  |
+| CI       | GitHub workflow requirements  |
+| Branches | Branch naming patterns        |
+| PR       | Size limits (files, lines)    |
+| Tickets  | Jira/Linear references        |
+| Coverage | Threshold enforcement         |
+| Repo     | Branch protection, CODEOWNERS |
+| Backups  | S3 backup verification        |
 
 ### INFRA — 1 Check
 
 Infrastructure validation.
 
-| Check | Purpose |
-|-------|---------|
+| Check   | Purpose                       |
+| ------- | ----------------------------- |
 | Tagging | AWS resource tag requirements |
 
 ## Commands
@@ -229,12 +229,12 @@ cm check --format json
 
 ### Exit Codes
 
-| Code | Meaning |
-|------|---------|
-| 0 | All checks passed |
-| 1 | Violations found |
-| 2 | Configuration error |
-| 3 | Runtime error |
+| Code | Meaning             |
+| ---- | ------------------- |
+| 0    | All checks passed   |
+| 1    | Violations found    |
+| 2    | Configuration error |
+| 3    | Runtime error       |
 
 ## Monorepo Usage
 

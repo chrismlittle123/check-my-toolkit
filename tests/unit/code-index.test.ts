@@ -4,10 +4,7 @@ import * as path from "node:path";
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import {
-  auditCodeConfig,
-  runCodeChecks,
-} from "../../src/code/index.js";
+import { auditCodeConfig, runCodeChecks } from "../../src/code/index.js";
 import type { Config } from "../../src/config/schema.js";
 
 // Mock execa
@@ -360,10 +357,7 @@ describe("auditCodeConfig", () => {
         noImplicitAny: true,
       },
     };
-    fs.writeFileSync(
-      path.join(tempDir, "tsconfig.json"),
-      JSON.stringify(tsconfig)
-    );
+    fs.writeFileSync(path.join(tempDir, "tsconfig.json"), JSON.stringify(tsconfig));
 
     const result = await auditCodeConfig(tempDir, config);
 
@@ -391,10 +385,7 @@ describe("auditCodeConfig", () => {
         strict: false, // Wrong value
       },
     };
-    fs.writeFileSync(
-      path.join(tempDir, "tsconfig.json"),
-      JSON.stringify(tsconfig)
-    );
+    fs.writeFileSync(path.join(tempDir, "tsconfig.json"), JSON.stringify(tsconfig));
 
     const result = await auditCodeConfig(tempDir, config);
 

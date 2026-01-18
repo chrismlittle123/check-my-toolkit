@@ -113,9 +113,7 @@ pattern = "^(feature|fix)/.*$"`
       const exitCode = await checkBranchCommand({ quiet: false });
 
       expect(exitCode).toBe(1);
-      expect(mockConsoleError).toHaveBeenCalledWith(
-        expect.stringContaining("my-invalid-branch")
-      );
+      expect(mockConsoleError).toHaveBeenCalledWith(expect.stringContaining("my-invalid-branch"));
     });
 
     it("passes for excluded branches", async () => {
@@ -162,7 +160,9 @@ pattern = "^(feature|fix)/v[0-9]+\\\\.[0-9]+\\\\.[0-9]+/.*$"`
 
       expect(exitCode).toBe(1);
       expect(mockConsoleError).toHaveBeenCalledWith(expect.stringContaining("Expected pattern:"));
-      expect(mockConsoleError).toHaveBeenCalledWith(expect.stringContaining("feature/v1.0.0/add-login"));
+      expect(mockConsoleError).toHaveBeenCalledWith(
+        expect.stringContaining("feature/v1.0.0/add-login")
+      );
     });
 
     it("does not show examples in quiet mode", async () => {

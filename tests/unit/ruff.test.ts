@@ -71,10 +71,7 @@ describe("RuffRunner", () => {
     });
 
     it("returns true when pyproject.toml has [tool.ruff]", async () => {
-      fs.writeFileSync(
-        path.join(tempDir, "pyproject.toml"),
-        "[tool.ruff]\nline-length = 100"
-      );
+      fs.writeFileSync(path.join(tempDir, "pyproject.toml"), "[tool.ruff]\nline-length = 100");
       fs.writeFileSync(path.join(tempDir, "test.py"), "");
 
       mockedExeca.mockResolvedValueOnce({
@@ -93,10 +90,7 @@ describe("RuffRunner", () => {
     });
 
     it("returns false when pyproject.toml exists without [tool.ruff]", async () => {
-      fs.writeFileSync(
-        path.join(tempDir, "pyproject.toml"),
-        "[project]\nname = 'test'"
-      );
+      fs.writeFileSync(path.join(tempDir, "pyproject.toml"), "[project]\nname = 'test'");
       fs.writeFileSync(path.join(tempDir, "test.py"), "");
 
       mockedExeca.mockResolvedValueOnce({
@@ -391,7 +385,9 @@ describe("RuffRunner", () => {
           filename: path.join(tempDir, "test.py"),
           fix: {
             applicability: "safe",
-            edits: [{ content: "", end_location: { column: 1, row: 2 }, location: { column: 1, row: 1 } }],
+            edits: [
+              { content: "", end_location: { column: 1, row: 2 }, location: { column: 1, row: 1 } },
+            ],
             message: "Remove unused import: `os`",
           },
           location: { column: 8, row: 1 },
@@ -567,10 +563,7 @@ describe("RuffRunner", () => {
     });
 
     it("passes when pyproject.toml has [tool.ruff]", async () => {
-      fs.writeFileSync(
-        path.join(tempDir, "pyproject.toml"),
-        "[tool.ruff]\nline-length = 100"
-      );
+      fs.writeFileSync(path.join(tempDir, "pyproject.toml"), "[tool.ruff]\nline-length = 100");
       const result = await runner.audit(tempDir);
 
       expect(result.passed).toBe(true);
@@ -749,7 +742,18 @@ describe("RuffRunner", () => {
 
       expect(mockedExeca).toHaveBeenCalledWith(
         "ruff",
-        ["check", ".", "--output-format", "json", "--line-length", "100", "--select", "F", "--ignore", "F401"],
+        [
+          "check",
+          ".",
+          "--output-format",
+          "json",
+          "--line-length",
+          "100",
+          "--select",
+          "F",
+          "--ignore",
+          "F401",
+        ],
         expect.objectContaining({
           cwd: tempDir,
         })

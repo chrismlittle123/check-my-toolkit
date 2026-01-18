@@ -152,7 +152,9 @@ jobs:
         const result = await runner.run(tempDir);
         expect(result.passed).toBe(false);
         expect(result.violations).toHaveLength(1);
-        expect(result.violations[0].message).toContain("Workflow 'ci.yml' missing required job: lint");
+        expect(result.violations[0].message).toContain(
+          "Workflow 'ci.yml' missing required job: lint"
+        );
       });
 
       it("reports all missing jobs", async () => {
@@ -241,7 +243,9 @@ jobs:
         const result = await runner.run(tempDir);
         expect(result.passed).toBe(false);
         expect(result.violations).toHaveLength(1);
-        expect(result.violations[0].message).toContain("Workflow 'ci.yml' missing required action: actions/setup-node");
+        expect(result.violations[0].message).toContain(
+          "Workflow 'ci.yml' missing required action: actions/setup-node"
+        );
       });
 
       it("finds actions across multiple jobs", async () => {
@@ -321,8 +325,14 @@ jobs:
         // 1 missing workflow + 1 missing job + 1 missing action
         expect(result.violations).toHaveLength(3);
         expect(result.violations.some((v) => v.message.includes("release.yml"))).toBe(true);
-        expect(result.violations.some((v) => v.message.includes("missing required job: test"))).toBe(true);
-        expect(result.violations.some((v) => v.message.includes("missing required action: actions/checkout"))).toBe(true);
+        expect(
+          result.violations.some((v) => v.message.includes("missing required job: test"))
+        ).toBe(true);
+        expect(
+          result.violations.some((v) =>
+            v.message.includes("missing required action: actions/checkout")
+          )
+        ).toBe(true);
       });
     });
   });
