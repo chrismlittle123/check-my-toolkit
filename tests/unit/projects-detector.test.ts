@@ -46,33 +46,14 @@ describe("detectProjects", () => {
       expect(result.projects[0].path).toBe("services/api");
     });
 
-    it("detects Rust projects by Cargo.toml", async () => {
-      createFile("tools/cli/Cargo.toml", '[package]\nname = "cli"');
-
-      const result = await detectProjects(tempDir);
-
-      expect(result.projects).toHaveLength(1);
-      expect(result.projects[0].type).toBe("rust");
-    });
-
-    it("detects Go projects by go.mod", async () => {
-      createFile("services/worker/go.mod", "module example.com/worker");
-
-      const result = await detectProjects(tempDir);
-
-      expect(result.projects).toHaveLength(1);
-      expect(result.projects[0].type).toBe("go");
-    });
-
     it("detects multiple projects of different types", async () => {
       createFile("apps/web/package.json", JSON.stringify({ name: "web" }));
       createFile("services/api/pyproject.toml", '[project]\nname = "api"');
-      createFile("tools/cli/Cargo.toml", '[package]\nname = "cli"');
 
       const result = await detectProjects(tempDir);
 
-      expect(result.projects).toHaveLength(3);
-      expect(result.projects.map((p) => p.type).sort()).toEqual(["python", "rust", "typescript"]);
+      expect(result.projects).toHaveLength(2);
+      expect(result.projects.map((p) => p.type).sort()).toEqual(["python", "typescript"]);
     });
 
     it("returns empty array when no projects found", async () => {
@@ -195,8 +176,18 @@ describe("detectProjects", () => {
 describe("getProjectTypes", () => {
   it("returns unique project types for projects without check.toml", () => {
     const projects = [
-      { path: "app1", type: "typescript" as const, hasCheckToml: false, markerFile: "package.json" },
-      { path: "app2", type: "typescript" as const, hasCheckToml: false, markerFile: "package.json" },
+      {
+        path: "app1",
+        type: "typescript" as const,
+        hasCheckToml: false,
+        markerFile: "package.json",
+      },
+      {
+        path: "app2",
+        type: "typescript" as const,
+        hasCheckToml: false,
+        markerFile: "package.json",
+      },
       { path: "api", type: "python" as const, hasCheckToml: false, markerFile: "pyproject.toml" },
       { path: "lib", type: "typescript" as const, hasCheckToml: true, markerFile: "package.json" },
     ];

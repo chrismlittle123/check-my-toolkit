@@ -256,8 +256,6 @@ Detect and initialize check.toml files across monorepos and multi-project reposi
 |-------------|--------------|
 | `package.json` | typescript (skip if has `"workspaces"` field) |
 | `pyproject.toml` | python |
-| `Cargo.toml` | rust |
-| `go.mod` | go |
 
 ### Flags
 
@@ -318,7 +316,6 @@ The following directories are automatically skipped during detection:
 - `venv/`, `.venv/`
 - `__pycache__/`
 - `dist/`, `build/`
-- `target/` (Rust)
 
 ### Workspace Root Detection
 

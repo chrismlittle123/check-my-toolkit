@@ -115,7 +115,7 @@ max-warnings = 0
 
 ### Ruff (`[code.linting.ruff]`)
 
-Python linting (extremely fast, written in Rust).
+Python linting (extremely fast).
 
 ```toml
 [code.linting.ruff]
@@ -771,8 +771,6 @@ cm projects detect --registry .cm  # Create shared registry
 |-------------|------|
 | `package.json` | typescript |
 | `pyproject.toml` | python |
-| `Cargo.toml` | rust |
-| `go.mod` | go |
 
 ---
 

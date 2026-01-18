@@ -19,20 +19,6 @@ enabled = true
 [code.linting.ruff]
 enabled = true
 `,
-
-  rust: `# check.toml - Rust project configuration
-# Note: Rust tooling support is limited. Configure as needed.
-
-# [code.linting]
-# enabled = false
-`,
-
-  go: `# check.toml - Go project configuration
-# Note: Go tooling support is limited. Configure as needed.
-
-# [code.linting]
-# enabled = false
-`,
 };
 
 /** Registry ruleset templates per project type */
@@ -50,14 +36,6 @@ enabled = true
 
 [code.linting.ruff]
 enabled = true
-`,
-
-  rust: `# Rust ruleset
-# Configure Rust-specific tools here
-`,
-
-  go: `# Go ruleset
-# Configure Go-specific tools here
 `,
 };
 

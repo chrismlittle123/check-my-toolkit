@@ -18,7 +18,7 @@ interface TyDiagnostic {
 
 /**
  * ty Python type checker tool runner
- * ty is Astral's extremely fast Python type checker written in Rust
+ * ty is Astral's extremely fast Python type checker
  */
 export class TyRunner extends BaseToolRunner {
   readonly name = "ty";

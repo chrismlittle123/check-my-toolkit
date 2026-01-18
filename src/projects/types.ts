@@ -1,5 +1,5 @@
 /** Project types detected by marker files */
-export type ProjectType = "typescript" | "python" | "rust" | "go";
+export type ProjectType = "typescript" | "python";
 
 /** Project marker file configuration */
 export interface ProjectMarker {
