@@ -7,7 +7,7 @@ Unified project health checks for code quality, process compliance, and infrastr
 check-my-toolkit (`cm`) provides a single CLI to run multiple code quality, process, and infrastructure tools with unified configuration via `check.toml`. Three domains are fully implemented:
 
 - **CODE** - 14 integrated tools for linting, formatting, type checking, security, and more
-- **PROCESS** - 11 workflow checks for git hooks, CI, PRs, branches, commits, and repository settings
+- **PROCESS** - 12 workflow checks for git hooks, CI, PRs, branches, commits, documentation, and repository settings
 - **INFRA** - AWS resource tagging validation
 
 ---
@@ -16,8 +16,8 @@ check-my-toolkit (`cm`) provides a single CLI to run multiple code quality, proc
 
 | Domain | Tools | Config |
 |--------|-------|--------|
-| CODE | ESLint, Ruff, Prettier, tsc, ty, Knip, Vulture, Gitleaks, npm-audit, pip-audit | `[code.*]` |
-| PROCESS | Hooks, CI, Branches, Commits, Changesets, PR, Tickets, Coverage, Repo, Backups, CODEOWNERS | `[process.*]` |
+| CODE | ESLint, Ruff, Prettier, tsc, ty, Knip, Vulture, Gitleaks, pnpm-audit, pip-audit | `[code.*]` |
+| PROCESS | Hooks, CI, Branches, Commits, Changesets, PR, Tickets, Coverage, Repo, Backups, CODEOWNERS, Docs | `[process.*]` |
 | INFRA | AWS Tagging | `[infra.*]` |
 
 ---
@@ -281,16 +281,21 @@ enabled = true
 
 ---
 
-### npm audit (`[code.security.npmaudit]`)
+### pnpm audit (`[code.security.pnpmaudit]`)
 
 JavaScript dependency vulnerability scanning.
 
 ```toml
-[code.security.npmaudit]
+[code.security.pnpmaudit]
 enabled = true
+exclude_dev = true  # Only check production dependencies (default)
 ```
 
-Auto-detects pnpm or npm based on lock file.
+| Property | Value |
+|----------|-------|
+| `exclude_dev` | Skip devDependencies (default: true) |
+
+Requires `pnpm-lock.yaml` in project root.
 
 ---
 
@@ -624,6 +629,66 @@ owners = ["@myorg/typescript-team"]
 
 ---
 
+## Documentation Governance (`[process.docs]`)
+
+Validate documentation structure, content, freshness, and API coverage.
+
+```toml
+[process.docs]
+enabled = true
+path = "docs/"
+enforcement = "warn"  # or "block"
+staleness_days = 30
+allowlist = ["README.md", "CLAUDE.md"]  # Markdown allowed outside docs/
+
+# File limits
+max_files = 50
+max_file_lines = 1000
+max_total_kb = 500
+
+# API coverage
+min_coverage = 80
+coverage_paths = ["src/**/*.ts"]
+exclude_patterns = ["**/*.test.ts"]
+
+# Stale mappings (doc -> source)
+[process.docs.stale_mappings]
+"docs/api.md" = "src/api/"
+
+# Content validation per doc type
+[process.docs.types.api]
+frontmatter = ["title", "version"]
+required_sections = ["Overview", "Usage", "API Reference"]
+
+[process.docs.types.guide]
+frontmatter = ["title"]
+required_sections = ["Introduction", "Getting Started"]
+```
+
+| Property | Value |
+|----------|-------|
+| `path` | Documentation directory (default: `docs/`) |
+| `enforcement` | `warn` or `block` - violation severity |
+| `staleness_days` | Days before doc is considered stale vs tracked source |
+| `allowlist` | Markdown files allowed outside docs/ |
+| `max_files` | Maximum markdown files in docs/ |
+| `max_file_lines` | Maximum lines per file |
+| `max_total_kb` | Maximum total size of docs/ |
+| `min_coverage` | Minimum API documentation coverage (0-100) |
+| `coverage_paths` | Glob patterns for source files to check coverage |
+| `exclude_patterns` | Patterns to exclude from coverage |
+| `stale_mappings` | Override doc-to-source mappings for freshness |
+| `types` | Per-type validation rules (frontmatter, sections) |
+
+**Validations:**
+- Structure: Markdown files outside docs/ not in allowlist
+- Content: Required frontmatter fields and sections per doc type
+- Freshness: Docs not updated after tracked source changes
+- Links: Broken internal markdown links
+- API Coverage: Exported symbols not mentioned in docs
+
+---
+
 ## Hook-Specific Commands
 
 Commands designed for use in git hooks with minimal output.
@@ -795,7 +860,7 @@ enabled = true
 [code.security.secrets]
 enabled = true
 
-[code.security.npmaudit]
+[code.security.pnpmaudit]
 enabled = true
 
 [code.security.pipaudit]
@@ -890,6 +955,13 @@ enabled = true
 pattern = "*"
 owners = ["@myorg/engineering"]
 
+[process.docs]
+enabled = true
+path = "docs/"
+enforcement = "warn"
+staleness_days = 30
+allowlist = ["README.md", "CLAUDE.md"]
+
 # =============================================================================
 # INFRA DOMAIN
 # =============================================================================
@@ -921,12 +993,12 @@ Environment = ["dev", "stag", "prod"]
 | Unused | Vulture | Python | `[code.unused.vulture]` |
 | Coverage | Coverage Run | Any | `[code.coverage_run]` |
 | Security | Gitleaks | Any | `[code.security.secrets]` |
-| Security | npm audit | JS/TS | `[code.security.npmaudit]` |
+| Security | pnpm audit | JS/TS | `[code.security.pnpmaudit]` |
 | Security | pip-audit | Python | `[code.security.pipaudit]` |
 | Naming | Built-in | Any | `[code.naming]` |
 | Quality | Disable Comments | JS/TS/Python | `[code.quality.disable-comments]` |
 
-## PROCESS Domain (11 checks)
+## PROCESS Domain (12 checks)
 
 | Check | Purpose | Config |
 |-------|---------|--------|
@@ -941,6 +1013,7 @@ Environment = ["dev", "stag", "prod"]
 | Repo | Branch protection | `[process.repo]` |
 | Backups | S3 backup verification | `[process.backups]` |
 | CODEOWNERS | CODEOWNERS validation | `[process.codeowners]` |
+| Docs | Documentation governance | `[process.docs]` |
 
 ## INFRA Domain (1 check)
 
