@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.1.2
+
+### Patch Changes
+
+- b4debd9: Enable prettier formatting for the codebase
+- ffc25e9: Remove support for non-TypeScript/Python project types from project detection. The tool now focuses exclusively on TypeScript and Python tooling.
+
 ## 1.1.1
 
 ### Patch Changes
