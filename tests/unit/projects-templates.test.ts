@@ -26,20 +26,6 @@ describe("getTemplate", () => {
     expect(template).toContain("[code.linting.ruff]");
     expect(template).toContain("enabled = true");
   });
-
-  it("returns Rust template with commented config", () => {
-    const template = getTemplate("rust");
-
-    expect(template).toContain("Rust");
-    expect(template).toContain("#");
-  });
-
-  it("returns Go template with commented config", () => {
-    const template = getTemplate("go");
-
-    expect(template).toContain("Go");
-    expect(template).toContain("#");
-  });
 });
 
 describe("getExtendsTemplate", () => {
@@ -139,7 +125,10 @@ describe("createRegistry", () => {
 
     createRegistry(registryPath, projectTypes, false);
 
-    const content = fs.readFileSync(path.join(registryPath, "rulesets", "typescript.toml"), "utf-8");
+    const content = fs.readFileSync(
+      path.join(registryPath, "rulesets", "typescript.toml"),
+      "utf-8"
+    );
     expect(content).toContain("[code.linting.eslint]");
   });
 

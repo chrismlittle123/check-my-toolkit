@@ -20,8 +20,6 @@ const PROJECT_MARKERS: ProjectMarker[] = [
     },
   },
   { file: "pyproject.toml", type: "python" },
-  { file: "Cargo.toml", type: "rust" },
-  { file: "go.mod", type: "go" },
 ];
 
 /** Files that indicate a workspace/monorepo root (not a project) */
@@ -36,7 +34,6 @@ const SKIP_DIRECTORIES = [
   "__pycache__",
   "dist",
   "build",
-  "target",
   "coverage",
   ".next",
   ".nuxt",

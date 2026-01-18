@@ -257,7 +257,7 @@
 ### Minor Changes
 
 - c82ca9e: Add `process.coverage` rule to enforce coverage thresholds are configured. Supports vitest, jest, and nyc/istanbul configs. Can check config files, CI workflows, or both.
-- 4d695e5: Add `cm projects detect` command for monorepo project discovery. Detects TypeScript, Python, Rust, and Go projects by marker files, shows which have check.toml configs, and can create missing configs with `--fix`.
+- 4d695e5: Add `cm projects detect` command for monorepo project discovery. Detects TypeScript and Python projects by marker files, shows which have check.toml configs, and can create missing configs with `--fix`.
 
 ### Patch Changes
 
@@ -715,7 +715,7 @@
 
 ### Minor Changes
 
-- 3db15bc: Add ty Python type checker integration (`[code.types.ty]`). ty is Astral's extremely fast Python type checker written in Rust. Enable with `[code.types.ty] enabled = true` to check Python code for type errors.
+- 3db15bc: Add ty Python type checker integration (`[code.types.ty]`). ty is Astral's extremely fast Python type checker. Enable with `[code.types.ty] enabled = true` to check Python code for type errors.
 
 ## 0.5.0
 
