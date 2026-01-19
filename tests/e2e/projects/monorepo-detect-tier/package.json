@@ -1,4 +1,7 @@
 {
   "name": "monorepo-detect-tier-fixture",
-  "workspaces": ["apps/*", "lambdas/*"]
+  "workspaces": [
+    "apps/*",
+    "lambdas/*"
+  ]
 }

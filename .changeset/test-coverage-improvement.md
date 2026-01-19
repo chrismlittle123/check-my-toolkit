@@ -11,5 +11,6 @@ Add comprehensive unit tests for process domain tools
 - infra-index.test.ts: 8 tests for infra domain orchestration
 
 Coverage improvements:
+
 - Overall: 77.33% → 85.79%
 - Process tools: 19.5% → 95.87%
