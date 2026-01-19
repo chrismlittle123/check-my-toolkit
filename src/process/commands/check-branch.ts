@@ -1,4 +1,4 @@
-import { loadConfigAsync } from "../../config/loader.js";
+import { getProjectRoot, loadConfigAsync } from "../../config/loader.js";
 import { type Config } from "../../config/schema.js";
 import { type CheckResult } from "../../types/index.js";
 import { BranchesRunner } from "../tools/branches.js";
@@ -78,10 +78,13 @@ function logFailure(
 }
 
 /** Run the branches validation and return the result */
-async function runBranchValidation(branchesConfig: BranchesConfig): Promise<CheckResult> {
+async function runBranchValidation(
+  projectRoot: string,
+  branchesConfig: BranchesConfig
+): Promise<CheckResult> {
   const runner = new BranchesRunner();
   runner.setConfig(branchesConfig);
-  return runner.run(process.cwd());
+  return runner.run(projectRoot);
 }
 
 /** Handle the result of the branch validation */
@@ -112,7 +115,8 @@ function handleResult(
  * @returns Exit code (0 = success, 1 = violation)
  */
 export async function checkBranchCommand(options: CheckBranchOptions): Promise<number> {
-  const { config } = await loadConfigAsync(options.config);
+  const { config, configPath } = await loadConfigAsync(options.config);
+  const projectRoot = getProjectRoot(configPath);
   const branchesConfig = config.process?.branches;
 
   if (!branchesConfig?.enabled) {
@@ -120,6 +124,6 @@ export async function checkBranchCommand(options: CheckBranchOptions): Promise<n
     return 0;
   }
 
-  const result = await runBranchValidation(branchesConfig);
+  const result = await runBranchValidation(projectRoot, branchesConfig);
   return handleResult(result, branchesConfig, options.quiet);
 }
