@@ -122,6 +122,57 @@ DRIFTED: arn:aws:s3:::my-app-logs
 | Orphaned | Resources in AWS not declared in CDK                |
 | Drifted  | Resources exist but attributes don't match expected |
 
+### Status-based Validation
+
+Validation behavior changes based on the project's `status` field in `repo-metadata.yaml`:
+
+```yaml
+# repo-metadata.yaml
+tier: production
+status: active # active | pre-release | deprecated
+```
+
+| Status        | Validation Behavior                                            |
+| ------------- | -------------------------------------------------------------- |
+| `active`      | Normal validation - verify resources match CDK code            |
+| `pre-release` | May skip prod account (project not yet deployed to production) |
+| `deprecated`  | Verify all resources are **DELETED** (cleanup verification)    |
+
+**Deprecated project validation:**
+
+When `status: deprecated`, the infra scan inverts its logic:
+
+- Instead of checking that resources exist and match CDK, it verifies resources have been **cleaned up**
+- Any remaining resources are reported as violations
+- Useful for ensuring decommissioned projects don't leave orphaned AWS resources
+
+```
+Infra Validation Results (Deprecated Project)
+=============================================
+
+Project: my-old-app
+Status: deprecated
+
+✗ 3 resources still exist (should be deleted)
+
+CLEANUP REQUIRED: arn:aws:s3:::my-old-app-bucket
+  Action: Delete S3 bucket or remove deprecated status
+
+CLEANUP REQUIRED: arn:aws:lambda:us-east-1:333:function:my-old-handler
+  Action: Delete Lambda function or remove deprecated status
+
+CLEANUP REQUIRED: arn:aws:dynamodb:us-east-1:333:table/my-old-table
+  Action: Delete DynamoDB table or remove deprecated status
+```
+
+**Pre-release project validation:**
+
+When `status: pre-release`, validation may:
+
+- Skip prod account checks (not yet deployed)
+- Only validate dev/staging accounts
+- Report resources as expected once deployed
+
 ### Workflow
 
 1. Read `[infra]` config from check.toml
