@@ -1,0 +1,24 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash(gh issue close*)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo 'REMINDER: If closing an EPIC, verify docs/FEATURES.md has been updated with new functionality.'"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash(gh issue create*)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo 'REMINDER: Include in Definition of Done: - [ ] docs/FEATURES.md updated (if adding user-facing functionality)'"
+          }
+        ]
+      }
+    ]
+  }
+}

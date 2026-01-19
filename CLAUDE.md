@@ -244,6 +244,7 @@ Brief description of what this epic covers.
 ## Acceptance Criteria
 - [ ] Criterion 1
 - [ ] Criterion 2
+- [ ] docs/FEATURES.md updated with new functionality
 
 ## Related
 - Spec: docs/specs/<domain>.md
@@ -272,6 +273,7 @@ Implement `cm dependencies` command for drift-toolkit integration.
 - [ ] `cm dependencies` returns all tracked files
 - [ ] `cm dependencies --json` outputs valid JSON
 - [ ] Built-in mappings for eslint, prettier, typescript, vitest, pytest
+- [ ] docs/FEATURES.md updated with new functionality
 
 ## Related
 - Spec: docs/specs/code.md
@@ -300,7 +302,7 @@ Part of #<epic-number>
 ## Definition of Done
 - [ ] Code implemented
 - [ ] Tests passing
-- [ ] Documentation updated (if applicable)
+- [ ] docs/FEATURES.md updated (if adding user-facing functionality)
 EOF
 )"
 
