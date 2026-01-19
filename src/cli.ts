@@ -11,6 +11,7 @@ import { zodToJsonSchema } from "zod-to-json-schema";
 import { auditCodeConfig, runCodeChecks } from "./code/index.js";
 import { ConfigError, getProjectRoot, loadConfig, loadConfigAsync } from "./config/index.js";
 import { configSchema } from "./config/schema.js";
+import { type DependenciesOptions, runDependencies } from "./dependencies/index.js";
 import { auditInfraConfig, runInfraChecks } from "./infra/index.js";
 import { formatOutput, type OutputFormat } from "./output/index.js";
 import { checkBranchCommand, checkCommitCommand } from "./process/commands/index.js";
@@ -390,6 +391,31 @@ infraCommand
   .action((options) => runAudit(options, "infra"));
 
 program.addCommand(infraCommand);
+
+// =============================================================================
+// Dependencies command
+// =============================================================================
+
+// cm dependencies - list config files tracked by enabled checks
+program
+  .command("dependencies")
+  .description("List config files tracked by enabled checks (for drift-toolkit)")
+  .option("-c, --config <path>", "Path to check.toml config file")
+  .addOption(
+    new Option("-f, --format <format>", "Output format").choices(["text", "json"]).default("text")
+  )
+  .option("--check <name>", "Filter to specific check (e.g., eslint)")
+  .option("--project <path>", "Monorepo project path")
+  .action(
+    async (options: { config?: string; format: string; check?: string; project?: string }) => {
+      try {
+        await runDependencies(options as DependenciesOptions);
+        process.exit(ExitCode.SUCCESS);
+      } catch (error) {
+        handleError(error);
+      }
+    }
+  );
 
 // =============================================================================
 // Projects subcommand
