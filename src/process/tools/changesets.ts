@@ -301,8 +301,8 @@ export class ChangesetsRunner extends BaseProcessToolRunner {
   }
 
   /** Check if changeset directory exists */
-  private checkDirectoryExists(elapsed: () => number): CheckResult | null {
-    if (!this.directoryExists(process.cwd(), ".changeset")) {
+  private checkDirectoryExists(projectRoot: string, elapsed: () => number): CheckResult | null {
+    if (!this.directoryExists(projectRoot, ".changeset")) {
       return this.fromViolations(
         [
           {
@@ -320,6 +320,7 @@ export class ChangesetsRunner extends BaseProcessToolRunner {
 
   /** Check if changes require a changeset */
   private async checkChangesRequireChangeset(
+    projectRoot: string,
     changesetFiles: string[],
     _elapsed: () => number
   ): Promise<{ skip?: string; violations: Violation[] }> {
@@ -329,7 +330,7 @@ export class ChangesetsRunner extends BaseProcessToolRunner {
       return { violations: [] };
     }
 
-    const changedFiles = await this.getChangedFiles(process.cwd());
+    const changedFiles = await this.getChangedFiles(projectRoot);
 
     if (changedFiles === null) {
       return {
@@ -358,7 +359,7 @@ export class ChangesetsRunner extends BaseProcessToolRunner {
     const elapsed = (): number => Date.now() - startTime;
 
     // Check directory exists
-    const dirCheck = this.checkDirectoryExists(elapsed);
+    const dirCheck = this.checkDirectoryExists(projectRoot, elapsed);
     if (dirCheck) {
       return dirCheck;
     }
@@ -367,7 +368,11 @@ export class ChangesetsRunner extends BaseProcessToolRunner {
     const changesetFiles = this.getChangesetFiles(projectRoot);
 
     // Check if changes require changeset
-    const { skip, violations } = await this.checkChangesRequireChangeset(changesetFiles, elapsed);
+    const { skip, violations } = await this.checkChangesRequireChangeset(
+      projectRoot,
+      changesetFiles,
+      elapsed
+    );
     if (skip) {
       return this.skip(skip, elapsed());
     }
