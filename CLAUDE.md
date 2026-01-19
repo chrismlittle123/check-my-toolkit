@@ -348,13 +348,13 @@ gh issue edit <issue-number> --add-project "check-my-toolkit"
 
 ### How Milestones and Changesets Work Together
 
-| Tool | Purpose | When Used |
-|------|---------|-----------|
+| Tool           | Purpose                       | When Used                 |
+| -------------- | ----------------------------- | ------------------------- |
 | **Milestones** | Plan what goes into a release | Before/during development |
-| **Changesets** | Determine version number | When PR is ready |
+| **Changesets** | Determine version number      | When PR is ready          |
 
-**Milestones** = your *intent* ("I want these features in v1.2.0")
-**Changesets** = the *mechanism* (calculates actual version from bump types)
+**Milestones** = your _intent_ ("I want these features in v1.2.0")
+**Changesets** = the _mechanism_ (calculates actual version from bump types)
 
 ### Creating a Milestone
 

@@ -56,7 +56,7 @@ require_workflows = ["ci.yml", "release.yml", "pr-checks.yml"]
 
 [process.branches]
 enabled = true
-pattern = "^(feature|fix|hotfix|docs)/v[0-9]+\\.[0-9]+\\.[0-9]+/[a-z0-9-]+$"
+pattern = "^(feature|fix|hotfix|docs)/v[0-9]+\\.[0-9]+\\.[0-9]+/[0-9]+/[a-z0-9-]+$"
 exclude = ["main"]
 
 [process.commits]
