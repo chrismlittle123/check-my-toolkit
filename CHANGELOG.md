@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.4.0
+
+### Minor Changes
+
+- 470f1cb: Add `[process.forbidden_files]` configuration to enforce that certain files must NOT exist in the repository. This is useful for detecting anti-patterns like `.env` files that should use secrets management instead.
+
 ## 1.3.1
 
 ### Patch Changes
