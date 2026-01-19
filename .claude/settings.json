@@ -19,6 +19,26 @@
           }
         ]
       }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash(gh pr merge*)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/post-merge-cleanup.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash(gh pr create*)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/pr-features-check.sh"
+          }
+        ]
+      }
     ]
   }
 }
