@@ -115,9 +115,8 @@ dependencies = ["custom-tool.config.yaml", "custom-tool.rules.json"]
 | prettier   | `.prettierrc*`, `.prettierignore`                 |
 | typescript | `tsconfig*.json`                                  |
 | knip       | `knip.json`, `knip.config.ts`                     |
-| jest       | `jest.config.*`                                   |
 | vitest     | `vitest.config.*`                                 |
-| biome      | `biome.json`                                      |
+| pytest     | `pytest.ini`, `pyproject.toml`, `conftest.py`     |
 
 ### Always Tracked (Hardcoded)
 
