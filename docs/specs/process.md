@@ -269,10 +269,10 @@ Enforce that specific shell commands execute in CI workflows. Uses AST-based wor
 "pr-checks.yml" = ["cm process check"]
 ```
 
-| Setting                  | Description                                      |
-| ------------------------ | ------------------------------------------------ |
-| `"<workflow>"` | Commands required anywhere in workflow           |
-| `"<workflow>".<job>`     | Commands required in specific job                |
+| Setting              | Description                            |
+| -------------------- | -------------------------------------- |
+| `"<workflow>"`       | Commands required anywhere in workflow |
+| `"<workflow>".<job>` | Commands required in specific job      |
 
 #### Validation Logic
 

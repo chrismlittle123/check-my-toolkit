@@ -431,6 +431,7 @@ When asked to "release", "publish", or "create a release", ALWAYS follow this pr
 8. **Verify Release** - Check GitHub releases and npm
 
 **NEVER:**
+
 - Commit directly to main
 - Create tags manually before the changeset workflow runs
 - Publish to npm manually (CI handles this)
