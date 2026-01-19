@@ -521,6 +521,16 @@ const docsConfigSchema = z
   .strict()
   .optional();
 
+/** Forbidden files configuration - files that must NOT exist */
+const forbiddenFilesConfigSchema = z
+  .object({
+    enabled: z.boolean().optional().default(false),
+    files: z.array(z.string()).optional(), // Glob patterns for files that must not exist
+    message: z.string().optional(), // Custom message explaining why these files are forbidden
+  })
+  .strict()
+  .optional();
+
 /** Process domain configuration */
 const processSchema = z
   .object({
@@ -536,6 +546,7 @@ const processSchema = z
     backups: backupsConfigSchema,
     codeowners: codeownersConfigSchema,
     docs: docsConfigSchema,
+    forbidden_files: forbiddenFilesConfigSchema,
   })
   .strict()
   .optional();
@@ -680,6 +691,9 @@ export const defaultConfig: Config = {
       enforcement: "warn",
       staleness_days: 30,
       require_docs_in_pr: false,
+    },
+    forbidden_files: {
+      enabled: false,
     },
   },
   infra: {
