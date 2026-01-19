@@ -1,4 +1,4 @@
-# PROCESS Domain Roadmap
+# PROCESS Domain Spec
 
 GitHub repository process standards validation for drift-toolkit integration.
 
@@ -303,27 +303,3 @@ const result = await validateProcess({
 // result.checks: ProcessCheck[]
 // result.summary: { passed, failed, warnings }
 ```
-
----
-
-## Implementation Priority
-
-| Phase | Feature                  | Enables              |
-| ----- | ------------------------ | -------------------- |
-| 2     | Process standards schema | `drift process scan` |
-| 2     | `cm process check`       | PR-time validation   |
-| 2     | `cm process scan`        | `drift process scan` |
-
----
-
-## Implementation Status
-
-| Feature                           | Status     |
-| --------------------------------- | ---------- |
-| `[process.branches]` schema       | 📋 Planned |
-| `[process.required_files]` schema | 📋 Planned |
-| `[process.commits]` schema        | 📋 Planned |
-| `[process.pull_requests]` schema  | 📋 Planned |
-| `[process.ci]` schema             | 📋 Planned |
-| `cm process check`                | 📋 Planned |
-| `cm process scan`                 | 📋 Planned |

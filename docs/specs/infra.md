@@ -1,4 +1,4 @@
-# INFRA Domain Roadmap
+# INFRA Domain Spec
 
 AWS infrastructure validation for CDK-based projects.
 
@@ -421,35 +421,6 @@ if (!result.valid) {
 2. Call `cm infra scan --account all --json`
 3. Parse results
 4. Create GitHub issue if violations found
-
----
-
-## Implementation Priority
-
-| Phase | Feature                    | Enables            |
-| ----- | -------------------------- | ------------------ |
-| 3     | Infra schema in check.toml | `drift infra scan` |
-| 3     | `cm infra check`           | PR-time validation |
-| 3     | `cm infra scan`            | `drift infra scan` |
-| 3     | `cm infra generate`        | Resource discovery |
-| 3     | `cm infra stacks`          | Stack exploration  |
-| 3     | `cm infra resources`       | Resource queries   |
-
----
-
-## Implementation Status
-
-| Feature                      | Status     |
-| ---------------------------- | ---------- |
-| `[infra]` schema             | 📋 Planned |
-| `[infra.accounts]` schema    | 📋 Planned |
-| `[infra.tracked_attributes]` | 📋 Planned |
-| `[infra.resources]` schema   | 📋 Planned |
-| `cm infra check`             | 📋 Planned |
-| `cm infra scan`              | 📋 Planned |
-| `cm infra generate`          | 📋 Planned |
-| `cm infra stacks`            | 📋 Planned |
-| `cm infra resources`         | 📋 Planned |
 
 ---
 

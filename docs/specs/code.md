@@ -1,4 +1,4 @@
-# CODE Domain Roadmap
+# CODE Domain Spec
 
 Dependency tracking, project detection, and tier validation for drift-toolkit integration.
 
@@ -18,8 +18,6 @@ The CODE domain provides tooling for dependency tracking and project management 
 ## `cm dependencies` Command
 
 **Purpose:** Returns the list of files that drift-toolkit should track for changes. Each check in check.toml has associated configuration files that, if changed, indicate potential drift.
-
-**Priority:** High (blocker for `drift code scan`)
 
 ### CLI Interface
 
@@ -330,25 +328,3 @@ const result = await validateTierRuleset({
 // result.rulesets: string[]
 // result.matchingRuleset: string | null
 ```
-
----
-
-## Implementation Priority
-
-| Phase | Feature                         | Enables               |
-| ----- | ------------------------------- | --------------------- |
-| 1     | `dependencies` command          | `drift code scan`     |
-| 1     | `projects detect` enhancemenets | `drift code scan`     |
-| 2     | `validate tier` command         | Standards enforcement |
-
----
-
-## Implementation Status
-
-| Feature                               | Status     |
-| ------------------------------------- | ---------- |
-| `cm dependencies`                     | 📋 Planned |
-| `cm projects detect`                  | ✅ Done    |
-| `cm projects detect --show-status`    | 📋 Planned |
-| `cm projects detect --missing-config` | 📋 Planned |
-| `cm validate tier`                    | 📋 Planned |
