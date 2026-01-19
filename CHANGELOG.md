@@ -1,5 +1,45 @@
 # Changelog
 
+## 1.3.1
+
+### Patch Changes
+
+- 38263d1: Fix 12 bugs across CODE and PROCESS domains
+
+  CODE domain fixes:
+  - Add duplicate extension validation in schema (#127)
+  - Handle undefined exitCode in coverage-run (#125)
+  - Add vulture exclusion patterns for virtual environments (#123)
+  - Deduplicate extensions in glob patterns (#122)
+  - Add symlink detection in ruff and ty tools (#124)
+  - Add comment-aware pattern detection to avoid false positives (#128)
+
+  PROCESS domain fixes:
+  - Use non-greedy scope regex in commits (#116)
+  - Add word boundary to issue reference regex (#115)
+  - Split frontmatter delimiter error messages (#120)
+  - Report malformed CODEOWNERS lines as violations (#114)
+  - Report YAML parse errors in CI checks (#107)
+  - Generate dynamic branch examples from config (#121)
+
+- 734b549: Fix inconsistent projectRoot vs process.cwd() usage in PROCESS domain
+  - changesets.ts: Pass projectRoot to checkDirectoryExists() instead of using process.cwd()
+  - changesets.ts: Pass projectRoot to checkChangesRequireChangeset() instead of using process.cwd()
+  - check-branch.ts: Pass projectRoot to runBranchValidation() instead of using process.cwd()
+
+  These fixes ensure consistent behavior when running from subdirectories or in monorepos.
+
+- a63bc8a: Add comprehensive unit tests for process domain tools
+  - commits.test.ts: 30 tests for conventional commit validation
+  - docs-helpers.test.ts: 43 tests for markdown/export parsing helpers
+  - changesets.test.ts: 39 tests for changeset format validation
+  - docs.test.ts: 48 tests for documentation governance checks
+  - infra-index.test.ts: 8 tests for infra domain orchestration
+
+  Coverage improvements:
+  - Overall: 77.33% → 85.79%
+  - Process tools: 19.5% → 95.87%
+
 ## 1.3.0
 
 ### Minor Changes
