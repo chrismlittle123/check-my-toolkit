@@ -355,6 +355,8 @@ const branchesConfigSchema = z
     enabled: z.boolean().optional().default(false),
     pattern: z.string().optional(), // Regex pattern for branch names
     exclude: z.array(z.string()).optional(), // Branches to skip (e.g., ["main", "master"])
+    require_issue: z.boolean().optional().default(false), // Require issue number in branch name
+    issue_pattern: z.string().optional(), // Regex to extract issue number (default: captures number after type/)
   })
   .strict()
   .optional();
@@ -388,12 +390,14 @@ const changesetsConfigSchema = z
   .strict()
   .optional();
 
-/** PR size limits configuration */
+/** PR configuration */
 const prConfigSchema = z
   .object({
     enabled: z.boolean().optional().default(false),
     max_files: z.number().int().positive().optional(), // Max files changed in PR
     max_lines: z.number().int().positive().optional(), // Max lines changed (additions + deletions)
+    require_issue: z.boolean().optional().default(false), // Require issue reference in PR description
+    issue_keywords: z.array(z.string()).optional(), // Keywords that link to issues (e.g., ["Closes", "Fixes", "Resolves"])
   })
   .strict()
   .optional();
@@ -628,6 +632,7 @@ export const defaultConfig: Config = {
     },
     branches: {
       enabled: false,
+      require_issue: false,
     },
     commits: {
       enabled: false,
@@ -640,6 +645,7 @@ export const defaultConfig: Config = {
     },
     pr: {
       enabled: false,
+      require_issue: false,
     },
     tickets: {
       enabled: false,

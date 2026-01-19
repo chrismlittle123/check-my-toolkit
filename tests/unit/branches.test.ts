@@ -145,8 +145,8 @@ describe("BranchesRunner", () => {
       });
     });
 
-    describe("no pattern configured", () => {
-      it("skips when no pattern is configured", async () => {
+    describe("no validation configured", () => {
+      it("skips when no pattern or issue requirement is configured", async () => {
         await initGitRepo("feature/test");
         runner.setConfig({
           enabled: true,
@@ -154,7 +154,159 @@ describe("BranchesRunner", () => {
 
         const result = await runner.run(tempDir);
         expect(result.skipped).toBe(true);
-        expect(result.skipReason).toContain("No branch pattern configured");
+        expect(result.skipReason).toContain("No branch pattern or issue requirement configured");
+      });
+    });
+
+    describe("require_issue validation", () => {
+      it("passes when branch contains issue number", async () => {
+        await initGitRepo("feature/123/add-login");
+        runner.setConfig({
+          enabled: true,
+          require_issue: true,
+        });
+
+        const result = await runner.run(tempDir);
+        expect(result.passed).toBe(true);
+        expect(result.violations).toHaveLength(0);
+      });
+
+      it("passes with fix branch containing issue number", async () => {
+        await initGitRepo("fix/456/broken-button");
+        runner.setConfig({
+          enabled: true,
+          require_issue: true,
+        });
+
+        const result = await runner.run(tempDir);
+        expect(result.passed).toBe(true);
+      });
+
+      it("passes with hotfix branch containing issue number", async () => {
+        await initGitRepo("hotfix/789/security-patch");
+        runner.setConfig({
+          enabled: true,
+          require_issue: true,
+        });
+
+        const result = await runner.run(tempDir);
+        expect(result.passed).toBe(true);
+      });
+
+      it("passes with docs branch containing issue number", async () => {
+        await initGitRepo("docs/42/update-readme");
+        runner.setConfig({
+          enabled: true,
+          require_issue: true,
+        });
+
+        const result = await runner.run(tempDir);
+        expect(result.passed).toBe(true);
+      });
+
+      it("fails when branch does not contain issue number", async () => {
+        await initGitRepo("feature/add-login");
+        runner.setConfig({
+          enabled: true,
+          require_issue: true,
+        });
+
+        const result = await runner.run(tempDir);
+        expect(result.passed).toBe(false);
+        expect(result.violations).toHaveLength(1);
+        expect(result.violations[0].rule).toBe("process.branches.require_issue");
+        expect(result.violations[0].message).toContain("does not contain issue number");
+      });
+
+      it("fails when branch has wrong format", async () => {
+        await initGitRepo("123/add-login");
+        runner.setConfig({
+          enabled: true,
+          require_issue: true,
+        });
+
+        const result = await runner.run(tempDir);
+        expect(result.passed).toBe(false);
+        expect(result.violations[0].message).toContain("does not contain issue number");
+      });
+
+      it("passes when excluded branch does not have issue number", async () => {
+        await initGitRepo("main");
+        runner.setConfig({
+          enabled: true,
+          require_issue: true,
+          exclude: ["main", "master"],
+        });
+
+        const result = await runner.run(tempDir);
+        expect(result.passed).toBe(true);
+      });
+
+      it("uses custom issue_pattern when provided", async () => {
+        await initGitRepo("PROJ-123-add-feature");
+        runner.setConfig({
+          enabled: true,
+          require_issue: true,
+          issue_pattern: "^PROJ-([0-9]+)-.*$",
+        });
+
+        const result = await runner.run(tempDir);
+        expect(result.passed).toBe(true);
+      });
+
+      it("fails with custom pattern when branch does not match", async () => {
+        await initGitRepo("feature/123/add-login");
+        runner.setConfig({
+          enabled: true,
+          require_issue: true,
+          issue_pattern: "^PROJ-([0-9]+)-.*$",
+        });
+
+        const result = await runner.run(tempDir);
+        expect(result.passed).toBe(false);
+      });
+    });
+
+    describe("combined pattern and require_issue", () => {
+      it("validates both pattern and issue requirement", async () => {
+        await initGitRepo("feature/123/add-login");
+        runner.setConfig({
+          enabled: true,
+          pattern: "^(feature|fix|hotfix|docs)/([0-9]+)/[a-z0-9-]+$",
+          require_issue: true,
+        });
+
+        const result = await runner.run(tempDir);
+        expect(result.passed).toBe(true);
+      });
+
+      it("reports both violations when both fail", async () => {
+        await initGitRepo("my-random-branch");
+        runner.setConfig({
+          enabled: true,
+          pattern: "^(feature|fix)/[0-9]+/[a-z-]+$",
+          require_issue: true,
+        });
+
+        const result = await runner.run(tempDir);
+        expect(result.passed).toBe(false);
+        expect(result.violations).toHaveLength(2);
+        expect(result.violations.map((v) => v.rule)).toContain("process.branches.pattern");
+        expect(result.violations.map((v) => v.rule)).toContain("process.branches.require_issue");
+      });
+
+      it("reports only pattern violation when issue is present but pattern fails", async () => {
+        await initGitRepo("feature/123/ADD_LOGIN");
+        runner.setConfig({
+          enabled: true,
+          pattern: "^(feature|fix)/[0-9]+/[a-z-]+$", // no underscores allowed
+          require_issue: true,
+        });
+
+        const result = await runner.run(tempDir);
+        expect(result.passed).toBe(false);
+        expect(result.violations).toHaveLength(1);
+        expect(result.violations[0].rule).toBe("process.branches.pattern");
       });
     });
   });

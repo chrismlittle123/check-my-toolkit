@@ -83,6 +83,8 @@ function createBranchesRunner(config: Config): BranchesRunner {
       enabled: branchesConfig.enabled,
       pattern: branchesConfig.pattern,
       exclude: branchesConfig.exclude,
+      require_issue: branchesConfig.require_issue,
+      issue_pattern: branchesConfig.issue_pattern,
     });
   }
   return runner;
@@ -131,6 +133,8 @@ function createPrRunner(config: Config): PrRunner {
       enabled: prConfig.enabled,
       max_files: prConfig.max_files,
       max_lines: prConfig.max_lines,
+      require_issue: prConfig.require_issue,
+      issue_keywords: prConfig.issue_keywords,
     });
   }
   return runner;

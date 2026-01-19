@@ -8,7 +8,12 @@ interface PrConfig {
   enabled?: boolean;
   max_files?: number;
   max_lines?: number;
+  require_issue?: boolean;
+  issue_keywords?: string[];
 }
+
+/** Default keywords that link PRs to issues */
+const DEFAULT_ISSUE_KEYWORDS = ["Closes", "Fixes", "Resolves"];
 
 /** GitHub PR event payload structure (partial) */
 interface GitHubPrEventPayload {
@@ -16,6 +21,8 @@ interface GitHubPrEventPayload {
     changed_files?: number;
     additions?: number;
     deletions?: number;
+    title?: string;
+    body?: string;
   };
 }
 
@@ -31,6 +38,7 @@ export class PrRunner extends BaseProcessToolRunner {
 
   private config: PrConfig = {
     enabled: false,
+    require_issue: false,
   };
 
   /**
@@ -62,9 +70,55 @@ export class PrRunner extends BaseProcessToolRunner {
     return payload?.pull_request ?? null;
   }
 
-  /** Check if any limits are configured */
-  private hasLimitsConfigured(): boolean {
-    return this.config.max_files !== undefined || this.config.max_lines !== undefined;
+  /** Check if any validation is configured */
+  private hasValidationConfigured(): boolean {
+    return (
+      this.config.max_files !== undefined ||
+      this.config.max_lines !== undefined ||
+      this.config.require_issue === true
+    );
+  }
+
+  /** Check if PR body contains issue reference with keyword */
+  private findIssueReference(text: string | undefined): string | null {
+    if (!text) {
+      return null;
+    }
+
+    const keywords = this.config.issue_keywords ?? DEFAULT_ISSUE_KEYWORDS;
+    // Build pattern: (Closes|Fixes|Resolves)\s+#(\d+)
+    const keywordPattern = keywords.map((k) => k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|");
+    const regex = new RegExp(`(?:${keywordPattern})\\s+#(\\d+)`, "i");
+    const match = text.match(regex);
+    return match ? match[1] : null;
+  }
+
+  /** Validate that PR contains issue reference */
+  private validateIssueReference(pr: NonNullable<GitHubPrEventPayload["pull_request"]>): {
+    passed: boolean;
+    error?: string;
+  } {
+    if (!this.config.require_issue) {
+      return { passed: true };
+    }
+
+    // Check body first (primary location for issue links)
+    const bodyIssue = this.findIssueReference(pr.body);
+    if (bodyIssue) {
+      return { passed: true };
+    }
+
+    // Also check title as fallback
+    const titleIssue = this.findIssueReference(pr.title);
+    if (titleIssue) {
+      return { passed: true };
+    }
+
+    const keywords = this.config.issue_keywords ?? DEFAULT_ISSUE_KEYWORDS;
+    return {
+      passed: false,
+      error: `PR does not contain issue reference. Include "${keywords[0]} #<issue-number>" in the PR description.`,
+    };
   }
 
   /** Validate PR size against configured limits */
@@ -109,23 +163,49 @@ export class PrRunner extends BaseProcessToolRunner {
     return this.pass(elapsed());
   }
 
-  /** Run PR size validation */
+  /** Collect all violations from PR validations */
+  private collectViolations(
+    prData: NonNullable<GitHubPrEventPayload["pull_request"]>,
+    elapsed: () => number
+  ): Violation[] {
+    const violations: Violation[] = [];
+
+    const sizeResult = this.validatePrSize(prData, elapsed);
+    if (!sizeResult.passed) {
+      violations.push(...sizeResult.violations);
+    }
+
+    const issueResult = this.validateIssueReference(prData);
+    if (!issueResult.passed && issueResult.error) {
+      violations.push({
+        rule: `${this.rule}.require_issue`,
+        tool: this.toolId,
+        message: issueResult.error,
+        severity: "error",
+      });
+    }
+
+    return violations;
+  }
+
+  /** Run PR validation */
   async run(_projectRoot: string): Promise<CheckResult> {
     const startTime = Date.now();
     const elapsed = (): number => Date.now() - startTime;
 
-    // Check if any limits are configured
-    if (!this.hasLimitsConfigured()) {
-      return this.skip("No PR size limits configured", elapsed());
+    if (!this.hasValidationConfigured()) {
+      return this.skip("No PR validation configured", elapsed());
     }
 
-    // Try to read PR event payload
     const payload = this.readPrEventPayload();
     const prData = this.getPrData(payload);
     if (!prData) {
       return this.skip("Not in a PR context (GITHUB_EVENT_PATH not set or no PR data)", elapsed());
     }
 
-    return this.validatePrSize(prData, elapsed);
+    const violations = this.collectViolations(prData, elapsed);
+    return violations.length > 0
+      ? this.fromViolations(violations, elapsed())
+      : this.pass(elapsed());
   }
 }

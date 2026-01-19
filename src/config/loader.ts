@@ -231,14 +231,14 @@ type DocsConfig = NonNullable<ProcessConfig["docs"]>;
 
 const defaultHooks: HooksConfig = { enabled: false, require_husky: true };
 const defaultCi: CiConfig = { enabled: false };
-const defaultBranches: BranchesConfig = { enabled: false };
+const defaultBranches: BranchesConfig = { enabled: false, require_issue: false };
 const defaultCommits: CommitsConfig = { enabled: false, require_scope: false };
 const defaultChangesets: ChangesetsConfig = {
   enabled: false,
   validate_format: true,
   require_description: true,
 };
-const defaultPr: PrConfig = { enabled: false };
+const defaultPr: PrConfig = { enabled: false, require_issue: false };
 const defaultTickets: TicketsConfig = {
   enabled: false,
   require_in_commits: true,

@@ -92,13 +92,13 @@ enabled = true
 1. **Create a branch** following the naming convention:
 
    ```
-   (feature|fix|hotfix|docs)/vX.Y.Z/description
+   (feature|fix|hotfix|docs)/<issue-number>/description
    ```
 
    Examples:
-   - `feature/v0.2.0/add-knip-integration`
-   - `fix/v0.1.3/eslint-parsing-error`
-   - `docs/v0.1.3/update-readme`
+   - `feature/123/add-knip-integration`
+   - `fix/456/eslint-parsing-error`
+   - `docs/42/update-readme`
 
 2. **Make your changes** on the branch
 
@@ -119,7 +119,7 @@ enabled = true
 
 ### Branch Naming Convention
 
-Format: `(feature|fix|hotfix|docs)/vX.Y.Z/description`
+Format: `<type>/<issue-number>/<description>`
 
 | Prefix     | Use For                   |
 | ---------- | ------------------------- |
@@ -128,7 +128,7 @@ Format: `(feature|fix|hotfix|docs)/vX.Y.Z/description`
 | `hotfix/`  | Critical production fixes |
 | `docs/`    | Documentation only        |
 
-The version should be the target version this change will be included in.
+The issue number links the branch to a GitHub issue for tracking.
 
 ## Release Process
 
@@ -343,3 +343,76 @@ gh issue edit <issue-number> --add-project "check-my-toolkit"
 4. **Link sub-issues** to their parent epic in the issue body
 5. **Update epic checklists** when sub-issues are completed
 6. **Close epics** when all sub-issues are done
+
+## Release Planning with Milestones
+
+### How Milestones and Changesets Work Together
+
+| Tool | Purpose | When Used |
+|------|---------|-----------|
+| **Milestones** | Plan what goes into a release | Before/during development |
+| **Changesets** | Determine version number | When PR is ready |
+
+**Milestones** = your *intent* ("I want these features in v1.2.0")
+**Changesets** = the *mechanism* (calculates actual version from bump types)
+
+### Creating a Milestone
+
+```bash
+# Create milestone for next release
+gh api repos/chrismlittle123/check-my-toolkit/milestones \
+  --method POST \
+  -f title="v1.2.0" \
+  -f description="Description of release goals"
+
+# List existing milestones
+gh api repos/chrismlittle123/check-my-toolkit/milestones
+```
+
+### Assigning Issues to Milestones
+
+```bash
+# Assign issue to milestone (use milestone number, not title)
+gh issue edit 123 --milestone "v1.2.0"
+
+# View issues in a milestone
+gh issue list --milestone "v1.2.0"
+```
+
+### Release Workflow
+
+```
+1. Create milestone "v1.2.0" for planned release
+2. Create issues for planned work
+3. Assign issues to milestone
+4. Create branches: feature/123/description (issue number required)
+5. Add changeset to PR: pnpm changeset (pick patch/minor/major)
+6. PR must include "Closes #123" in description
+7. Merge PRs to main
+8. Release workflow runs → version calculated from changesets
+9. Close milestone when release ships
+```
+
+## Branch and PR Requirements
+
+### Branch Naming (Enforced by pre-push hook)
+
+Format: `<type>/<issue-number>/<description>`
+
+```
+feature/123/add-dark-mode    ✓
+fix/456/broken-button        ✓
+hotfix/789/security-patch    ✓
+docs/42/update-readme        ✓
+
+feature/add-dark-mode        ✗ (missing issue number)
+123/add-dark-mode            ✗ (missing type)
+```
+
+Excluded: `main`, `docs/*`
+
+### PR Requirements (Enforced by GitHub Actions)
+
+1. **Issue link required**: PR description must contain `Closes #123`, `Fixes #123`, or `Resolves #123`
+2. **Changeset required**: For code changes, run `pnpm changeset` and commit the file
+3. **Milestone recommended**: Assign PR to target release milestone

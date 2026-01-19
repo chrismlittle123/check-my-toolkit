@@ -355,8 +355,10 @@ function mergeBranchesConfig(
   }
   return {
     enabled: override.enabled,
+    require_issue: override.require_issue,
     pattern: override.pattern ?? base?.pattern,
     exclude: override.exclude ?? base?.exclude,
+    issue_pattern: override.issue_pattern ?? base?.issue_pattern,
   };
 }
 
@@ -369,8 +371,10 @@ function mergePrConfig(
   }
   return {
     enabled: override.enabled,
+    require_issue: override.require_issue,
     max_files: override.max_files ?? base?.max_files,
     max_lines: override.max_lines ?? base?.max_lines,
+    issue_keywords: override.issue_keywords ?? base?.issue_keywords,
   };
 }
 

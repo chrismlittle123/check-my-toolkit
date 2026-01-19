@@ -31,23 +31,49 @@ function logDisabled(quiet: boolean | undefined): void {
   }
 }
 
+/** Show help for issue-based branch naming */
+function showIssueExamples(): void {
+  console.error("");
+  console.error("Examples (with issue number):");
+  console.error("  feature/123/add-login");
+  console.error("  fix/456/broken-button");
+  console.error("  hotfix/789/security-patch");
+}
+
+/** Show help for pattern-based branch naming */
+function showPatternExamples(): void {
+  console.error("");
+  console.error("Examples:");
+  console.error("  feature/v1.0.0/add-login");
+  console.error("  fix/v1.0.1/broken-button");
+}
+
 /** Output failure details */
 function logFailure(
-  violations: { message: string }[],
-  pattern: string | undefined,
+  violations: { message: string; rule?: string }[],
+  branchesConfig: BranchesConfig,
   quiet: boolean | undefined
 ): void {
   for (const violation of violations) {
     console.error(`✗ ${violation.message}`);
   }
 
-  if (!quiet && pattern) {
+  if (quiet) {
+    return;
+  }
+
+  const hasPatternViolation = violations.some((v) => v.rule?.includes("pattern"));
+  const hasIssueViolation = violations.some((v) => v.rule?.includes("require_issue"));
+
+  if (hasPatternViolation && branchesConfig.pattern) {
     console.error("");
-    console.error(`Expected pattern: ${pattern}`);
-    console.error("");
-    console.error("Examples:");
-    console.error("  feature/v1.0.0/add-login");
-    console.error("  fix/v1.0.1/broken-button");
+    console.error(`Expected pattern: ${branchesConfig.pattern}`);
+  }
+
+  if (hasIssueViolation || branchesConfig.require_issue) {
+    showIssueExamples();
+  } else if (hasPatternViolation) {
+    showPatternExamples();
   }
 }
 
@@ -74,7 +100,7 @@ function handleResult(
     return 0;
   }
 
-  logFailure(result.violations, branchesConfig.pattern, quiet);
+  logFailure(result.violations, branchesConfig, quiet);
   return 1;
 }
 
