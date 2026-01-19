@@ -476,6 +476,46 @@ function mergeBackupsConfig(
   };
 }
 
+function mergeCodeownersConfig(
+  base: ProcessConfig["codeowners"],
+  override: ProcessConfig["codeowners"]
+): ProcessConfig["codeowners"] {
+  if (!override) {
+    return base;
+  }
+  return {
+    enabled: override.enabled,
+    rules: override.rules ?? base?.rules,
+  };
+}
+
+// eslint-disable-next-line complexity -- docs config has many optional fields requiring individual merge
+function mergeDocsConfig(
+  base: ProcessConfig["docs"],
+  override: ProcessConfig["docs"]
+): ProcessConfig["docs"] {
+  if (!override) {
+    return base;
+  }
+  // Fields with schema defaults: enabled, path, enforcement, staleness_days, require_docs_in_pr
+  return {
+    enabled: override.enabled,
+    path: override.path,
+    enforcement: override.enforcement,
+    allowlist: override.allowlist ?? base?.allowlist,
+    max_files: override.max_files ?? base?.max_files,
+    max_file_lines: override.max_file_lines ?? base?.max_file_lines,
+    max_total_kb: override.max_total_kb ?? base?.max_total_kb,
+    staleness_days: override.staleness_days,
+    stale_mappings: override.stale_mappings ?? base?.stale_mappings,
+    require_docs_in_pr: override.require_docs_in_pr,
+    min_coverage: override.min_coverage ?? base?.min_coverage,
+    coverage_paths: override.coverage_paths ?? base?.coverage_paths,
+    exclude_patterns: override.exclude_patterns ?? base?.exclude_patterns,
+    types: override.types ?? base?.types,
+  };
+}
+
 // eslint-disable-next-line complexity -- merging all process config sections requires multiple calls
 function mergeProcessSection(
   base: ProcessConfig | undefined,
@@ -492,6 +532,8 @@ function mergeProcessSection(
     coverage: mergeCoverageConfig(base?.coverage, override.coverage),
     repo: mergeRepoConfig(base?.repo, override.repo),
     backups: mergeBackupsConfig(base?.backups, override.backups),
+    codeowners: mergeCodeownersConfig(base?.codeowners, override.codeowners),
+    docs: mergeDocsConfig(base?.docs, override.docs),
   };
 }
 
