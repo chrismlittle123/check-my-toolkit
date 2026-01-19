@@ -9,6 +9,7 @@ import {
   CommitsRunner,
   CoverageRunner,
   DocsRunner,
+  ForbiddenFilesRunner,
   HooksRunner,
   PrRunner,
   RepoRunner,
@@ -26,6 +27,7 @@ export {
   CommitsRunner,
   CoverageRunner,
   DocsRunner,
+  ForbiddenFilesRunner,
   HooksRunner,
   PrRunner,
   RepoRunner,
@@ -240,6 +242,20 @@ function createDocsRunner(config: Config): DocsRunner {
   return runner;
 }
 
+/** Create a configured ForbiddenFilesRunner */
+function createForbiddenFilesRunner(config: Config): ForbiddenFilesRunner {
+  const runner = new ForbiddenFilesRunner();
+  const forbiddenFilesConfig = config.process?.forbidden_files;
+  if (forbiddenFilesConfig) {
+    runner.setConfig({
+      enabled: forbiddenFilesConfig.enabled,
+      files: forbiddenFilesConfig.files,
+      message: forbiddenFilesConfig.message,
+    });
+  }
+  return runner;
+}
+
 /** All available process tools with their config predicates */
 const toolRegistry: ToolEntry[] = [
   { isEnabled: (c) => isEnabled(c.process?.hooks), runner: createHooksRunner },
@@ -254,6 +270,7 @@ const toolRegistry: ToolEntry[] = [
   { isEnabled: (c) => isEnabled(c.process?.backups), runner: createBackupsRunner },
   { isEnabled: (c) => isEnabled(c.process?.codeowners), runner: createCodeownersRunner },
   { isEnabled: (c) => isEnabled(c.process?.docs), runner: createDocsRunner },
+  { isEnabled: (c) => isEnabled(c.process?.forbidden_files), runner: createForbiddenFilesRunner },
 ];
 
 /**

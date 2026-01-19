@@ -633,6 +633,51 @@ owners = ["@myorg/typescript-team"]
 
 ---
 
+## Forbidden Files (`[process.forbidden_files]`)
+
+Enforce that certain files must NOT exist anywhere in the repository. Scans the entire repo recursively to detect anti-patterns like `.env` files.
+
+```toml
+[process.forbidden_files]
+enabled = true
+files = ["**/.env", "**/.env.*", "**/.env.example"]
+message = "Use AWS Secrets Manager for secrets and TypeScript config for settings"
+```
+
+| Property  | Value                                                        |
+| --------- | ------------------------------------------------------------ |
+| `files`   | Glob patterns for files that must not exist (scans entire repo) |
+| `message` | Custom message explaining why these files are forbidden      |
+
+**Glob Pattern Examples:**
+
+| Pattern               | Matches                                          |
+| --------------------- | ------------------------------------------------ |
+| `**/.env`             | `.env`, `packages/api/.env`, `src/config/.env`   |
+| `**/.env.*`           | `.env.local`, `apps/web/.env.production`         |
+| `**/credentials.json` | Any `credentials.json` anywhere in the repo      |
+| `**/*.pem`            | Any `.pem` private key file                      |
+
+**Validation:**
+
+- Scans entire repository recursively for matching files
+- Automatically ignores `node_modules/` and `.git/` directories
+- Reports all matching files with custom message
+
+**Why avoid .env files:**
+
+1. **Security risk** - Files on disk can be accidentally committed or leaked
+2. **No audit trail** - No record of who accessed secrets or when
+3. **Rotation pain** - Must manually update every developer's local copy
+4. **No revocation** - Can't revoke access to secrets already downloaded
+
+**Better alternatives:**
+
+- **Secrets** → AWS Secrets Manager (audited, revocable, access-controlled)
+- **Configuration** → TypeScript config files (type-safe, version-controlled, reviewed)
+
+---
+
 ## Documentation Governance (`[process.docs]`)
 
 Validate documentation structure, content, freshness, and API coverage.
@@ -969,6 +1014,11 @@ enforcement = "warn"
 staleness_days = 30
 allowlist = ["README.md", "CLAUDE.md"]
 
+[process.forbidden_files]
+enabled = true
+files = ["**/.env", "**/.env.*", "**/credentials.json"]
+message = "Use AWS Secrets Manager for secrets"
+
 # =============================================================================
 # INFRA DOMAIN
 # =============================================================================
@@ -1005,22 +1055,23 @@ Environment = ["dev", "stag", "prod"]
 | Naming     | Built-in         | Any            | `[code.naming]`                     |
 | Quality    | Disable Comments | JS/TS/Python   | `[code.quality.disable-comments]`   |
 
-## PROCESS Domain (12 checks)
+## PROCESS Domain (13 checks)
 
-| Check      | Purpose                  | Config                 |
-| ---------- | ------------------------ | ---------------------- |
-| Hooks      | Git hooks (Husky)        | `[process.hooks]`      |
-| CI         | GitHub workflows         | `[process.ci]`         |
-| Branches   | Naming patterns          | `[process.branches]`   |
-| Commits    | Message format           | `[process.commits]`    |
-| Changesets | Changeset validation     | `[process.changesets]` |
-| PR         | Size limits              | `[process.pr]`         |
-| Tickets    | Reference validation     | `[process.tickets]`    |
-| Coverage   | Threshold enforcement    | `[process.coverage]`   |
-| Repo       | Branch protection        | `[process.repo]`       |
-| Backups    | S3 backup verification   | `[process.backups]`    |
-| CODEOWNERS | CODEOWNERS validation    | `[process.codeowners]` |
-| Docs       | Documentation governance | `[process.docs]`       |
+| Check           | Purpose                  | Config                      |
+| --------------- | ------------------------ | --------------------------- |
+| Hooks           | Git hooks (Husky)        | `[process.hooks]`           |
+| CI              | GitHub workflows         | `[process.ci]`              |
+| Branches        | Naming patterns          | `[process.branches]`        |
+| Commits         | Message format           | `[process.commits]`         |
+| Changesets      | Changeset validation     | `[process.changesets]`      |
+| PR              | Size limits              | `[process.pr]`              |
+| Tickets         | Reference validation     | `[process.tickets]`         |
+| Coverage        | Threshold enforcement    | `[process.coverage]`        |
+| Repo            | Branch protection        | `[process.repo]`            |
+| Backups         | S3 backup verification   | `[process.backups]`         |
+| CODEOWNERS      | CODEOWNERS validation    | `[process.codeowners]`      |
+| Docs            | Documentation governance | `[process.docs]`            |
+| Forbidden Files | Anti-pattern detection   | `[process.forbidden_files]` |
 
 ## INFRA Domain (1 check)
 
