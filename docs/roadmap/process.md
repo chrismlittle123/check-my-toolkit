@@ -4,40 +4,76 @@ GitHub repository process standards validation for drift-toolkit integration.
 
 ## Overview
 
-The PROCESS domain validates GitHub repository settings, branch protection, required files, commit conventions, and CI/CD configuration. It enables both local validation (at PR time) and remote validation (scheduled scans via drift-toolkit).
+The PROCESS domain validates GitHub repository settings, branch protection, required files, commit conventions, and CI/CD configuration.
+
+**Two modes:**
+
+| Command            | Timing          | Purpose                   | Data Source      |
+| ------------------ | --------------- | ------------------------- | ---------------- |
+| `cm process check` | Pre-production  | Preventative (PR/CI)      | Local filesystem |
+| `cm process scan`  | Post-deployment | Detective (drift-toolkit) | GitHub API       |
 
 ```toml
 [process]
-├── [process.branches]      # Branch protection settings
+├── [process.branches]       # Branch protection settings
 ├── [process.required_files] # Required repository files
-├── [process.commits]       # Commit message format
-├── [process.pull_requests] # PR requirements
-└── [process.ci]            # CI/CD workflow requirements
+├── [process.commits]        # Commit message format
+├── [process.pull_requests]  # PR requirements
+└── [process.ci]             # CI/CD workflow requirements
 ```
 
 ---
 
-## `cm process validate` Command
+## `cm process check` Command
 
-**Purpose:** Validates process standards defined in check.toml against actual GitHub repository state.
+**Purpose:** Local validation of process standards at PR/CI time. Checks files and configurations that can be validated without API calls.
 
-**Priority:** Medium (enables `drift process scan`)
+**Timing:** Pre-production (preventative)
 
 ### CLI Interface
 
 ```bash
-# Validate process standards (local)
-cm process validate
+# Run all local process checks
+cm process check
 
-# Validate specific category
-cm process validate --category branches
-cm process validate --category required_files
+# Check specific category
+cm process check --category commits
+cm process check --category ci
 
 # JSON output
-cm process validate --json
+cm process check --json
+```
 
-# Remote validation (for drift-toolkit)
-cm process validate --repo owner/repo --token $GITHUB_TOKEN
+### What It Checks (Local)
+
+- Commit message format (conventional commits)
+- Required files exist (CODEOWNERS, PR template, etc.)
+- Workflow files exist and are valid
+- Branch naming conventions
+
+---
+
+## `cm process scan` Command
+
+**Purpose:** Remote validation of process standards via GitHub API. Used by drift-toolkit for scheduled scans to detect configuration drift.
+
+**Timing:** Post-deployment (detective)
+
+### CLI Interface
+
+```bash
+# Scan current repository (requires GITHUB_TOKEN)
+cm process scan
+
+# Scan specific repository
+cm process scan --repo owner/repo
+
+# Scan specific category
+cm process scan --category branches
+cm process scan --category required_files
+
+# JSON output (for drift-toolkit)
+cm process scan --json
 ```
 
 ### Output Format
@@ -220,24 +256,26 @@ workflow_path = ".github/workflows"
 
 ## Implementation Details
 
-### Local vs Remote Validation
+### Check vs Scan
 
-| Mode   | Use Case                        | Data Source |
-| ------ | ------------------------------- | ----------- |
-| Local  | PR-time checks, CI              | Filesystem  |
-| Remote | Scheduled scans (drift-toolkit) | GitHub API  |
+| Command            | Use Case                      | Data Source      |
+| ------------------ | ----------------------------- | ---------------- |
+| `cm process check` | PR-time, CI pipelines         | Local filesystem |
+| `cm process scan`  | drift-toolkit scheduled scans | GitHub API       |
 
-**Local validation:**
+**Check (local):**
 
-- Check file existence
-- Parse workflow files
 - Validate commit messages
+- Verify required files exist
+- Parse workflow files
+- Fast, no API calls
 
-**Remote validation:**
+**Scan (remote):**
 
 - Query GitHub API for branch protection settings
-- Check repository settings
-- Verify file existence via Contents API
+- Verify repository settings match check.toml
+- Check file existence via Contents API
+- Requires `GITHUB_TOKEN`
 
 ### GitHub API Endpoints
 
@@ -270,11 +308,11 @@ const result = await validateProcess({
 
 ## Implementation Priority
 
-| Phase | Feature                     | Enables              |
-| ----- | --------------------------- | -------------------- |
-| 2     | Process standards schema    | `drift process scan` |
-| 2     | `process validate` (local)  | PR-time validation   |
-| 2     | `process validate` (remote) | `drift process scan` |
+| Phase | Feature                  | Enables              |
+| ----- | ------------------------ | -------------------- |
+| 2     | Process standards schema | `drift process scan` |
+| 2     | `cm process check`       | PR-time validation   |
+| 2     | `cm process scan`        | `drift process scan` |
 
 ---
 
@@ -287,5 +325,5 @@ const result = await validateProcess({
 | `[process.commits]` schema        | 📋 Planned |
 | `[process.pull_requests]` schema  | 📋 Planned |
 | `[process.ci]` schema             | 📋 Planned |
-| `cm process validate` (local)     | 📋 Planned |
-| `cm process validate` (remote)    | 📋 Planned |
+| `cm process check`                | 📋 Planned |
+| `cm process scan`                 | 📋 Planned |

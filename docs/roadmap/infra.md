@@ -4,11 +4,19 @@ AWS infrastructure validation for CDK-based projects.
 
 ## Overview
 
-The INFRA domain validates that AWS infrastructure matches what's declared in CDK code. It detects missing resources, orphaned resources, and attribute drift. This enables drift-toolkit to perform scheduled infrastructure scans.
+The INFRA domain validates that AWS infrastructure matches what's declared in CDK code. It detects missing resources, orphaned resources, and attribute drift.
+
+**Two modes:**
+
+| Command          | Timing          | Purpose                   | Data Source     |
+| ---------------- | --------------- | ------------------------- | --------------- |
+| `cm infra check` | Pre-production  | Preventative (PR/CI)      | Local CDK synth |
+| `cm infra scan`  | Post-deployment | Detective (drift-toolkit) | AWS APIs        |
 
 ```toml
 [infra]
-├── validate    # Compare CDK code vs AWS state
+├── check       # Validate CDK code locally (synth, tagging rules)
+├── scan        # Compare CDK code vs actual AWS state
 ├── generate    # Generate resource declarations from CDK
 ├── stacks      # List deployed CloudFormation stacks
 └── resources   # Query AWS resources
@@ -16,29 +24,54 @@ The INFRA domain validates that AWS infrastructure matches what's declared in CD
 
 ---
 
-## `cm infra validate` Command
+## `cm infra check` Command
 
-**Purpose:** Validates that AWS infrastructure matches what's declared in CDK code. Detects missing resources, orphaned resources, and attribute drift.
+**Purpose:** Local validation of infrastructure code. Runs `cdk synth` and validates tagging rules without querying AWS.
 
-**Priority:** High (enables `drift infra scan`)
+**Timing:** Pre-production (preventative)
 
 ### CLI Interface
 
 ```bash
-# Validate infra for current project (default: dev account)
-cm infra validate
+# Run all local infra checks
+cm infra check
 
-# Validate specific account
-cm infra validate --account prod
+# JSON output
+cm infra check --json
+```
 
-# Validate all accounts
-cm infra validate --account all
+### What It Checks (Local)
+
+- CDK code synthesizes successfully
+- Tagging rules are satisfied in templates
+- Resource naming conventions
+- No AWS API calls required
+
+---
+
+## `cm infra scan` Command
+
+**Purpose:** Remote validation comparing CDK code against actual AWS state. Detects missing resources, orphaned resources, and attribute drift. Used by drift-toolkit for scheduled scans.
+
+**Timing:** Post-deployment (detective)
+
+### CLI Interface
+
+```bash
+# Scan infra for current project (default: dev account)
+cm infra scan
+
+# Scan specific account
+cm infra scan --account prod
+
+# Scan all accounts
+cm infra scan --account all
 
 # JSON output for programmatic use
-cm infra validate --json
+cm infra scan --json
 
 # Specify region
-cm infra validate --region us-east-1
+cm infra scan --region us-east-1
 ```
 
 ### Output Format
@@ -343,25 +376,7 @@ Uses standard AWS credential chain:
 
 ```bash
 # Using profiles
-AWS_PROFILE=prod cm infra validate --account prod
-```
-
----
-
-## Programmatic API
-
-```typescript
-import { validateInfra } from "check-my-toolkit";
-
-const result = await validateInfra({
-  projectPath: ".",
-  account: "prod", // or "all"
-  region: "us-east-1",
-});
-
-// result.valid: boolean
-// result.issues: InfraIssue[]
-// result.summary: { found, missing, orphaned, drifted }
+AWS_PROFILE=prod cm infra scan --account prod
 ```
 
 ---
@@ -388,9 +403,9 @@ Optional peer dependencies (lazy-loaded when infra commands are used):
 drift-toolkit calls check-my-toolkit programmatically for infra scanning:
 
 ```typescript
-import { validateInfra } from "check-my-toolkit";
+import { scanInfra } from "check-my-toolkit";
 
-const result = await validateInfra({
+const result = await scanInfra({
   configPath: "./check.toml",
   account: "prod",
 });
@@ -403,7 +418,7 @@ if (!result.valid) {
 **drift-toolkit `infra scan` workflow:**
 
 1. Discover repos with `[infra]` in check.toml
-2. Call `cm infra validate --account all --json`
+2. Call `cm infra scan --account all --json`
 3. Parse results
 4. Create GitHub issue if violations found
 
@@ -414,7 +429,8 @@ if (!result.valid) {
 | Phase | Feature                    | Enables            |
 | ----- | -------------------------- | ------------------ |
 | 3     | Infra schema in check.toml | `drift infra scan` |
-| 3     | `cm infra validate`        | `drift infra scan` |
+| 3     | `cm infra check`           | PR-time validation |
+| 3     | `cm infra scan`            | `drift infra scan` |
 | 3     | `cm infra generate`        | Resource discovery |
 | 3     | `cm infra stacks`          | Stack exploration  |
 | 3     | `cm infra resources`       | Resource queries   |
@@ -429,7 +445,8 @@ if (!result.valid) {
 | `[infra.accounts]` schema    | 📋 Planned |
 | `[infra.tracked_attributes]` | 📋 Planned |
 | `[infra.resources]` schema   | 📋 Planned |
-| `cm infra validate`          | 📋 Planned |
+| `cm infra check`             | 📋 Planned |
+| `cm infra scan`              | 📋 Planned |
 | `cm infra generate`          | 📋 Planned |
 | `cm infra stacks`            | 📋 Planned |
 | `cm infra resources`         | 📋 Planned |
