@@ -416,3 +416,21 @@ Excluded: `main`, `docs/*`
 1. **Issue link required**: PR description must contain `Closes #123`, `Fixes #123`, or `Resolves #123`
 2. **Changeset required**: For code changes, run `pnpm changeset` and commit the file
 3. **Milestone recommended**: Assign PR to target release milestone
+
+## Release Process (Claude Instructions)
+
+When asked to "release", "publish", or "create a release", ALWAYS follow this process:
+
+1. **Create Issue** - Document the changes being released
+2. **Create Branch** - Use format: `<type>/<milestone>/<issue-number>/<description>`
+3. **Commit Changes** - Include `Closes #<issue>` in message
+4. **Add Changeset** - Run `pnpm changeset` or create `.changeset/*.md` manually
+5. **Push & Create PR** - Push branch and create PR linking the issue
+6. **Merge PR** - Use squash merge
+7. **Wait for CI** - Changesets workflow creates release commit and tag
+8. **Verify Release** - Check GitHub releases and npm
+
+**NEVER:**
+- Commit directly to main
+- Create tags manually before the changeset workflow runs
+- Publish to npm manually (CI handles this)

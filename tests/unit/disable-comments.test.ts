@@ -359,6 +359,101 @@ describe("DisableCommentsRunner", () => {
     });
   });
 
+  describe("comment-aware pattern detection (#128)", () => {
+    it("does not flag patterns inside double-quoted strings in JS/TS", async () => {
+      fs.writeFileSync(
+        path.join(tempDir, "clean.ts"),
+        `const msg = "Please use eslint-disable sparingly";\n`
+      );
+
+      const result = await runner.run(tempDir);
+
+      expect(result.passed).toBe(true);
+      expect(result.violations).toEqual([]);
+    });
+
+    it("does not flag patterns inside single-quoted strings in JS/TS", async () => {
+      fs.writeFileSync(
+        path.join(tempDir, "clean.ts"),
+        `const msg = 'Error: @ts-ignore is deprecated';\n`
+      );
+
+      const result = await runner.run(tempDir);
+
+      expect(result.passed).toBe(true);
+      expect(result.violations).toEqual([]);
+    });
+
+    it("does not flag patterns inside template strings in JS/TS", async () => {
+      fs.writeFileSync(
+        path.join(tempDir, "clean.ts"),
+        "const msg = `Use // eslint-disable-next-line for single lines`;\n"
+      );
+
+      const result = await runner.run(tempDir);
+
+      expect(result.passed).toBe(true);
+      expect(result.violations).toEqual([]);
+    });
+
+    it("does not flag patterns inside Python strings", async () => {
+      fs.writeFileSync(
+        path.join(tempDir, "clean.py"),
+        `msg = "Do not use # noqa without reason"\n`
+      );
+
+      const result = await runner.run(tempDir);
+
+      expect(result.passed).toBe(true);
+      expect(result.violations).toEqual([]);
+    });
+
+    it("flags patterns in actual comments after strings", async () => {
+      fs.writeFileSync(
+        path.join(tempDir, "bad.ts"),
+        `const x = "string"; // eslint-disable-line\n`
+      );
+
+      const result = await runner.run(tempDir);
+
+      expect(result.passed).toBe(false);
+      expect(result.violations).toHaveLength(1);
+    });
+
+    it("flags Python comments after strings", async () => {
+      fs.writeFileSync(path.join(tempDir, "bad.py"), `x = "value"  # noqa\n`);
+
+      const result = await runner.run(tempDir);
+
+      expect(result.passed).toBe(false);
+      expect(result.violations).toHaveLength(1);
+    });
+
+    it("handles escaped quotes correctly", async () => {
+      fs.writeFileSync(
+        path.join(tempDir, "clean.ts"),
+        `const msg = "He said \\"eslint-disable\\" loudly";\n`
+      );
+
+      const result = await runner.run(tempDir);
+
+      expect(result.passed).toBe(true);
+      expect(result.violations).toEqual([]);
+    });
+
+    it("handles mixed quotes correctly", async () => {
+      fs.writeFileSync(
+        path.join(tempDir, "clean.ts"),
+        `const msg = "It's a '// @ts-ignore' situation";\n`
+      );
+
+      const result = await runner.run(tempDir);
+
+      expect(result.passed).toBe(true);
+      expect(result.violations).toEqual([]);
+    });
+  });
+
   describe("edge cases", () => {
     it("handles empty directory", async () => {
       const result = await runner.run(tempDir);

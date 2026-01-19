@@ -78,9 +78,14 @@ export class CodeownersRunner extends BaseProcessToolRunner {
       );
     }
 
-    const parsedRules = this.parseCodeowners(content);
-    const violations = this.validateRules(parsedRules, codeownersPath);
+    const { rules: parsedRules, malformedViolations } = this.parseCodeowners(
+      content,
+      codeownersPath
+    );
+    const validationViolations = this.validateRules(parsedRules, codeownersPath);
 
+    // Combine malformed line violations with validation violations
+    const violations = [...malformedViolations, ...validationViolations];
     return this.fromViolations(violations, elapsed());
   }
 
@@ -123,27 +128,42 @@ export class CodeownersRunner extends BaseProcessToolRunner {
   }
 
   /**
-   * Parse CODEOWNERS file content into rules
+   * Parse result including both valid rules and malformed line violations
    */
-  private parseCodeowners(content: string): ParsedRule[] {
+  private parseCodeowners(
+    content: string,
+    filePath: string
+  ): { rules: ParsedRule[]; malformedViolations: Violation[] } {
     const rules: ParsedRule[] = [];
+    const malformedViolations: Violation[] = [];
     const lines = content.split("\n");
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim();
+      const lineNumber = i + 1;
 
       // Skip empty lines and comments
       if (!line || line.startsWith("#")) {
         continue;
       }
 
-      const parsed = this.parseCodeownersLine(line, i + 1);
+      const parsed = this.parseCodeownersLine(line, lineNumber);
       if (parsed) {
         rules.push(parsed);
+      } else {
+        // Report malformed line as violation
+        malformedViolations.push({
+          rule: `${this.rule}.malformed`,
+          tool: this.toolId,
+          file: filePath,
+          line: lineNumber,
+          message: `Malformed CODEOWNERS line: pattern "${line}" has no owners`,
+          severity: "error",
+        });
       }
     }
 
-    return rules;
+    return { rules, malformedViolations };
   }
 
   /**

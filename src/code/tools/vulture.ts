@@ -43,7 +43,9 @@ export class VultureRunner extends BaseToolRunner {
     }
 
     try {
-      const result = await execa("vulture", ["."], {
+      // Exclude common virtual environment and build directories
+      const excludePatterns = ".venv,venv,.git,node_modules,__pycache__,dist,build,.tox,.nox,.eggs";
+      const result = await execa("vulture", [".", "--exclude", excludePatterns], {
         cwd: projectRoot,
         reject: false,
         timeout: 5 * 60 * 1000,

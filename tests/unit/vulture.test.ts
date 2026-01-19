@@ -83,7 +83,7 @@ describe("VultureRunner", () => {
       expect(mockedExeca).toHaveBeenNthCalledWith(
         2,
         "vulture",
-        ["."],
+        [".", "--exclude", ".venv,venv,.git,node_modules,__pycache__,dist,build,.tox,.nox,.eggs"],
         expect.objectContaining({
           cwd: tempDir,
           reject: false,

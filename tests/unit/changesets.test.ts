@@ -310,9 +310,7 @@ Missing frontmatter delimiters`
         const result = await runner.run(tempDir);
 
         expect(result.passed).toBe(false);
-        expect(
-          result.violations.some((v) => v.message.includes("Missing frontmatter delimiters"))
-        ).toBe(true);
+        expect(result.violations.some((v) => v.message.includes("Missing frontmatter"))).toBe(true);
       });
 
       it("fails when no packages in frontmatter", async () => {

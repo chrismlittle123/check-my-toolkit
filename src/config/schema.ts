@@ -222,10 +222,16 @@ const codeSecuritySchema = z
 /** Supported case types for naming conventions */
 const caseTypeSchema = z.enum(["kebab-case", "snake_case", "camelCase", "PascalCase"]);
 
+/** Helper to validate no duplicate values in array */
+const uniqueArraySchema = <T extends z.ZodTypeAny>(schema: T): z.ZodEffects<z.ZodArray<T>> =>
+  z.array(schema).refine((arr) => new Set(arr).size === arr.length, {
+    message: "Duplicate values not allowed",
+  });
+
 /** Single naming rule */
 const namingRuleSchema = z
   .object({
-    extensions: z.array(z.string()), // e.g., ["ts", "tsx"]
+    extensions: uniqueArraySchema(z.string()), // e.g., ["ts", "tsx"] - no duplicates allowed
     file_case: caseTypeSchema,
     folder_case: caseTypeSchema,
     exclude: z.array(z.string()).optional(), // Glob patterns to exclude, e.g., ["tests/**"]
@@ -251,7 +257,7 @@ const disableCommentsConfigSchema = z
   .object({
     enabled: z.boolean().optional().default(false),
     patterns: z.array(z.string()).optional(), // Override default patterns
-    extensions: z.array(z.string()).optional(), // File extensions to scan
+    extensions: uniqueArraySchema(z.string()).optional(), // File extensions to scan - no duplicates allowed
     exclude: z.array(z.string()).optional(), // Glob patterns to exclude
   })
   .strict()

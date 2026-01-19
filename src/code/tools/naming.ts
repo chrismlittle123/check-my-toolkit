@@ -337,10 +337,12 @@ export class NamingRunner extends BaseToolRunner {
    * Build a glob pattern for the given extensions
    */
   private buildGlobPattern(extensions: string[]): string {
-    if (extensions.length === 1) {
-      return `**/*.${extensions[0]}`;
+    // Deduplicate extensions to avoid glob pattern issues
+    const unique = [...new Set(extensions)];
+    if (unique.length === 1) {
+      return `**/*.${unique[0]}`;
     }
-    return `**/*.{${extensions.join(",")}}`;
+    return `**/*.{${unique.join(",")}}`;
   }
 
   private createFileViolation(file: string, baseName: string, expectedCase: CaseType): Violation {

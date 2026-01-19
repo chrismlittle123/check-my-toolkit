@@ -144,24 +144,34 @@ export class ChangesetsRunner extends BaseProcessToolRunner {
 
     try {
       const content = fs.readFileSync(fullPath, "utf-8");
-      const lines = content.split("\n");
-      const { start, end } = findFrontmatterBounds(lines);
-
-      if (start === -1 || end === -1) {
-        result.parseError = "Missing frontmatter delimiters (---)";
-        return result;
-      }
-
-      result.packages = parseFrontmatterPackages(lines, start, end);
-      result.description = lines
-        .slice(end + 1)
-        .join("\n")
-        .trim();
+      return this.parseChangesetContent(content, result);
     } catch (error) {
       const msg = error instanceof Error ? error.message : "Unknown error";
       result.parseError = `Failed to read file: ${msg}`;
+      return result;
+    }
+  }
+
+  /** Parse changeset content and populate result */
+  private parseChangesetContent(content: string, result: ParsedChangeset): ParsedChangeset {
+    const lines = content.split("\n");
+    const { start, end } = findFrontmatterBounds(lines);
+
+    if (start === -1) {
+      result.parseError = "Missing frontmatter: no opening '---' delimiter found";
+      return result;
+    }
+    if (end === -1) {
+      result.parseError =
+        "Invalid frontmatter: opening '---' found but missing closing '---' delimiter";
+      return result;
     }
 
+    result.packages = parseFrontmatterPackages(lines, start, end);
+    result.description = lines
+      .slice(end + 1)
+      .join("\n")
+      .trim();
     return result;
   }
 

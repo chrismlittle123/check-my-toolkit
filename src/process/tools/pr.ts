@@ -86,9 +86,10 @@ export class PrRunner extends BaseProcessToolRunner {
     }
 
     const keywords = this.config.issue_keywords ?? DEFAULT_ISSUE_KEYWORDS;
-    // Build pattern: (Closes|Fixes|Resolves)\s+#(\d+)
+    // Build pattern: \b(Closes|Fixes|Resolves)\s+#(\d+)
+    // Word boundary \b prevents matching "Closes" in "ClosesFile"
     const keywordPattern = keywords.map((k) => k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|");
-    const regex = new RegExp(`(?:${keywordPattern})\\s+#(\\d+)`, "i");
+    const regex = new RegExp(`\\b(?:${keywordPattern})\\s+#(\\d+)`, "i");
     const match = text.match(regex);
     return match ? match[1] : null;
   }

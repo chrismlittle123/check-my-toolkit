@@ -186,7 +186,7 @@ jobs:
         expect(result.passed).toBe(true);
       });
 
-      it("handles invalid YAML gracefully", async () => {
+      it("reports invalid YAML as violation", async () => {
         fs.writeFileSync(path.join(tempDir, ".github/workflows/ci.yml"), "invalid: yaml: content:");
         runner.setConfig({
           enabled: true,
@@ -194,8 +194,10 @@ jobs:
         });
 
         const result = await runner.run(tempDir);
-        // Should pass because invalid YAML is skipped
-        expect(result.passed).toBe(true);
+        // Invalid YAML should be reported as a violation
+        expect(result.passed).toBe(false);
+        expect(result.violations).toHaveLength(1);
+        expect(result.violations[0].message).toContain("Invalid YAML");
       });
     });
 

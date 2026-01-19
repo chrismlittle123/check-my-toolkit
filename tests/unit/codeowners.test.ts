@@ -343,6 +343,57 @@ describe("CodeownersRunner", () => {
       });
     });
 
+    describe("malformed lines detection (#114)", () => {
+      beforeEach(() => {
+        fs.mkdirSync(path.join(tempDir, ".github"), { recursive: true });
+      });
+
+      it("reports violation for line with pattern but no owners", async () => {
+        // Bug #114: Lines with pattern but no owners were silently ignored
+        fs.writeFileSync(
+          path.join(tempDir, ".github/CODEOWNERS"),
+          `/valid-path @owner
+/path-without-owner
+/another-valid @team`
+        );
+        runner.setConfig({
+          enabled: true,
+          rules: [
+            { pattern: "/valid-path", owners: ["@owner"] },
+            { pattern: "/another-valid", owners: ["@team"] },
+          ],
+        });
+
+        const result = await runner.run(tempDir);
+        expect(result.passed).toBe(false);
+        expect(result.violations.some((v) => v.message.includes("no owners"))).toBe(true);
+        expect(result.violations.some((v) => v.line === 2)).toBe(true);
+      });
+
+      it("reports correct line number for malformed line", async () => {
+        fs.writeFileSync(
+          path.join(tempDir, ".github/CODEOWNERS"),
+          `# Comment line
+/valid @owner
+/malformed-no-owner
+/another @team`
+        );
+        runner.setConfig({
+          enabled: true,
+          rules: [
+            { pattern: "/valid", owners: ["@owner"] },
+            { pattern: "/another", owners: ["@team"] },
+          ],
+        });
+
+        const result = await runner.run(tempDir);
+        expect(result.passed).toBe(false);
+        const malformedViolation = result.violations.find((v) => v.message.includes("no owners"));
+        expect(malformedViolation).toBeDefined();
+        expect(malformedViolation?.line).toBe(3);
+      });
+    });
+
     describe("empty config", () => {
       beforeEach(() => {
         fs.mkdirSync(path.join(tempDir, ".github"), { recursive: true });

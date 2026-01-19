@@ -473,6 +473,47 @@ describe("CommitsRunner", () => {
       });
     });
 
+    describe("non-greedy scope matching (#116)", () => {
+      it("correctly handles parentheses in commit description", async () => {
+        // Bug #116: greedy regex \(.+\) would match too much
+        // e.g., "feat(api): add method (experimental)" should match (api) not (api): add method (experimental)
+        mockExeca.mockResolvedValueOnce({
+          stdout: "feat(api): add method (experimental)",
+          stderr: "",
+          exitCode: 0,
+          failed: false,
+          command: "git log -1 --format=%s",
+          escapedCommand: "git log -1 --format=%s",
+          timedOut: false,
+          killed: false,
+        } as never);
+
+        runner.setConfig({ enabled: true, types: ["feat", "fix"], require_scope: true });
+        const result = await runner.run(tempDir);
+
+        // Should pass because scope is (api), not greedy match to (experimental)
+        expect(result.passed).toBe(true);
+      });
+
+      it("handles multiple parentheses groups correctly", async () => {
+        mockExeca.mockResolvedValueOnce({
+          stdout: "fix(ui): update button (hover state) for accessibility (WCAG 2.1)",
+          stderr: "",
+          exitCode: 0,
+          failed: false,
+          command: "git log -1 --format=%s",
+          escapedCommand: "git log -1 --format=%s",
+          timedOut: false,
+          killed: false,
+        } as never);
+
+        runner.setConfig({ enabled: true, types: ["feat", "fix"], require_scope: true });
+        const result = await runner.run(tempDir);
+
+        expect(result.passed).toBe(true);
+      });
+    });
+
     describe("edge cases", () => {
       it("handles whitespace in commit message", async () => {
         mockExeca.mockResolvedValueOnce({

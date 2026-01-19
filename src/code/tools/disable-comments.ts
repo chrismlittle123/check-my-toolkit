@@ -48,6 +48,13 @@ interface DisableCommentsConfig {
   exclude?: string[];
 }
 
+/** Quote state for tracking string contexts */
+interface QuoteState {
+  single: boolean;
+  double: boolean;
+  template: boolean;
+}
+
 /**
  * Disable comments runner for detecting linter/type-checker disable comments
  */
@@ -92,10 +99,12 @@ export class DisableCommentsRunner extends BaseToolRunner {
    */
   private buildGlobPattern(): string {
     const extensions = this.getExtensions();
-    if (extensions.length === 1) {
-      return `**/*.${extensions[0]}`;
+    // Deduplicate extensions to avoid glob pattern issues
+    const unique = [...new Set(extensions)];
+    if (unique.length === 1) {
+      return `**/*.${unique[0]}`;
     }
-    return `**/*.{${extensions.join(",")}}`;
+    return `**/*.{${unique.join(",")}}`;
   }
 
   async run(projectRoot: string): Promise<CheckResult> {
@@ -142,6 +151,94 @@ export class DisableCommentsRunner extends BaseToolRunner {
     return violations;
   }
 
+  /** File extensions with known comment syntax */
+  private static readonly KNOWN_EXTENSIONS = new Set(["py", "ts", "tsx", "js", "jsx"]);
+
+  /** Check if we can toggle a specific quote type */
+  private canToggleQuote(
+    quoteChar: string,
+    char: string,
+    state: QuoteState,
+    isPython: boolean
+  ): boolean {
+    if (char !== quoteChar) {
+      return false;
+    }
+    if (quoteChar === "'") {
+      return !state.double && !state.template;
+    }
+    if (quoteChar === '"') {
+      return !state.single && !state.template;
+    }
+    return !isPython && !state.single && !state.double; // backtick
+  }
+
+  /** Quote tracking state for string detection */
+  private updateQuoteState(char: string, isPython: boolean, state: QuoteState): void {
+    if (this.canToggleQuote("'", char, state, isPython)) {
+      state.single = !state.single;
+    } else if (this.canToggleQuote('"', char, state, isPython)) {
+      state.double = !state.double;
+    } else if (this.canToggleQuote("`", char, state, isPython)) {
+      state.template = !state.template;
+    }
+  }
+
+  /** Check if character is a comment marker */
+  private isCommentMarker(line: string, index: number, isPython: boolean): boolean {
+    const char = line[index];
+    if (isPython) {
+      return char === "#";
+    }
+    return char === "/" && line[index + 1] === "/";
+  }
+
+  /**
+   * Find the start of a comment in a line, ignoring comment markers inside strings.
+   * Returns the index of the comment start, or -1 if no comment found.
+   */
+  private findCommentStart(line: string, extension: string): number {
+    const isPython = extension === "py";
+    const quoteState: QuoteState = { single: false, double: false, template: false };
+
+    for (let i = 0; i < line.length; i++) {
+      if (i > 0 && line[i - 1] === "\\") {
+        continue;
+      } // Skip escaped
+
+      this.updateQuoteState(line[i], isPython, quoteState);
+
+      const inString = quoteState.single || quoteState.double || quoteState.template;
+      if (!inString && this.isCommentMarker(line, i, isPython)) {
+        return i;
+      }
+    }
+
+    return -1;
+  }
+
+  /**
+   * Check if a pattern appears in a comment (not in a string)
+   */
+  private isPatternInComment(line: string, pattern: string, extension: string): boolean {
+    const patternIndex = line.indexOf(pattern);
+    if (patternIndex === -1) {
+      return false;
+    }
+
+    // For unknown file types, fall back to simple string matching
+    // This maintains backward compatibility for custom extensions like .md
+    if (!DisableCommentsRunner.KNOWN_EXTENSIONS.has(extension)) {
+      return true;
+    }
+
+    const commentStart = this.findCommentStart(line, extension);
+
+    // Pattern is in a comment if comment starts at or before the pattern
+    // Use <= because patterns like "# noqa" include the comment marker
+    return commentStart !== -1 && commentStart <= patternIndex;
+  }
+
   /**
    * Scan a single file for disable comment patterns
    */
@@ -152,12 +249,16 @@ export class DisableCommentsRunner extends BaseToolRunner {
       const content = fs.readFileSync(absolutePath, "utf-8");
       const lines = content.split("\n");
 
+      // Get file extension for comment detection
+      const extension = path.extname(relativePath).slice(1).toLowerCase();
+
       for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
         const line = lines[lineIndex];
         const lineNumber = lineIndex + 1;
 
         for (const pattern of patterns) {
-          if (line.includes(pattern)) {
+          // Only flag if pattern appears in an actual comment, not in a string
+          if (this.isPatternInComment(line, pattern, extension)) {
             violations.push(this.createViolation(relativePath, lineNumber, pattern, line));
             break; // Only report first matching pattern per line
           }

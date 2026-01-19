@@ -31,21 +31,54 @@ function logDisabled(quiet: boolean | undefined): void {
   }
 }
 
-/** Show help for issue-based branch naming */
-function showIssueExamples(): void {
-  console.error("");
-  console.error("Examples (with issue number):");
-  console.error("  feature/123/add-login");
-  console.error("  fix/456/broken-button");
-  console.error("  hotfix/789/security-patch");
+/** Extract branch types from pattern (e.g., "(feature|fix|hotfix)" -> ["feature", "fix", "hotfix"]) */
+function extractBranchTypes(pattern: string | undefined): string[] {
+  if (!pattern) {
+    return ["feature", "fix", "hotfix"]; // Default types
+  }
+
+  // Try to extract types from pattern like "^(feature|fix|hotfix|docs)/"
+  const typeMatch = /\(([^)]+)\)/.exec(pattern);
+  if (typeMatch) {
+    const types = typeMatch[1].split("|").filter((t) => !t.includes("\\") && t.length < 20);
+    if (types.length > 0) {
+      return types.slice(0, 3); // Take first 3 types
+    }
+  }
+
+  return ["feature", "fix", "hotfix"]; // Default types
 }
 
-/** Show help for pattern-based branch naming */
-function showPatternExamples(): void {
+/** Generate dynamic examples based on config */
+function generateExamples(branchesConfig: BranchesConfig): string[] {
+  const types = extractBranchTypes(branchesConfig.pattern);
+
+  if (branchesConfig.require_issue) {
+    // Issue-based examples
+    return types.map((type, i) => `${type}/${100 + i}/add-feature`);
+  }
+
+  // Pattern-based examples - try to infer format from pattern
+  const pattern = branchesConfig.pattern ?? "";
+
+  // Check if pattern expects a version-like segment
+  if (pattern.includes("v") || pattern.includes("\\d+\\.")) {
+    return types.map((type) => `${type}/v1.0.0/add-login`);
+  }
+
+  // Default format: type/description
+  return types.map((type) => `${type}/add-feature`);
+}
+
+/** Show help with dynamic examples */
+function showExamples(branchesConfig: BranchesConfig): void {
   console.error("");
-  console.error("Examples:");
-  console.error("  feature/v1.0.0/add-login");
-  console.error("  fix/v1.0.1/broken-button");
+  const examples = generateExamples(branchesConfig);
+  const label = branchesConfig.require_issue ? "Examples (with issue number):" : "Examples:";
+  console.error(label);
+  for (const example of examples) {
+    console.error(`  ${example}`);
+  }
 }
 
 /** Output failure details */
@@ -70,10 +103,9 @@ function logFailure(
     console.error(`Expected pattern: ${branchesConfig.pattern}`);
   }
 
-  if (hasIssueViolation || branchesConfig.require_issue) {
-    showIssueExamples();
-  } else if (hasPatternViolation) {
-    showPatternExamples();
+  // Show dynamic examples based on config
+  if (hasIssueViolation || hasPatternViolation) {
+    showExamples(branchesConfig);
   }
 }
 

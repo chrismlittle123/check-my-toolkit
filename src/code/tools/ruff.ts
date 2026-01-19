@@ -6,6 +6,16 @@ import { execa } from "execa";
 import { type CheckResult, type Violation } from "../../types/index.js";
 import { BaseToolRunner } from "./base.js";
 
+/** Check if a file is a symlink */
+function isSymlink(filePath: string): boolean {
+  try {
+    const stats = fs.lstatSync(filePath);
+    return stats.isSymbolicLink();
+  } catch {
+    return false;
+  }
+}
+
 /** Ruff JSON output message format */
 interface RuffMessage {
   code: string;
@@ -180,16 +190,29 @@ export class RuffRunner extends BaseToolRunner {
 
     try {
       const results = JSON.parse(stdout) as RuffMessage[];
-      return results.map((msg) => ({
-        rule: `${this.rule}.${this.toolId}`,
-        tool: this.toolId,
-        file: path.relative(projectRoot, msg.filename),
-        line: msg.location.row,
-        column: msg.location.column,
-        message: msg.message,
-        code: msg.code,
-        severity: "error" as const,
-      }));
+      return results
+        .filter((msg) => {
+          // Skip parse errors (E999) for symlinks - they may point to non-Python files
+          if (msg.code === "E999") {
+            const fullPath = path.isAbsolute(msg.filename)
+              ? msg.filename
+              : path.join(projectRoot, msg.filename);
+            if (isSymlink(fullPath)) {
+              return false;
+            }
+          }
+          return true;
+        })
+        .map((msg) => ({
+          rule: `${this.rule}.${this.toolId}`,
+          tool: this.toolId,
+          file: path.relative(projectRoot, msg.filename),
+          line: msg.location.row,
+          column: msg.location.column,
+          message: msg.message,
+          code: msg.code,
+          severity: "error" as const,
+        }));
     } catch {
       return null;
     }

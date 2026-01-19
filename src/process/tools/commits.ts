@@ -53,7 +53,8 @@ export class CommitsRunner extends BaseProcessToolRunner {
     }
 
     const typePattern = types.join("|");
-    const scopePattern = this.config.require_scope ? "\\(.+\\)" : "(\\(.+\\))?";
+    // Use [^)]+ instead of .+ to avoid greedy matching through multiple parentheses
+    const scopePattern = this.config.require_scope ? "\\([^)]+\\)" : "(\\([^)]+\\))?";
 
     // Pattern: type(scope)?: description
     // e.g., feat(api): add new endpoint

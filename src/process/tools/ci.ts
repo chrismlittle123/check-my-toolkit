@@ -71,16 +71,20 @@ export class CiRunner extends BaseProcessToolRunner {
       }));
   }
 
-  /** Parse a workflow YAML file */
-  private parseWorkflow(projectRoot: string, workflowFile: string): WorkflowFile | null {
+  /** Result of parsing a workflow file */
+  private parseWorkflow(
+    projectRoot: string,
+    workflowFile: string
+  ): { workflow: WorkflowFile | null; parseError?: string } {
     const content = this.readFile(projectRoot, `.github/workflows/${workflowFile}`);
     if (content === null) {
-      return null;
+      return { workflow: null };
     }
     try {
-      return yaml.load(content) as WorkflowFile;
-    } catch {
-      return null;
+      return { workflow: yaml.load(content) as WorkflowFile };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown YAML parse error";
+      return { workflow: null, parseError: message };
     }
   }
 
@@ -90,9 +94,22 @@ export class CiRunner extends BaseProcessToolRunner {
     const violations: Violation[] = [];
 
     for (const [workflowFile, requiredJobs] of Object.entries(jobsConfig)) {
-      const workflow = this.parseWorkflow(projectRoot, workflowFile);
+      const { workflow, parseError } = this.parseWorkflow(projectRoot, workflowFile);
+
+      // Report YAML parse errors instead of silently skipping
+      if (parseError) {
+        violations.push({
+          rule: `${this.rule}.yaml`,
+          tool: this.toolId,
+          file: `.github/workflows/${workflowFile}`,
+          message: `Invalid YAML in workflow '${workflowFile}': ${parseError}`,
+          severity: "error",
+        });
+        continue;
+      }
+
       if (!workflow) {
-        continue; // Skip if workflow doesn't exist or can't be parsed
+        continue; // Skip if workflow file doesn't exist
       }
 
       const existingJobs = Object.keys(workflow.jobs ?? {});
@@ -132,9 +149,22 @@ export class CiRunner extends BaseProcessToolRunner {
     const violations: Violation[] = [];
 
     for (const [workflowFile, requiredActions] of Object.entries(actionsConfig)) {
-      const workflow = this.parseWorkflow(projectRoot, workflowFile);
-      if (!workflow) {
+      const { workflow, parseError } = this.parseWorkflow(projectRoot, workflowFile);
+
+      // Report YAML parse errors instead of silently skipping
+      if (parseError) {
+        violations.push({
+          rule: `${this.rule}.yaml`,
+          tool: this.toolId,
+          file: `.github/workflows/${workflowFile}`,
+          message: `Invalid YAML in workflow '${workflowFile}': ${parseError}`,
+          severity: "error",
+        });
         continue;
+      }
+
+      if (!workflow) {
+        continue; // Skip if workflow file doesn't exist
       }
 
       const usedActions = this.extractUsedActions(workflow);

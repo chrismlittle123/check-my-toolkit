@@ -6,6 +6,16 @@ import { execa } from "execa";
 import { type CheckResult, type Violation } from "../../types/index.js";
 import { BaseToolRunner } from "./base.js";
 
+/** Check if a file is a symlink */
+function isSymlink(filePath: string): boolean {
+  try {
+    const stats = fs.lstatSync(filePath);
+    return stats.isSymbolicLink();
+  } catch {
+    return false;
+  }
+}
+
 /** Parsed ty diagnostic */
 interface TyDiagnostic {
   file: string;
@@ -212,6 +222,15 @@ export class TyRunner extends BaseToolRunner {
       const match = diagnosticRegex.exec(line);
       if (match) {
         const [, filePath, lineNum, colNum, severity, code, message] = match;
+
+        // Skip syntax/parse errors for symlinks - they may point to non-Python files
+        if (code.includes("syntax") || code.includes("parse")) {
+          const fullPath = path.isAbsolute(filePath) ? filePath : path.join(projectRoot, filePath);
+          if (isSymlink(fullPath)) {
+            continue;
+          }
+        }
+
         // Only apply path.relative if the path is absolute
         const normalizedPath = path.isAbsolute(filePath)
           ? path.relative(projectRoot, filePath)

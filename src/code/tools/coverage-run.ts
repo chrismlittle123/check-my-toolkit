@@ -390,17 +390,9 @@ export class CoverageRunRunner extends BaseToolRunner {
 
     try {
       const result = await this.executeTests(testCommand, projectRoot);
-
-      if (result.exitCode !== 0 && result.exitCode !== 1) {
-        const errorMsg = result.stderr || result.stdout;
-        return this.fail(
-          [
-            this.createViolation(
-              `Test command failed with exit code ${result.exitCode}: ${errorMsg}`
-            ),
-          ],
-          elapsed()
-        );
+      const exitError = this.validateExitCode(result, elapsed);
+      if (exitError) {
+        return exitError;
       }
 
       const thresholdResult = this.checkCoverageThreshold(projectRoot);
@@ -412,6 +404,34 @@ export class CoverageRunRunner extends BaseToolRunner {
     } catch (error) {
       return this.handleRunError(error, elapsed);
     }
+  }
+
+  /** Validate test command exit code and return error result if invalid */
+  private validateExitCode(
+    result: { exitCode?: number; stdout: string; stderr: string },
+    elapsed: () => number
+  ): CheckResult | null {
+    if (result.exitCode === undefined) {
+      const errorMsg = result.stderr || result.stdout || "Command not found or failed to execute";
+      return this.fail(
+        [this.createViolation(`Test command failed to execute: ${errorMsg}`)],
+        elapsed()
+      );
+    }
+
+    if (result.exitCode !== 0 && result.exitCode !== 1) {
+      const errorMsg = result.stderr || result.stdout;
+      return this.fail(
+        [
+          this.createViolation(
+            `Test command failed with exit code ${result.exitCode}: ${errorMsg}`
+          ),
+        ],
+        elapsed()
+      );
+    }
+
+    return null;
   }
 
   private handleRunError(error: unknown, elapsed: () => number): CheckResult {

@@ -511,6 +511,46 @@ describe("PrRunner", () => {
         const result = await runner.run(tempDir);
         expect(result.passed).toBe(true);
       });
+
+      it("does not match keyword as part of another word (#115)", async () => {
+        // Bug #115: Pattern without word boundary would match "Discloses" as "Closes"
+        const eventPath = createEventPayload({
+          pull_request: {
+            changed_files: 5,
+            additions: 100,
+            deletions: 50,
+            body: "This Discloses some information about #123",
+          },
+        });
+        process.env.GITHUB_EVENT_PATH = eventPath;
+        runner.setConfig({
+          enabled: true,
+          require_issue: true,
+        });
+
+        const result = await runner.run(tempDir);
+        // Should fail because "Discloses" is not a keyword - need actual "Closes #123"
+        expect(result.passed).toBe(false);
+      });
+
+      it("matches keyword at start of sentence (#115)", async () => {
+        const eventPath = createEventPayload({
+          pull_request: {
+            changed_files: 5,
+            additions: 100,
+            deletions: 50,
+            body: "Closes #456 - this fixes the bug",
+          },
+        });
+        process.env.GITHUB_EVENT_PATH = eventPath;
+        runner.setConfig({
+          enabled: true,
+          require_issue: true,
+        });
+
+        const result = await runner.run(tempDir);
+        expect(result.passed).toBe(true);
+      });
     });
 
     describe("combined size and issue validation", () => {
