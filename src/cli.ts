@@ -223,6 +223,42 @@ validateCommand
     process.exit(valid ? ExitCode.SUCCESS : ExitCode.CONFIG_ERROR);
   });
 
+// cm validate tier - validate tier-ruleset alignment
+validateCommand
+  .command("tier")
+  .description("Validate tier-ruleset alignment (repo-metadata.yaml vs check.toml)")
+  .option("-c, --config <path>", "Path to check.toml config file")
+  .addOption(
+    new Option("-f, --format <format>", "Output format").choices(["text", "json"]).default("text")
+  )
+  .action(async (options: { config?: string; format: string }) => {
+    try {
+      const { validateTierRuleset, formatTierResultText, formatTierResultJson } =
+        await import("./validate/index.js");
+      const result = validateTierRuleset({ config: options.config });
+
+      const output =
+        options.format === "json" ? formatTierResultJson(result) : formatTierResultText(result);
+
+      process.stdout.write(`${output}\n`);
+      process.exit(result.valid ? ExitCode.SUCCESS : ExitCode.CONFIG_ERROR);
+    } catch (error) {
+      if (error instanceof ConfigError) {
+        if (options.format === "json") {
+          process.stdout.write(
+            `${JSON.stringify({ valid: false, error: error.message }, null, 2)}\n`
+          );
+        } else {
+          console.error(chalk.red(`✗ Error: ${error.message}`));
+        }
+        process.exit(ExitCode.CONFIG_ERROR);
+      }
+      const message = error instanceof Error ? error.message : "Unknown error";
+      console.error(chalk.red(`Error: ${message}`));
+      process.exit(ExitCode.RUNTIME_ERROR);
+    }
+  });
+
 program.addCommand(validateCommand);
 
 // =============================================================================

@@ -67,3 +67,14 @@ export {
   type DependenciesResult,
   getDependencies,
 } from "./dependencies/index.js";
+
+// Validate
+export {
+  formatTierResultJson,
+  formatTierResultText,
+  type RepoMetadata,
+  type Tier,
+  type ValidateTierOptions,
+  type ValidateTierResult,
+  validateTierRuleset,
+} from "./validate/index.js";
