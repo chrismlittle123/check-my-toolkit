@@ -252,6 +252,75 @@ workflow_path = ".github/workflows"
 | `required_workflows` | Workflow files that must exist |
 | `workflow_path`      | Directory containing workflows |
 
+### Required Commands: `[process.ci.commands]`
+
+Enforce that specific shell commands execute in CI workflows. Uses AST-based workflow parsing via [`@actions/workflow-parser`](https://www.npmjs.com/package/@actions/workflow-parser) to intelligently determine if commands will actually run on PRs to main.
+
+```toml
+[process.ci.commands]
+# Commands that must run unconditionally on PRs to main
+"ci.yml" = ["cm code check", "cm code audit"]
+
+# Target specific jobs
+"ci.yml".test = ["cm code check"]
+"ci.yml".lint = ["cm code audit"]
+
+# Multiple workflows
+"pr-checks.yml" = ["cm process check"]
+```
+
+| Setting                  | Description                                      |
+| ------------------------ | ------------------------------------------------ |
+| `"<workflow>"` | Commands required anywhere in workflow           |
+| `"<workflow>".<job>`     | Commands required in specific job                |
+
+#### Validation Logic
+
+The parser performs intelligent analysis to ensure commands **will execute on every PR to main**:
+
+1. **Workflow triggers:** Must include `pull_request` targeting `main`/`master` (or `push` to main)
+2. **Job conditions:** Job must not have `if:` conditions that could skip execution (e.g., `if: github.event_name == 'schedule'`)
+3. **Step conditions:** Step containing the command must not have conditional `if:` that skips on PRs
+4. **Command presence:** Command must appear in a `run:` block (not commented out)
+5. **Matrix/reusable workflows:** Follows job references to validate command presence
+
+#### Violation Examples
+
+```
+VIOLATION: Required command not found
+  Workflow: ci.yml
+  Job: test
+  Command: cm code audit
+  Reason: Command not present in any step
+
+VIOLATION: Command may not execute on PRs
+  Workflow: ci.yml
+  Job: lint
+  Command: cm code check
+  Reason: Step has condition "if: github.event_name == 'push'"
+
+VIOLATION: Command is commented out
+  Workflow: ci.yml
+  Job: test
+  Command: cm code check
+  Reason: Found "# cm code check" but command is commented
+```
+
+#### Match Behavior
+
+- **Substring match:** `cm code check` matches `cm code check --format json`
+- **Ignores comments:** Lines starting with `#` are not matched
+- **Multi-line run blocks:** Parses entire `run: |` blocks for command presence
+
+#### Implementation Notes
+
+Uses [`@actions/workflow-parser`](https://www.npmjs.com/package/@actions/workflow-parser) (official GitHub package) for parsing workflow YAML into an intermediate representation, enabling:
+
+- Accurate trigger detection (`on:` block parsing)
+- Conditional expression evaluation (`if:` conditions)
+- Job dependency resolution (`needs:`)
+- Reusable workflow expansion (`uses: ./.github/workflows/`)
+
 ---
 
 ## Implementation Details
