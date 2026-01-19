@@ -41,6 +41,7 @@ const eslintConfigSchema = z
     ignore: z.array(z.string()).optional(), // Glob patterns to ignore
     "max-warnings": z.number().int().nonnegative().optional(), // Max warnings before failure
     rules: eslintRulesSchema, // Required rules for audit (verifies eslint.config.js)
+    dependencies: z.array(z.string()).optional(), // Custom dependency files for drift tracking
   })
   .strict()
   .optional();
@@ -65,6 +66,7 @@ const ruffConfigSchema = z
     format: z.boolean().optional().default(false), // Also check formatting with ruff format
     "line-length": z.number().int().positive().optional(),
     lint: ruffLintSchema,
+    dependencies: z.array(z.string()).optional(), // Custom dependency files for drift tracking
   })
   .strict()
   .optional();
@@ -95,6 +97,7 @@ const tscConfigSchema = z
   .object({
     enabled: z.boolean().optional().default(false),
     require: tscCompilerOptionsSchema, // Required compiler options for audit
+    dependencies: z.array(z.string()).optional(), // Custom dependency files for drift tracking
   })
   .strict()
   .optional();
@@ -107,6 +110,7 @@ const tscConfigSchema = z
 const tyConfigSchema = z
   .object({
     enabled: z.boolean().optional().default(false),
+    dependencies: z.array(z.string()).optional(), // Custom dependency files for drift tracking
   })
   .strict()
   .optional();
@@ -119,6 +123,7 @@ const tyConfigSchema = z
 const knipConfigSchema = z
   .object({
     enabled: z.boolean().optional().default(false),
+    dependencies: z.array(z.string()).optional(), // Custom dependency files for drift tracking
   })
   .strict()
   .optional();
@@ -131,6 +136,7 @@ const knipConfigSchema = z
 const vultureConfigSchema = z
   .object({
     enabled: z.boolean().optional().default(false),
+    dependencies: z.array(z.string()).optional(), // Custom dependency files for drift tracking
   })
   .strict()
   .optional();
@@ -143,6 +149,7 @@ const vultureConfigSchema = z
 const prettierConfigSchema = z
   .object({
     enabled: z.boolean().optional().default(false),
+    dependencies: z.array(z.string()).optional(), // Custom dependency files for drift tracking
   })
   .strict()
   .optional();
@@ -161,6 +168,7 @@ const coverageRunConfigSchema = z
     min_threshold: z.number().int().min(0).max(100).optional().default(80), // Minimum coverage percentage
     runner: coverageRunnerSchema.optional().default("auto"), // Test runner to use
     command: z.string().optional(), // Custom command to run tests with coverage
+    dependencies: z.array(z.string()).optional(), // Custom dependency files for drift tracking
   })
   .strict()
   .optional();
@@ -173,6 +181,7 @@ const coverageRunConfigSchema = z
 const secretsConfigSchema = z
   .object({
     enabled: z.boolean().optional().default(false),
+    dependencies: z.array(z.string()).optional(), // Custom dependency files for drift tracking
   })
   .strict()
   .optional();
@@ -182,6 +191,7 @@ const pnpmauditConfigSchema = z
   .object({
     enabled: z.boolean().optional().default(false),
     exclude_dev: z.boolean().optional().default(true),
+    dependencies: z.array(z.string()).optional(), // Custom dependency files for drift tracking
   })
   .strict()
   .optional();
@@ -190,6 +200,7 @@ const pnpmauditConfigSchema = z
 const pipauditConfigSchema = z
   .object({
     enabled: z.boolean().optional().default(false),
+    dependencies: z.array(z.string()).optional(), // Custom dependency files for drift tracking
   })
   .strict()
   .optional();

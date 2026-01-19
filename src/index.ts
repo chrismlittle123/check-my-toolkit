@@ -60,3 +60,10 @@ export {
 
 // Output
 export { formatJson, formatOutput, formatText, type OutputFormat } from "./output/index.js";
+
+// Dependencies
+export {
+  type DependenciesOptions,
+  type DependenciesResult,
+  getDependencies,
+} from "./dependencies/index.js";
