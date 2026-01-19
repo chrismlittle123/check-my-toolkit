@@ -15,11 +15,12 @@ The PROCESS domain validates GitHub repository settings, branch protection, requ
 
 ```toml
 [process]
-├── [process.branches]       # Branch protection settings
-├── [process.required_files] # Required repository files
-├── [process.commits]        # Commit message format
-├── [process.pull_requests]  # PR requirements
-└── [process.ci]             # CI/CD workflow requirements
+├── [process.branches]        # Branch protection settings
+├── [process.required_files]  # Required repository files
+├── [process.forbidden_files] # Files that must NOT exist
+├── [process.commits]         # Commit message format
+├── [process.pull_requests]   # PR requirements
+└── [process.ci]              # CI/CD workflow requirements
 ```
 
 ---
@@ -48,6 +49,7 @@ cm process check --json
 
 - Commit message format (conventional commits)
 - Required files exist (CODEOWNERS, PR template, etc.)
+- Forbidden files do not exist (.env, credentials, etc.)
 - Workflow files exist and are valid
 - Branch naming conventions
 
@@ -201,6 +203,67 @@ license = false
 | `issue_templates`  | Issue templates directory must exist |
 | `contributing`     | CONTRIBUTING.md must exist           |
 | `license`          | LICENSE file must exist              |
+
+### Forbidden Files: `[process.forbidden_files]`
+
+Enforce that certain files must NOT exist anywhere in the repository. Scans the entire repo recursively to detect anti-patterns like `.env` files (secrets should come from AWS Secrets Manager, configuration should be in typed code).
+
+```toml
+[process.forbidden_files]
+enabled = true
+files = ["**/.env", "**/.env.*", "**/.env.example"]
+message = "Use AWS Secrets Manager for secrets and TypeScript config for settings"
+```
+
+| Setting   | Description                                                     |
+| --------- | --------------------------------------------------------------- |
+| `files`   | Glob patterns for files that must not exist (scans entire repo) |
+| `message` | Custom message explaining why these files are forbidden         |
+
+#### Glob Pattern Examples
+
+| Pattern               | Matches                                        |
+| --------------------- | ---------------------------------------------- |
+| `**/.env`             | `.env`, `packages/api/.env`, `src/config/.env` |
+| `**/.env.*`           | `.env.local`, `apps/web/.env.production`       |
+| `**/.env.example`     | `.env.example`, `services/auth/.env.example`   |
+| `**/credentials.json` | Any `credentials.json` anywhere in the repo    |
+| `**/*.pem`            | Any `.pem` private key file                    |
+
+#### Rationale
+
+The `.env` pattern has security and operational problems:
+
+1. **Security risk** - Files on disk can be accidentally committed, leaked, or accessed
+2. **No audit trail** - No record of who accessed secrets or when
+3. **Rotation pain** - Must manually update every developer's local copy
+4. **No revocation** - Can't revoke access to secrets already downloaded
+
+**Better alternatives:**
+
+| What          | Where                  | Why                                     |
+| ------------- | ---------------------- | --------------------------------------- |
+| Secrets       | AWS Secrets Manager    | Audited, revocable, access-controlled   |
+| Configuration | TypeScript config file | Type-safe, version-controlled, reviewed |
+
+#### Violation Examples
+
+```
+VIOLATION: Forbidden file exists
+  File: .env
+  Message: Use AWS Secrets Manager for secrets and TypeScript config for settings
+  Action: Remove file and migrate secrets to AWS Secrets Manager
+
+VIOLATION: Forbidden file exists
+  File: packages/api/.env.local
+  Message: Use AWS Secrets Manager for secrets and TypeScript config for settings
+  Action: Remove file and migrate secrets to AWS Secrets Manager
+
+VIOLATION: Forbidden file exists
+  File: services/auth/.env.example
+  Message: Use AWS Secrets Manager for secrets and TypeScript config for settings
+  Action: Remove file and use TypeScript config with documented environment variables
+```
 
 ### Commit Conventions: `[process.commits]`
 
