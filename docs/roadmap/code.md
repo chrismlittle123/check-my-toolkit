@@ -1,282 +1,181 @@
 # CODE Domain Roadmap
 
-Static analysis, security, and code quality enforcement.
+Dependency tracking, project detection, and tier validation for drift-toolkit integration.
 
 ## Overview
 
-The CODE domain validates source code quality through linting, type checking, formatting, and security scanning. It wraps existing tools (ESLint, Ruff, tsc) and provides unified configuration via `check.toml`.
-
-The key value proposition: **enforce organizational standards** by extending from a registry and validating that project configs conform.
-
-```
-Registry (org standards) → check.toml [extends] → validates project configs
-```
+The CODE domain provides tooling for dependency tracking and project management that enables drift-toolkit to perform scheduled code scans.
 
 ```toml
 [code]
-├── [code.linting]      # ESLint, Ruff
-├── [code.formatting]   # Prettier, Ruff (format)
-├── [code.types]        # tsc, ty
-├── [code.unused]       # Knip, Vulture
-├── [code.coverage_run] # Run tests with coverage threshold
-├── [code.security]     # Secrets, dependency audits
-├── [code.naming]       # File and folder naming conventions
-└── [code.quality]      # Disable comments detection
+├── dependencies      # Track config files per check
+├── projects detect   # Discover projects in monorepos
+└── validate tier     # Tier-to-ruleset alignment
 ```
 
 ---
 
-## Implemented Features
+## `cm dependencies` Command
 
-### Linting: `[code.linting]`
+**Purpose:** Returns the list of files that drift-toolkit should track for changes. Each check in check.toml has associated configuration files that, if changed, indicate potential drift.
 
-| Check  | Description                   | Tool   |
-| ------ | ----------------------------- | ------ |
-| ESLint | JavaScript/TypeScript linting | ESLint |
-| Ruff   | Python linting                | Ruff   |
+**Priority:** High (blocker for `drift code scan`)
 
-```toml
-[code.linting.eslint]
-enabled = true
-
-[code.linting.ruff]
-enabled = true
-line-length = 100
-lint.select = ["E", "F", "I"]
-lint.ignore = ["E501"]
-```
-
-### Formatting: `[code.formatting]`
-
-| Check       | Description       | Tool                 |
-| ----------- | ----------------- | -------------------- |
-| Prettier    | JS/TS formatting  | Prettier             |
-| Ruff Format | Python formatting | Ruff (`ruff format`) |
-
-```toml
-[code.formatting.prettier]
-enabled = true
-
-[code.linting.ruff]
-enabled = true
-format = true  # Also check formatting
-```
-
-### Type Checking: `[code.types]`
-
-| Check | Description              | Tool        |
-| ----- | ------------------------ | ----------- |
-| tsc   | TypeScript type checking | tsc         |
-| ty    | Python type checking     | ty (Astral) |
-
-```toml
-[code.types.tsc]
-enabled = true
-
-[code.types.tsc.require]
-strict = true
-noImplicitAny = true
-
-[code.types.ty]
-enabled = true
-```
-
-### Unused Code: `[code.unused]`
-
-| Check   | Description                         | Tool    |
-| ------- | ----------------------------------- | ------- |
-| Knip    | Unused exports, files, dependencies | Knip    |
-| Vulture | Python dead code detection          | Vulture |
-
-```toml
-[code.unused.knip]
-enabled = true
-
-[code.unused.vulture]
-enabled = true
-```
-
-### Coverage Run: `[code.coverage_run]`
-
-Run tests with coverage and validate against thresholds.
-
-| Check              | Description                                 |
-| ------------------ | ------------------------------------------- |
-| Coverage threshold | Run tests and verify coverage meets minimum |
-
-```toml
-[code.coverage_run]
-enabled = true
-min_threshold = 80
-command = "pnpm test:coverage"  # Optional: custom command
-```
-
-**How it works:**
-
-- Auto-detects test runner (vitest, jest, pytest) if no command specified
-- Runs tests with coverage enabled
-- Parses coverage output and validates against `min_threshold`
-- Reports actual coverage percentage vs required
-
-### Security: `[code.security]`
-
-| Check                     | Description                 | Tool      |
-| ------------------------- | --------------------------- | --------- |
-| Secrets                   | Hardcoded secrets detection | Gitleaks  |
-| Dependency audit (JS)     | npm vulnerability scanning  | npm-audit |
-| Dependency audit (Python) | pip vulnerability scanning  | pip-audit |
-
-```toml
-[code.security.secrets]
-enabled = true
-
-[code.security.npmaudit]
-enabled = true
-
-[code.security.pipaudit]
-enabled = true
-```
-
-### Registry & Extends
-
-Inherit standards from organizational registries:
-
-```toml
-[extends]
-registry = "github:myorg/standards"
-rulesets = ["base", "typescript"]
-
-# Local overrides
-[code.linting.eslint]
-enabled = true
-```
-
-Registry structure:
-
-- `rulesets/*.toml` - Check.toml configuration files
-- `prompts/*.md` - Markdown prompt files
-
-### Config Audit
-
-Verify that project tool configs conform to the standard:
-
-```toml
-[code.types.tsc]
-enabled = true
-
-[code.types.tsc.require]
-strict = true
-noImplicitAny = true
-```
-
-`cm code audit` checks that `tsconfig.json` contains the required compiler options.
-
-### Naming Conventions: `[code.naming]`
-
-Enforce file and folder naming conventions based on file extensions.
-
-| Case         | Example           |
-| ------------ | ----------------- |
-| `kebab-case` | `my-component.ts` |
-| `snake_case` | `my_module.py`    |
-| `camelCase`  | `myHelper.ts`     |
-| `PascalCase` | `MyComponent.tsx` |
-
-```toml
-[code.naming]
-enabled = true
-
-# TypeScript/JavaScript files and folders should be kebab-case
-[[code.naming.rules]]
-extensions = ["ts", "tsx", "js", "jsx"]
-file_case = "kebab-case"
-folder_case = "kebab-case"
-
-# Python files and folders should be snake_case
-[[code.naming.rules]]
-extensions = ["py"]
-file_case = "snake_case"
-folder_case = "snake_case"
-```
-
-**How it works:**
-
-- Files are validated against `file_case` based on their extension
-- Folders containing files with matching extensions are validated against `folder_case`
-- Common directories (`node_modules`, `.git`, `dist`, `__pycache__`) are automatically excluded
-
-### Code Quality: `[code.quality]`
-
-Detect linter/type-checker disable comments in code.
-
-| Check            | Description                                    |
-| ---------------- | ---------------------------------------------- |
-| Disable comments | Detects eslint-disable, @ts-ignore, noqa, etc. |
-
-```toml
-[code.quality.disable-comments]
-enabled = true
-extensions = ["ts", "tsx", "js", "jsx", "py"]
-exclude = ["tests/**", "**/*.test.ts"]
-
-# Optional: custom patterns (defaults are built-in)
-patterns = ["eslint-disable", "@ts-ignore", "@ts-expect-error", "noqa", "type: ignore", "prettier-ignore"]
-```
-
-**Default patterns detected:**
-
-- `eslint-disable`, `eslint-disable-next-line`
-- `@ts-ignore`, `@ts-expect-error`
-- `# noqa`, `# type: ignore`
-- `prettier-ignore`
-
----
-
-## Commands
-
-| Command                | Description                                      |
-| ---------------------- | ------------------------------------------------ |
-| `cm code check`        | Run all enabled checks                           |
-| `cm code audit`        | Verify tool configs exist and match requirements |
-| `cm validate config`   | Validate check.toml syntax and schema            |
-| `cm validate registry` | Validate registry structure                      |
-
----
-
-## Project Detection ✅
-
-Detect and initialize check.toml files across monorepos and multi-project repositories.
-
-### Commands
-
-| Command                    | Description                                                  |
-| -------------------------- | ------------------------------------------------------------ |
-| `cm projects detect`       | Discover all projects, show which have/don't have check.toml |
-| `cm projects detect --fix` | Create missing check.toml files                              |
-
-### Project Detection Rules
-
-| Marker File      | Project Type                                  |
-| ---------------- | --------------------------------------------- |
-| `package.json`   | typescript (skip if has `"workspaces"` field) |
-| `pyproject.toml` | python                                        |
-
-### Flags
-
-| Flag                | Description                                 |
-| ------------------- | ------------------------------------------- |
-| `--fix`             | Create missing check.toml files             |
-| `--registry <path>` | Create shared registry and extend from it   |
-| `--dry-run`         | Show what would be created without creating |
-| `--json`            | Output as JSON (for tooling/CI)             |
-
-### Example Usage
-
-**Detect projects:**
+### CLI Interface
 
 ```bash
-$ cm projects detect
+# Get all dependencies for current project
+cm dependencies
 
+# Get dependencies as JSON (for programmatic use)
+cm dependencies --json
+
+# Get dependencies for a specific check
+cm dependencies --check eslint
+
+# Get dependencies for a specific project in monorepo
+cm dependencies --project packages/api
+```
+
+### Output Format
+
+**Human-readable:**
+
+```
+Dependencies for check.toml
+
+eslint:
+  - .eslintrc.js
+  - .eslintignore
+  - eslint.config.js
+
+prettier:
+  - .prettierrc
+  - .prettierignore
+
+typescript:
+  - tsconfig.json
+  - tsconfig.build.json
+
+knip:
+  - knip.json
+
+Always tracked:
+  - check.toml
+  - .github/workflows/*.yml
+```
+
+**JSON output (`--json`):**
+
+```json
+{
+  "project": ".",
+  "checkTomlPath": "./check.toml",
+  "dependencies": {
+    "eslint": [".eslintrc.js", ".eslintignore", "eslint.config.js"],
+    "prettier": [".prettierrc", ".prettierignore"],
+    "typescript": ["tsconfig.json", "tsconfig.build.json"],
+    "knip": ["knip.json"]
+  },
+  "alwaysTracked": ["check.toml", ".github/workflows/*.yml"],
+  "allFiles": [
+    "check.toml",
+    ".eslintrc.js",
+    ".eslintignore",
+    "eslint.config.js",
+    ".prettierrc",
+    ".prettierignore",
+    "tsconfig.json",
+    "tsconfig.build.json",
+    "knip.json",
+    ".github/workflows/*.yml"
+  ]
+}
+```
+
+### Configuration
+
+Custom dependencies can be specified in check.toml:
+
+```toml
+[eslint]
+enabled = true
+dependencies = [".eslintrc.js", ".eslintignore", "eslint.config.js"]
+
+[custom-tool]
+enabled = true
+dependencies = ["custom-tool.config.yaml", "custom-tool.rules.json"]
+```
+
+### Built-in Dependency Mappings
+
+| Check      | Default Dependencies                              |
+| ---------- | ------------------------------------------------- |
+| eslint     | `.eslintrc.*`, `eslint.config.*`, `.eslintignore` |
+| prettier   | `.prettierrc*`, `.prettierignore`                 |
+| typescript | `tsconfig*.json`                                  |
+| knip       | `knip.json`, `knip.config.ts`                     |
+| jest       | `jest.config.*`                                   |
+| vitest     | `vitest.config.*`                                 |
+| biome      | `biome.json`                                      |
+
+### Always Tracked (Hardcoded)
+
+- `check.toml` (all of them in monorepos)
+- `.github/workflows/*.yml`
+- `repo-metadata.yaml`
+
+### Programmatic API
+
+```typescript
+import { getDependencies } from "check-my-toolkit";
+
+const result = await getDependencies({
+  projectPath: ".",
+  check: "eslint", // optional, filter to specific check
+});
+
+// result.dependencies: Record<string, string[]>
+// result.alwaysTracked: string[]
+// result.allFiles: string[]
+```
+
+---
+
+## `cm projects detect` Command
+
+**Purpose:** Discover all projects in a monorepo, show which have/don't have check.toml, and optionally create missing configs.
+
+### CLI Interface
+
+```bash
+# Discover all projects
+cm projects detect
+
+# Show check.toml and tier status
+cm projects detect --show-status
+
+# Filter to projects without check.toml
+cm projects detect --missing-config
+
+# Create missing check.toml files
+cm projects detect --fix
+
+# Create with shared registry
+cm projects detect --fix --registry .cm
+
+# Output as JSON
+cm projects detect --json
+
+# Dry run
+cm projects detect --fix --dry-run
+```
+
+### Output Format
+
+**Human-readable:**
+
+```
 Detected 4 projects:
 
   PATH                    TYPE          STATUS
@@ -288,36 +187,44 @@ Detected 4 projects:
 2 projects missing check.toml. Run 'cm projects detect --fix' to create them.
 ```
 
-**Create missing check.toml files:**
+**Enhanced JSON output (`--json --show-status`):**
 
-```bash
-$ cm projects detect --fix
-
-Creating check.toml files...
-
-  lambdas/processor/check.toml    created (python defaults)
-  lambdas/notifier/check.toml     created (python defaults)
-
-Done. 2 files created.
+```json
+{
+  "projects": [
+    {
+      "path": "packages/api",
+      "name": "api",
+      "type": "typescript",
+      "hasCheckToml": true,
+      "tier": "production",
+      "status": "active"
+    },
+    {
+      "path": "packages/utils",
+      "name": "utils",
+      "type": "python",
+      "hasCheckToml": false,
+      "tier": null,
+      "status": null
+    }
+  ],
+  "summary": {
+    "total": 2,
+    "withConfig": 1,
+    "withoutConfig": 1
+  }
+}
 ```
 
-**Create with shared registry:**
+### Project Detection Rules
 
-```bash
-$ cm projects detect --fix --registry .cm
-
-Creating shared registry...
-  .cm/rulesets/typescript.toml    created
-  .cm/rulesets/python.toml        created
-
-Creating check.toml files (extending from registry)...
-  lambdas/processor/check.toml    created (extends .cm/rulesets/python)
-  lambdas/notifier/check.toml     created (extends .cm/rulesets/python)
-```
+| Marker File      | Project Type                                  |
+| ---------------- | --------------------------------------------- |
+| `package.json`   | typescript (skip if has `"workspaces"` field) |
+| `pyproject.toml` | python                                        |
 
 ### Skipped Directories
-
-The following directories are automatically skipped during detection:
 
 - `node_modules/`
 - `.git/`
@@ -325,9 +232,124 @@ The following directories are automatically skipped during detection:
 - `__pycache__/`
 - `dist/`, `build/`
 
-### Workspace Root Detection
+---
 
-Workspace roots are identified but not treated as projects:
+## `cm validate tier` Command
 
-- `package.json` with `"workspaces"` field
-- Presence of `turbo.json`, `pnpm-workspace.yaml`, `lerna.json`
+**Purpose:** Verify that a project's check.toml extends from rulesets appropriate for its tier (production, internal, prototype).
+
+### CLI Interface
+
+```bash
+# Validate tier-ruleset alignment
+cm validate tier
+
+# JSON output
+cm validate tier --json
+```
+
+### Validation Logic
+
+**repo-metadata.yaml:**
+
+```yaml
+tier: production
+status: active
+```
+
+**check.toml:**
+
+```toml
+[extends]
+registry = "github:myorg/standards"
+rulesets = ["typescript-production"]
+```
+
+**Rules:**
+
+1. If `tier: production` → rulesets must include a `*-production` ruleset
+2. If `tier: internal` → rulesets must include a `*-internal` ruleset
+3. If `tier: prototype` → rulesets must include a `*-prototype` ruleset
+4. Overrides are allowed, but base ruleset must match tier
+5. If no tier specified, default to `internal`
+
+### Output Format
+
+**Success:**
+
+```
+Tier-Ruleset Validation
+=======================
+
+Tier: production (from repo-metadata.yaml)
+Rulesets: ["typescript-production", "custom-overrides"]
+
+✓ Tier-ruleset alignment valid
+  Base ruleset: typescript-production
+  Tier requirement: *-production
+```
+
+**Failure:**
+
+```
+Tier-Ruleset Validation
+=======================
+
+Tier: production (from repo-metadata.yaml)
+Rulesets: ["typescript-internal"]
+
+✗ Tier-ruleset mismatch
+  Expected: ruleset matching *-production
+  Actual: typescript-internal
+  Action: Update check.toml to extend from typescript-production
+```
+
+**JSON output:**
+
+```json
+{
+  "valid": false,
+  "tier": "production",
+  "rulesets": ["typescript-internal"],
+  "expectedPattern": "*-production",
+  "matchingRuleset": null,
+  "error": "Tier-ruleset mismatch: production tier requires *-production ruleset"
+}
+```
+
+### Programmatic API
+
+```typescript
+import { validateTierRuleset } from "check-my-toolkit";
+
+const result = await validateTierRuleset({
+  projectPath: ".",
+});
+
+// result.valid: boolean
+// result.tier: string
+// result.rulesets: string[]
+// result.matchingRuleset: string | null
+```
+
+---
+
+## Implementation Priority
+
+| Phase | Feature                         | Enables               |
+| ----- | ------------------------------- | --------------------- |
+| 1     | `dependencies` command          | `drift code scan`     |
+| 1     | `projects detect` enhancemenets | `drift code scan`     |
+| 2     | `validate tier` command         | Standards enforcement |
+
+---
+
+## Implementation Status
+
+| Feature                               | Status     |
+| ------------------------------------- | ---------- |
+| `cm dependencies`                     | 📋 Planned |
+| `cm projects detect`                  | ✅ Done    |
+| `cm projects detect --show-status`    | 📋 Planned |
+| `cm projects detect --missing-config` | 📋 Planned |
+| `cm validate tier`                    | 📋 Planned |

@@ -74,9 +74,9 @@ arn_pattern = "arn:aws:s3:::${bucketName}"
 Validates infrastructure against actual AWS resources.
 
 ```bash
-cmt infra validate                    # Validate current project
-cmt infra validate --account prod     # Validate specific account
-cmt infra validate --account all      # Validate all accounts
+cm infra validate                    # Validate current project
+cm infra validate --account prod     # Validate specific account
+cm infra validate --account all      # Validate all accounts
 ```
 
 **How it works:**
@@ -128,8 +128,8 @@ DRIFTED: arn:aws:s3:::my-app-logs
 Generates resource declarations from CDK code.
 
 ```bash
-cmt infra generate                    # Auto-discover and output
-cmt infra generate --output check.toml --append   # Append to check.toml
+cm infra generate                    # Auto-discover and output
+cm infra generate --output check.toml --append   # Append to check.toml
 ```
 
 **How it works:**
@@ -153,9 +153,9 @@ cmt infra generate --output check.toml --append   # Append to check.toml
 Lists deployed CloudFormation stacks and their resources.
 
 ```bash
-cmt infra stacks                      # List stacks in default account
-cmt infra stacks --account prod       # List stacks in prod
-cmt infra stacks --filter "MyApp*"    # Filter by name pattern
+cm infra stacks                      # List stacks in default account
+cm infra stacks --account prod       # List stacks in prod
+cm infra stacks --filter "MyApp*"    # Filter by name pattern
 ```
 
 **Options:**
@@ -172,9 +172,9 @@ cmt infra stacks --filter "MyApp*"    # Filter by name pattern
 Queries AWS for resources matching criteria.
 
 ```bash
-cmt infra resources --type AWS::S3::Bucket
-cmt infra resources --tag Project=my-app
-cmt infra resources --orphaned         # Resources not in any stack
+cm infra resources --type AWS::S3::Bucket
+cm infra resources --tag Project=my-app
+cm infra resources --orphaned         # Resources not in any stack
 ```
 
 **Options:**
@@ -256,7 +256,7 @@ Uses standard AWS credential chain:
 
 ```bash
 # Using profiles
-AWS_PROFILE=prod cmt infra validate --account prod
+AWS_PROFILE=prod cm infra validate --account prod
 
 # Or configure in check.toml
 [infra.accounts]
