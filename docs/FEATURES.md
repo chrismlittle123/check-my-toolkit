@@ -644,19 +644,19 @@ files = ["**/.env", "**/.env.*", "**/.env.example"]
 message = "Use AWS Secrets Manager for secrets and TypeScript config for settings"
 ```
 
-| Property  | Value                                                        |
-| --------- | ------------------------------------------------------------ |
+| Property  | Value                                                           |
+| --------- | --------------------------------------------------------------- |
 | `files`   | Glob patterns for files that must not exist (scans entire repo) |
-| `message` | Custom message explaining why these files are forbidden      |
+| `message` | Custom message explaining why these files are forbidden         |
 
 **Glob Pattern Examples:**
 
-| Pattern               | Matches                                          |
-| --------------------- | ------------------------------------------------ |
-| `**/.env`             | `.env`, `packages/api/.env`, `src/config/.env`   |
-| `**/.env.*`           | `.env.local`, `apps/web/.env.production`         |
-| `**/credentials.json` | Any `credentials.json` anywhere in the repo      |
-| `**/*.pem`            | Any `.pem` private key file                      |
+| Pattern               | Matches                                        |
+| --------------------- | ---------------------------------------------- |
+| `**/.env`             | `.env`, `packages/api/.env`, `src/config/.env` |
+| `**/.env.*`           | `.env.local`, `apps/web/.env.production`       |
+| `**/credentials.json` | Any `credentials.json` anywhere in the repo    |
+| `**/*.pem`            | Any `.pem` private key file                    |
 
 **Validation:**
 
