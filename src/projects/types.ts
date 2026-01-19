@@ -1,5 +1,13 @@
+import type { Tier } from "../validate/types.js";
+
+/** Re-export Tier for convenience */
+export type { Tier } from "../validate/types.js";
+
 /** Project types detected by marker files */
 export type ProjectType = "typescript" | "python";
+
+/** Source of tier value */
+export type TierSource = "repo-metadata.yaml" | "default" | null;
 
 /** Project marker file configuration */
 export interface ProjectMarker {
@@ -21,6 +29,14 @@ export interface DetectedProject {
   markerFile: string;
 }
 
+/** A project enriched with tier information */
+export interface EnrichedProject extends DetectedProject {
+  /** Tier from repo-metadata.yaml (undefined if no file exists) */
+  tier?: Tier;
+  /** Source of tier value: repo-metadata.yaml, default, or null if no file */
+  tierSource?: TierSource;
+}
+
 /** Result of project detection */
 export interface DetectionResult {
   /** All detected projects */
@@ -39,6 +55,10 @@ export interface DetectOptions {
   registry?: string;
   /** Output format */
   format: "text" | "json";
+  /** Show tier/status from repo-metadata.yaml */
+  showStatus?: boolean;
+  /** Filter to projects without check.toml */
+  missingConfig?: boolean;
 }
 
 /** JSON output structure */
@@ -47,6 +67,10 @@ export interface DetectJsonOutput {
     path: string;
     type: string;
     status: "has-config" | "missing-config";
+    /** Tier from repo-metadata.yaml (only when --show-status) */
+    tier?: Tier | null;
+    /** Source of tier value (only when --show-status) */
+    tierSource?: TierSource;
   }[];
   workspaceRoots: string[];
   summary: {

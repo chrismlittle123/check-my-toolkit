@@ -466,19 +466,19 @@ projectsCommand
   .option("--fix", "Create missing check.toml files")
   .option("--dry-run", "Show what would be created without creating")
   .option("--registry <path>", "Create shared registry and extend from it")
+  .option("--show-status", "Show tier from repo-metadata.yaml")
+  .option("--missing-config", "Filter to projects without check.toml")
   .addOption(
     new Option("-f, --format <format>", "Output format").choices(["text", "json"]).default("text")
   )
-  .action(
-    async (options: { fix?: boolean; dryRun?: boolean; registry?: string; format: string }) => {
-      try {
-        await runDetect(options as DetectOptions);
-        process.exit(ExitCode.SUCCESS);
-      } catch (error) {
-        handleError(error);
-      }
+  .action(async (options) => {
+    try {
+      await runDetect(options as DetectOptions);
+      process.exit(ExitCode.SUCCESS);
+    } catch (error) {
+      handleError(error);
     }
-  );
+  });
 
 program.addCommand(projectsCommand);
 

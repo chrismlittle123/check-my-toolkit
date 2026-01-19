@@ -4,7 +4,16 @@ import chalk from "chalk";
 
 import { detectProjects, getProjectTypes } from "./detector.js";
 import { createCheckToml, createRegistry } from "./templates.js";
-import type { DetectionResult, DetectJsonOutput, DetectOptions, ProjectType } from "./types.js";
+import { loadProjectTier } from "./tier-loader.js";
+import type {
+  DetectedProject,
+  DetectionResult,
+  DetectJsonOutput,
+  DetectOptions,
+  EnrichedProject,
+  ProjectType,
+  Tier,
+} from "./types.js";
 
 export type { DetectOptions } from "./types.js";
 
@@ -14,21 +23,77 @@ interface FixAction {
   path: string;
 }
 
+/** Enrich a project with tier information */
+function enrichProjectWithTier(project: DetectedProject, searchRoot: string): EnrichedProject {
+  const projectAbsPath = path.join(searchRoot, project.path);
+  const tierInfo = loadProjectTier(projectAbsPath);
+
+  return {
+    ...project,
+    tier: tierInfo.tier,
+    tierSource: tierInfo.source,
+  };
+}
+
+/** Enrich all projects with tier info when --show-status is used */
+function enrichProjects(
+  result: DetectionResult,
+  searchRoot: string,
+  options: DetectOptions
+): EnrichedProject[] {
+  if (!options.showStatus) {
+    return result.projects;
+  }
+
+  return result.projects.map((p) => enrichProjectWithTier(p, searchRoot));
+}
+
+/** Filter projects based on options */
+function filterProjects(projects: EnrichedProject[], options: DetectOptions): EnrichedProject[] {
+  if (options.missingConfig) {
+    return projects.filter((p) => !p.hasCheckToml);
+  }
+  return projects;
+}
+
+/** Format tier for display */
+function formatTier(tier: Tier | undefined): string {
+  if (tier === undefined) {
+    return "-";
+  }
+  return tier;
+}
+
 /** Write a line to stdout */
 function writeLine(text: string): void {
   process.stdout.write(`${text}\n`);
 }
 
 /** Build JSON output structure */
-function buildJsonOutput(result: DetectionResult, actions?: FixAction[]): DetectJsonOutput {
-  const { projects, workspaceRoots } = result;
-
+function buildJsonOutput(
+  projects: EnrichedProject[],
+  workspaceRoots: string[],
+  options: DetectOptions,
+  actions?: FixAction[]
+): DetectJsonOutput {
   return {
-    projects: projects.map((p) => ({
-      path: p.path,
-      type: p.type,
-      status: p.hasCheckToml ? ("has-config" as const) : ("missing-config" as const),
-    })),
+    projects: projects.map((p) => {
+      const base = {
+        path: p.path,
+        type: p.type,
+        status: p.hasCheckToml ? ("has-config" as const) : ("missing-config" as const),
+      };
+
+      if (options.showStatus) {
+        return {
+          ...base,
+          tier: p.tier ?? null,
+          tierSource: p.tierSource ?? null,
+        };
+      }
+
+      return base;
+    }),
     workspaceRoots,
     summary: {
       total: projects.length,
@@ -40,28 +105,38 @@ function buildJsonOutput(result: DetectionResult, actions?: FixAction[]): Detect
 }
 
 /** Output detection results as JSON */
-function outputJson(result: DetectionResult, actions?: FixAction[]): void {
-  const output = buildJsonOutput(result, actions);
+function outputJson(
+  projects: EnrichedProject[],
+  workspaceRoots: string[],
+  options: DetectOptions,
+  actions?: FixAction[]
+): void {
+  const output = buildJsonOutput(projects, workspaceRoots, options, actions);
   writeLine(JSON.stringify(output, null, 2));
 }
 
 /** Output table header */
-function outputTableHeader(pathWidth: number, typeWidth: number): void {
-  writeLine(chalk.dim(`  ${"PATH".padEnd(pathWidth)}${"TYPE".padEnd(typeWidth)}STATUS`));
+function outputTableHeader(pathWidth: number, typeWidth: number, showTier: boolean): void {
+  const tierHeader = showTier ? "TIER".padEnd(14) : "";
+  writeLine(
+    chalk.dim(`  ${"PATH".padEnd(pathWidth)}${"TYPE".padEnd(typeWidth)}${tierHeader}STATUS`)
+  );
 }
 
 /** Output a single project row */
 function outputProjectRow(
-  project: { path: string; type: string; hasCheckToml: boolean },
+  project: EnrichedProject,
   pathWidth: number,
-  typeWidth: number
+  typeWidth: number,
+  showTier: boolean
 ): void {
   const statusIcon = project.hasCheckToml ? chalk.green("\u2713") : chalk.red("\u2717");
   const statusText = project.hasCheckToml
     ? chalk.green("has check.toml")
     : chalk.red("missing check.toml");
+  const tierCol = showTier ? formatTier(project.tier).padEnd(14) : "";
   writeLine(
-    `  ${project.path.padEnd(pathWidth)}${project.type.padEnd(typeWidth)}${statusIcon} ${statusText}`
+    `  ${project.path.padEnd(pathWidth)}${project.type.padEnd(typeWidth)}${tierCol}${statusIcon} ${statusText}`
   );
 }
 
@@ -74,9 +149,11 @@ function outputMissingSummary(missingCount: number): void {
 }
 
 /** Output detection results as text table */
-function outputText(result: DetectionResult, options: DetectOptions): void {
-  const { projects, workspaceRoots } = result;
-
+function outputText(
+  projects: EnrichedProject[],
+  workspaceRoots: string[],
+  options: DetectOptions
+): void {
   if (projects.length === 0) {
     writeLine(chalk.yellow("No projects detected."));
     return;
@@ -86,15 +163,16 @@ function outputText(result: DetectionResult, options: DetectOptions): void {
 
   const pathWidth = Math.max(20, ...projects.map((p) => p.path.length)) + 2;
   const typeWidth = 14;
+  const showTier = !!options.showStatus;
 
-  outputTableHeader(pathWidth, typeWidth);
+  outputTableHeader(pathWidth, typeWidth, showTier);
 
   for (const project of projects) {
-    outputProjectRow(project, pathWidth, typeWidth);
+    outputProjectRow(project, pathWidth, typeWidth, showTier);
   }
 
   const missingCount = projects.filter((p) => !p.hasCheckToml).length;
-  if (missingCount > 0 && !options.fix && !options.dryRun) {
+  if (missingCount > 0 && !options.fix && !options.dryRun && !options.missingConfig) {
     outputMissingSummary(missingCount);
   }
 
@@ -236,7 +314,13 @@ export async function runDetect(options: DetectOptions): Promise<void> {
   const searchRoot = process.cwd();
   const result = await detectProjects(searchRoot);
 
-  // Handle --fix or --dry-run
+  // Enrich projects with tier info when --show-status
+  const enrichedProjects = enrichProjects(result, searchRoot, options);
+
+  // Filter projects when --missing-config
+  const filteredProjects = filterProjects(enrichedProjects, options);
+
+  // Handle --fix or --dry-run (operates on all missing projects, not filtered)
   let actions: FixAction[] | undefined;
   if (options.fix || options.dryRun) {
     actions = handleFix(result, options, searchRoot);
@@ -244,8 +328,8 @@ export async function runDetect(options: DetectOptions): Promise<void> {
 
   // Output results
   if (options.format === "json") {
-    outputJson(result, actions);
+    outputJson(filteredProjects, result.workspaceRoots, options, actions);
   } else {
-    outputText(result, options);
+    outputText(filteredProjects, result.workspaceRoots, options);
   }
 }

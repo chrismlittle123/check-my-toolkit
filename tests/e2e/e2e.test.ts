@@ -1271,3 +1271,88 @@ describe("Projects Detect E2E Tests", () => {
     expect(stdout).toContain("workspace root");
   });
 });
+
+describe("Projects Detect --show-status E2E Tests", () => {
+  const fixtureDir = path.resolve("tests/e2e/projects/monorepo-detect-tier");
+
+  it("shows tier column when --show-status is used", () => {
+    const { stdout, exitCode } = runProjectsDetect(fixtureDir, " --show-status");
+
+    expect(exitCode).toBe(0);
+    expect(stdout).toContain("TIER");
+    expect(stdout).toContain("production");
+    expect(stdout).toContain("internal");
+    expect(stdout).toContain("-"); // For projects without repo-metadata.yaml
+  });
+
+  it("includes tier in JSON when --show-status is used", () => {
+    const { stdout, exitCode } = runProjectsDetect(fixtureDir, " --show-status", "json");
+
+    expect(exitCode).toBe(0);
+    const output = JSON.parse(stdout);
+
+    // Find the production tier project
+    const webProject = output.projects.find((p: { path: string }) => p.path === "apps/web");
+    expect(webProject.tier).toBe("production");
+    expect(webProject.tierSource).toBe("repo-metadata.yaml");
+
+    // Find the internal tier project
+    const apiProject = output.projects.find((p: { path: string }) => p.path === "apps/api");
+    expect(apiProject.tier).toBe("internal");
+    expect(apiProject.tierSource).toBe("repo-metadata.yaml");
+
+    // Find the project without repo-metadata.yaml
+    const processorProject = output.projects.find(
+      (p: { path: string }) => p.path === "lambdas/processor"
+    );
+    expect(processorProject.tier).toBeNull();
+    expect(processorProject.tierSource).toBeNull();
+  });
+
+  it("does not include tier in JSON when --show-status is not used", () => {
+    const { stdout, exitCode } = runProjectsDetect(fixtureDir, "", "json");
+
+    expect(exitCode).toBe(0);
+    const output = JSON.parse(stdout);
+    const webProject = output.projects.find((p: { path: string }) => p.path === "apps/web");
+    expect(webProject.tier).toBeUndefined();
+    expect(webProject.tierSource).toBeUndefined();
+  });
+
+  it("--missing-config filters to projects without check.toml", () => {
+    const { stdout, exitCode } = runProjectsDetect(fixtureDir, " --missing-config");
+
+    expect(exitCode).toBe(0);
+    expect(stdout).not.toContain("has check.toml");
+    expect(stdout).toContain("missing check.toml");
+    // apps/web has check.toml, so it should not appear
+    expect(stdout).not.toContain("apps/web");
+    // apps/api and lambdas/processor don't have check.toml
+    expect(stdout).toContain("apps/api");
+    expect(stdout).toContain("lambdas/processor");
+  });
+
+  it("--show-status and --missing-config work together", () => {
+    const { stdout, exitCode } = runProjectsDetect(fixtureDir, " --show-status --missing-config");
+
+    expect(exitCode).toBe(0);
+    expect(stdout).toContain("TIER");
+    expect(stdout).not.toContain("has check.toml");
+    // Should show tier for filtered projects
+    expect(stdout).toContain("internal"); // apps/api has internal tier
+    expect(stdout).toContain("-"); // lambdas/processor has no tier
+  });
+
+  it("--missing-config JSON output only includes projects without check.toml", () => {
+    const { stdout, exitCode } = runProjectsDetect(fixtureDir, " --missing-config", "json");
+
+    expect(exitCode).toBe(0);
+    const output = JSON.parse(stdout);
+
+    // Should only have 2 projects (api and processor, not web)
+    expect(output.projects).toHaveLength(2);
+    expect(output.projects.every((p: { status: string }) => p.status === "missing-config")).toBe(
+      true
+    );
+  });
+});
