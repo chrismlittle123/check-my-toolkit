@@ -228,6 +228,7 @@ type RepoConfig = NonNullable<ProcessConfig["repo"]>;
 type BackupsConfig = NonNullable<ProcessConfig["backups"]>;
 type CodeownersConfig = NonNullable<ProcessConfig["codeowners"]>;
 type DocsConfig = NonNullable<ProcessConfig["docs"]>;
+type ForbiddenFilesConfig = NonNullable<ProcessConfig["forbidden_files"]>;
 
 const defaultHooks: HooksConfig = { enabled: false, require_husky: true };
 const defaultCi: CiConfig = { enabled: false };
@@ -259,6 +260,7 @@ const defaultDocs: DocsConfig = {
   staleness_days: 30,
   require_docs_in_pr: false,
 };
+const defaultForbiddenFiles: ForbiddenFilesConfig = { enabled: false };
 
 /** Merge a single process config section with defaults */
 function mergeProcessSection<T>(defaultVal: T, dcVal: T | undefined, cVal: T | undefined): T {
@@ -362,6 +364,13 @@ function mergeProcessDocs(
   return mergeProcessSection(defaultDocs, dcp?.docs, cp?.docs);
 }
 
+function mergeProcessForbiddenFiles(
+  cp: ProcessConfig | undefined,
+  dcp: ProcessConfig | undefined
+): ForbiddenFilesConfig {
+  return mergeProcessSection(defaultForbiddenFiles, dcp?.forbidden_files, cp?.forbidden_files);
+}
+
 function mergeProcess(c: Config, dc: Config): ProcessConfig {
   return {
     hooks: mergeProcessHooks(c.process, dc.process),
@@ -376,6 +385,7 @@ function mergeProcess(c: Config, dc: Config): ProcessConfig {
     backups: mergeProcessBackups(c.process, dc.process),
     codeowners: mergeProcessCodeowners(c.process, dc.process),
     docs: mergeProcessDocs(c.process, dc.process),
+    forbidden_files: mergeProcessForbiddenFiles(c.process, dc.process),
   };
 }
 
