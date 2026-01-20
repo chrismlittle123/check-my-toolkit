@@ -346,6 +346,172 @@ describe("RepoRunner", () => {
         );
       });
     });
+
+    describe("tag protection check", () => {
+      beforeEach(() => {
+        // gh --version succeeds
+        mockedExeca.mockResolvedValueOnce({ stdout: "gh version 2.0.0" } as never);
+        // gh repo view succeeds
+        mockedExeca.mockResolvedValueOnce({
+          stdout: JSON.stringify({ owner: { login: "testorg" }, name: "testrepo" }),
+        } as never);
+      });
+
+      it("passes when tag protection ruleset exists with correct patterns", async () => {
+        mockedExeca.mockResolvedValueOnce({
+          stdout: JSON.stringify([
+            {
+              id: 1,
+              name: "Tag Protection",
+              target: "tag",
+              enforcement: "active",
+              conditions: { ref_name: { include: ["refs/tags/v*"] } },
+              rules: [{ type: "deletion" }, { type: "update" }],
+            },
+          ]),
+        } as never);
+        runner.setConfig({
+          enabled: true,
+          tag_protection: { patterns: ["v*"] },
+        });
+
+        const result = await runner.run(tempDir);
+        expect(result.passed).toBe(true);
+        expect(result.violations).toHaveLength(0);
+      });
+
+      it("fails when no tag protection ruleset exists", async () => {
+        mockedExeca.mockResolvedValueOnce({ stdout: "[]" } as never);
+        runner.setConfig({
+          enabled: true,
+          tag_protection: { patterns: ["v*"] },
+        });
+
+        const result = await runner.run(tempDir);
+        expect(result.passed).toBe(false);
+        expect(result.violations).toHaveLength(1);
+        expect(result.violations[0].rule).toBe("process.repo.tag_protection");
+        expect(result.violations[0].message).toContain("No active tag protection ruleset");
+      });
+
+      it("fails when patterns do not match", async () => {
+        mockedExeca.mockResolvedValueOnce({
+          stdout: JSON.stringify([
+            {
+              id: 1,
+              name: "Tag Protection",
+              target: "tag",
+              enforcement: "active",
+              conditions: { ref_name: { include: ["refs/tags/release-*"] } },
+              rules: [{ type: "deletion" }, { type: "update" }],
+            },
+          ]),
+        } as never);
+        runner.setConfig({
+          enabled: true,
+          tag_protection: { patterns: ["v*"] },
+        });
+
+        const result = await runner.run(tempDir);
+        expect(result.passed).toBe(false);
+        expect(result.violations.some((v) => v.rule.includes("patterns"))).toBe(true);
+        expect(result.violations[0].message).toContain("patterns mismatch");
+      });
+
+      it("fails when prevent_deletion rule is missing", async () => {
+        mockedExeca.mockResolvedValueOnce({
+          stdout: JSON.stringify([
+            {
+              id: 1,
+              name: "Tag Protection",
+              target: "tag",
+              enforcement: "active",
+              conditions: { ref_name: { include: ["refs/tags/v*"] } },
+              rules: [{ type: "update" }], // missing deletion
+            },
+          ]),
+        } as never);
+        runner.setConfig({
+          enabled: true,
+          tag_protection: { patterns: ["v*"], prevent_deletion: true },
+        });
+
+        const result = await runner.run(tempDir);
+        expect(result.passed).toBe(false);
+        expect(result.violations.some((v) => v.rule.includes("prevent_deletion"))).toBe(true);
+      });
+
+      it("fails when prevent_update rule is missing", async () => {
+        mockedExeca.mockResolvedValueOnce({
+          stdout: JSON.stringify([
+            {
+              id: 1,
+              name: "Tag Protection",
+              target: "tag",
+              enforcement: "active",
+              conditions: { ref_name: { include: ["refs/tags/v*"] } },
+              rules: [{ type: "deletion" }], // missing update
+            },
+          ]),
+        } as never);
+        runner.setConfig({
+          enabled: true,
+          tag_protection: { patterns: ["v*"], prevent_update: true },
+        });
+
+        const result = await runner.run(tempDir);
+        expect(result.passed).toBe(false);
+        expect(result.violations.some((v) => v.rule.includes("prevent_update"))).toBe(true);
+      });
+
+      it("warns when insufficient permissions", async () => {
+        mockedExeca.mockRejectedValueOnce(new Error("403 Must have admin rights"));
+        runner.setConfig({
+          enabled: true,
+          tag_protection: { patterns: ["v*"] },
+        });
+
+        const result = await runner.run(tempDir);
+        expect(result.passed).toBe(false);
+        expect(result.violations).toHaveLength(1);
+        expect(result.violations[0].severity).toBe("warning");
+        expect(result.violations[0].message).toContain("insufficient permissions");
+      });
+
+      it("skips tag protection when no patterns configured", async () => {
+        runner.setConfig({
+          enabled: true,
+          tag_protection: { patterns: [] },
+        });
+
+        const result = await runner.run(tempDir);
+        expect(result.passed).toBe(true);
+        expect(result.violations).toHaveLength(0);
+      });
+
+      it("handles multiple tag patterns", async () => {
+        mockedExeca.mockResolvedValueOnce({
+          stdout: JSON.stringify([
+            {
+              id: 1,
+              name: "Tag Protection",
+              target: "tag",
+              enforcement: "active",
+              conditions: { ref_name: { include: ["refs/tags/v*", "refs/tags/release-*"] } },
+              rules: [{ type: "deletion" }, { type: "update" }],
+            },
+          ]),
+        } as never);
+        runner.setConfig({
+          enabled: true,
+          tag_protection: { patterns: ["v*", "release-*"] },
+        });
+
+        const result = await runner.run(tempDir);
+        expect(result.passed).toBe(true);
+        expect(result.violations).toHaveLength(0);
+      });
+    });
   });
 
   describe("audit", () => {

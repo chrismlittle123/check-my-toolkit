@@ -15,12 +15,20 @@ interface BranchProtectionConfig {
   enforce_admins?: boolean;
 }
 
+/** Tag protection configuration */
+interface TagProtectionConfig {
+  patterns?: string[];
+  prevent_deletion?: boolean;
+  prevent_update?: boolean;
+}
+
 /** Repository configuration */
 interface RepoConfig {
   enabled?: boolean;
   require_branch_protection?: boolean;
   require_codeowners?: boolean;
   branch_protection?: BranchProtectionConfig;
+  tag_protection?: TagProtectionConfig;
 }
 
 /** GitHub API response for branch protection */
@@ -42,15 +50,21 @@ interface BranchProtectionResponse {
   };
 }
 
-/**
- * Runner for repository settings validation.
- * Checks branch protection rules and CODEOWNERS file via GitHub API.
- */
+/** GitHub Ruleset response */
+interface RulesetResponse {
+  id: number;
+  name: string;
+  target: string;
+  enforcement: string;
+  conditions?: { ref_name?: { include?: string[]; exclude?: string[] } };
+  rules?: { type: string }[];
+}
+
+/** Runner for repository settings validation */
 export class RepoRunner extends BaseProcessToolRunner {
   readonly name = "Repository";
   readonly rule = "process.repo";
   readonly toolId = "repo";
-
   private config: RepoConfig = {
     enabled: false,
     require_branch_protection: false,
@@ -65,32 +79,33 @@ export class RepoRunner extends BaseProcessToolRunner {
     const startTime = Date.now();
     const elapsed = (): number => Date.now() - startTime;
 
-    // Check if gh CLI is available
-    const ghAvailable = await this.isGhCliAvailable();
-    if (!ghAvailable) {
+    if (!(await this.isGhCliAvailable())) {
       return this.skip("GitHub CLI (gh) not available", elapsed());
     }
-
-    // Get repo info from git remote
     const repoInfo = await this.getRepoInfo(projectRoot);
     if (!repoInfo) {
       return this.skip("Could not determine GitHub repository from git remote", elapsed());
     }
 
-    const violations: Violation[] = [];
+    const violations = await this.collectViolations(projectRoot, repoInfo);
+    return this.fromViolations(violations, elapsed());
+  }
 
-    // Check CODEOWNERS file (local check - no API needed)
+  private async collectViolations(
+    projectRoot: string,
+    repoInfo: { owner: string; repo: string }
+  ): Promise<Violation[]> {
+    const violations: Violation[] = [];
     if (this.config.require_codeowners) {
       violations.push(...this.checkCodeowners(projectRoot));
     }
-
-    // Check branch protection (requires API)
     if (this.config.require_branch_protection || this.config.branch_protection) {
-      const protectionViolations = await this.checkBranchProtection(repoInfo);
-      violations.push(...protectionViolations);
+      violations.push(...(await this.checkBranchProtection(repoInfo)));
     }
-
-    return this.fromViolations(violations, elapsed());
+    if (this.config.tag_protection?.patterns?.length) {
+      violations.push(...(await this.checkTagProtection(repoInfo)));
+    }
+    return violations;
   }
 
   private async isGhCliAvailable(): Promise<boolean> {
@@ -116,26 +131,19 @@ export class RepoRunner extends BaseProcessToolRunner {
   }
 
   private checkCodeowners(projectRoot: string): Violation[] {
-    // Check common CODEOWNERS locations
-    const codeownersLocations = ["CODEOWNERS", ".github/CODEOWNERS", "docs/CODEOWNERS"];
-
-    const codeownersExists = codeownersLocations.some((location) =>
-      this.fileExists(projectRoot, location)
-    );
-
-    if (!codeownersExists) {
-      return [
-        {
-          rule: `${this.rule}.codeowners`,
-          tool: this.toolId,
-          message:
-            "CODEOWNERS file not found (checked CODEOWNERS, .github/CODEOWNERS, docs/CODEOWNERS)",
-          severity: "error",
-        },
-      ];
+    const locations = ["CODEOWNERS", ".github/CODEOWNERS", "docs/CODEOWNERS"];
+    if (locations.some((loc) => this.fileExists(projectRoot, loc))) {
+      return [];
     }
-
-    return [];
+    return [
+      {
+        rule: `${this.rule}.codeowners`,
+        tool: this.toolId,
+        severity: "error",
+        message:
+          "CODEOWNERS file not found (checked CODEOWNERS, .github/CODEOWNERS, docs/CODEOWNERS)",
+      },
+    ];
   }
 
   private async checkBranchProtection(repoInfo: {
@@ -160,41 +168,22 @@ export class RepoRunner extends BaseProcessToolRunner {
   }
 
   private handleBranchProtectionError(error: unknown, branch: string): Violation[] {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-
-    if (errorMessage.includes("404") || errorMessage.includes("Branch not protected")) {
-      if (this.config.require_branch_protection) {
-        return [
-          {
-            rule: `${this.rule}.branch_protection`,
-            tool: this.toolId,
-            message: `Branch '${branch}' does not have branch protection enabled`,
-            severity: "error",
-          },
-        ];
-      }
-      return [];
-    }
-
-    if (errorMessage.includes("403") || errorMessage.includes("Must have admin rights")) {
-      return [
-        {
-          rule: `${this.rule}.branch_protection`,
-          tool: this.toolId,
-          message: `Cannot check branch protection: insufficient permissions (requires admin access)`,
-          severity: "warning",
-        },
-      ];
-    }
-
-    return [
-      {
-        rule: `${this.rule}.branch_protection`,
-        tool: this.toolId,
-        message: `Failed to check branch protection: ${errorMessage}`,
-        severity: "error",
-      },
+    const msg = error instanceof Error ? error.message : String(error);
+    const v = (message: string, severity: "error" | "warning" = "error"): Violation[] => [
+      { rule: `${this.rule}.branch_protection`, tool: this.toolId, message, severity },
     ];
+    if (msg.includes("404") || msg.includes("Branch not protected")) {
+      return this.config.require_branch_protection
+        ? v(`Branch '${branch}' does not have branch protection enabled`)
+        : [];
+    }
+    if (msg.includes("403") || msg.includes("Must have admin rights")) {
+      return v(
+        "Cannot check branch protection: insufficient permissions (requires admin access)",
+        "warning"
+      );
+    }
+    return v(`Failed to check branch protection: ${msg}`);
   }
 
   private validateProtectionSettings(
@@ -363,5 +352,99 @@ export class RepoRunner extends BaseProcessToolRunner {
     }
 
     return violations;
+  }
+
+  // ===========================================================================
+  // Tag Protection
+  // ===========================================================================
+
+  private async checkTagProtection(repoInfo: {
+    owner: string;
+    repo: string;
+  }): Promise<Violation[]> {
+    try {
+      const result = await execa("gh", [
+        "api",
+        `repos/${repoInfo.owner}/${repoInfo.repo}/rulesets`,
+      ]);
+
+      const rulesets = JSON.parse(result.stdout) as RulesetResponse[];
+      return this.validateTagProtection(rulesets);
+    } catch (error) {
+      return this.handleTagProtectionError(error);
+    }
+  }
+
+  private validateTagProtection(rulesets: RulesetResponse[]): Violation[] {
+    const cfg = this.config.tag_protection;
+    if (!cfg?.patterns?.length) {
+      return [];
+    }
+    const ruleset = rulesets.find((r) => r.target === "tag" && r.enforcement === "active");
+    if (!ruleset) {
+      return [this.tagViolation("tag_protection", "No active tag protection ruleset found")];
+    }
+    return [
+      ...this.checkTagPatterns(cfg.patterns, ruleset.conditions?.ref_name?.include ?? []),
+      ...this.checkTagRules(cfg, ruleset.rules ?? []),
+    ];
+  }
+
+  private checkTagPatterns(expected: string[], actual: string[]): Violation[] {
+    const exp = expected.map((p) => `refs/tags/${p}`).sort();
+    const act = [...actual].sort();
+    if (exp.length === act.length && exp.every((v, i) => v === act[i])) {
+      return [];
+    }
+    const found = act.map((p) => p.replace(/^refs\/tags\//, "")).join(", ");
+    return [
+      this.tagViolation(
+        "tag_protection.patterns",
+        `Tag protection patterns mismatch: expected [${expected.join(", ")}], found [${found}]`
+      ),
+    ];
+  }
+
+  private checkTagRules(cfg: TagProtectionConfig, rules: { type: string }[]): Violation[] {
+    const v: Violation[] = [];
+    if (cfg.prevent_deletion !== false && !rules.some((r) => r.type === "deletion")) {
+      v.push(
+        this.tagViolation(
+          "tag_protection.prevent_deletion",
+          "Tag protection does not prevent deletion"
+        )
+      );
+    }
+    if (cfg.prevent_update !== false && !rules.some((r) => r.type === "update")) {
+      v.push(
+        this.tagViolation(
+          "tag_protection.prevent_update",
+          "Tag protection does not prevent updates (force-push)"
+        )
+      );
+    }
+    return v;
+  }
+
+  private tagViolation(
+    rule: string,
+    message: string,
+    severity: "error" | "warning" = "error"
+  ): Violation {
+    return { rule: `${this.rule}.${rule}`, tool: this.toolId, message, severity };
+  }
+
+  private handleTagProtectionError(error: unknown): Violation[] {
+    const msg = error instanceof Error ? error.message : String(error);
+    if (msg.includes("403") || msg.includes("Must have admin rights")) {
+      return [
+        this.tagViolation(
+          "tag_protection",
+          "Cannot check tag protection: insufficient permissions (requires admin access)",
+          "warning"
+        ),
+      ];
+    }
+    return [this.tagViolation("tag_protection", `Failed to check tag protection: ${msg}`)];
   }
 }

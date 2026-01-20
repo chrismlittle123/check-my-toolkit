@@ -389,6 +389,37 @@ processCommand
     });
   });
 
+// cm process diff-tags
+processCommand
+  .command("diff-tags")
+  .description("Show tag protection differences (current vs. config)")
+  .option("-c, --config <path>", "Path to check.toml config file")
+  .addOption(
+    new Option("-f, --format <format>", "Output format").choices(["text", "json"]).default("text")
+  )
+  .action(async (options: { config?: string; format: string }) => {
+    const { runTagDiff } = await import("./process/sync/index.js");
+    await runTagDiff({ config: options.config, format: options.format as "text" | "json" });
+  });
+
+// cm process sync-tags
+processCommand
+  .command("sync-tags")
+  .description("Synchronize tag protection ruleset to match config")
+  .option("-c, --config <path>", "Path to check.toml config file")
+  .option("--apply", "Actually apply changes (required for safety)")
+  .addOption(
+    new Option("-f, --format <format>", "Output format").choices(["text", "json"]).default("text")
+  )
+  .action(async (options: { config?: string; format: string; apply?: boolean }) => {
+    const { runTagSync } = await import("./process/sync/index.js");
+    await runTagSync({
+      config: options.config,
+      format: options.format as "text" | "json",
+      apply: options.apply,
+    });
+  });
+
 // cm process check-branch
 processCommand
   .command("check-branch")

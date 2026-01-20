@@ -505,7 +505,7 @@ ci_job = "test"
 
 ## Repository Settings (`[process.repo]`)
 
-Verify branch protection and CODEOWNERS.
+Verify branch protection, tag protection, and CODEOWNERS.
 
 ```toml
 [process.repo]
@@ -521,13 +521,45 @@ require_code_owner_reviews = true
 require_status_checks = ["ci"]
 require_branches_up_to_date = true
 enforce_admins = true
+
+[process.repo.tag_protection]
+patterns = ["v*"]           # Tag patterns to protect
+prevent_deletion = true     # Prevent tag deletion (default: true)
+prevent_update = true       # Prevent tag updates (default: true)
 ```
 
-### Sync Branch Protection
+### Branch Protection Properties
+
+| Property                     | Value                                         |
+| ---------------------------- | --------------------------------------------- |
+| `branch`                     | Target branch to protect (default: "main")    |
+| `required_reviews`           | Minimum required approving reviews            |
+| `dismiss_stale_reviews`      | Dismiss stale reviews on new commits          |
+| `require_code_owner_reviews` | Require CODEOWNER approval                    |
+| `require_status_checks`      | Array of required CI status checks            |
+| `require_branches_up_to_date`| Require branch to be up to date before merge  |
+| `enforce_admins`             | Apply rules to administrators too             |
+
+### Tag Protection Properties
+
+| Property           | Value                                          |
+| ------------------ | ---------------------------------------------- |
+| `patterns`         | Array of tag patterns to protect (e.g., `["v*"]`) |
+| `prevent_deletion` | Prevent matching tags from being deleted (default: true) |
+| `prevent_update`   | Prevent matching tags from being force-pushed (default: true) |
+
+**Note:** Tag protection uses GitHub Rulesets API. Requires admin permissions.
+
+### Sync Commands
 
 ```bash
-cm process diff              # Show what would change
-cm process sync --apply      # Apply changes to GitHub
+# Branch protection
+cm process diff              # Show branch protection differences
+cm process sync --apply      # Apply branch protection changes
+
+# Tag protection
+cm process diff-tags         # Show tag protection differences
+cm process sync-tags --apply # Apply tag protection changes
 ```
 
 ---
@@ -1013,6 +1045,9 @@ require_codeowners = true
 branch = "main"
 required_reviews = 1
 dismiss_stale_reviews = true
+
+[process.repo.tag_protection]
+patterns = ["v*"]
 
 [process.backups]
 enabled = true

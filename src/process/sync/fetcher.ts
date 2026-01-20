@@ -3,7 +3,9 @@ import { execa } from "execa";
 import {
   type BranchProtectionSettings,
   type GitHubBranchProtection,
+  type GitHubRuleset,
   type RepoInfo,
+  type TagProtectionSettings,
 } from "./types.js";
 
 /** Error thrown when fetcher encounters an issue */
@@ -126,4 +128,75 @@ function createEmptySettings(branch: string): BranchProtectionSettings {
     requireSignedCommits: null,
     enforceAdmins: null,
   };
+}
+
+// =============================================================================
+// Tag Protection (GitHub Rulesets API)
+// =============================================================================
+
+/** Fetch current tag protection rulesets from GitHub */
+export async function fetchTagProtection(repoInfo: RepoInfo): Promise<TagProtectionSettings> {
+  try {
+    const result = await execa("gh", ["api", `repos/${repoInfo.owner}/${repoInfo.repo}/rulesets`]);
+
+    const rulesets = JSON.parse(result.stdout) as GitHubRuleset[];
+    return parseTagRuleset(rulesets);
+  } catch (error) {
+    return handleTagFetchError(error);
+  }
+}
+
+/** Find and parse the tag protection ruleset */
+function parseTagRuleset(rulesets: GitHubRuleset[]): TagProtectionSettings {
+  // Find existing tag protection ruleset (by target type and name)
+  const tagRuleset = rulesets.find((r) => r.target === "tag" && r.name === "Tag Protection");
+
+  if (!tagRuleset) {
+    return createEmptyTagSettings();
+  }
+
+  const patterns =
+    tagRuleset.conditions?.ref_name?.include?.map((p) => p.replace(/^refs\/tags\//, "")) ?? [];
+
+  const rules = tagRuleset.rules ?? [];
+  const preventDeletion = rules.some((r) => r.type === "deletion");
+  const preventUpdate = rules.some((r) => r.type === "update");
+
+  return {
+    patterns,
+    preventDeletion,
+    preventUpdate,
+    rulesetId: tagRuleset.id,
+    rulesetName: tagRuleset.name,
+  };
+}
+
+/** Create empty settings when no tag ruleset exists */
+function createEmptyTagSettings(): TagProtectionSettings {
+  return {
+    patterns: [],
+    preventDeletion: false,
+    preventUpdate: false,
+    rulesetId: null,
+    rulesetName: null,
+  };
+}
+
+/** Handle errors from fetching tag protection */
+function handleTagFetchError(error: unknown): TagProtectionSettings {
+  const errorMessage = error instanceof Error ? error.message : String(error);
+
+  // 404 means no rulesets exist - return empty settings
+  if (errorMessage.includes("404")) {
+    return createEmptyTagSettings();
+  }
+
+  if (errorMessage.includes("403") || errorMessage.includes("Must have admin rights")) {
+    throw new FetcherError(
+      "Cannot read tag protection: insufficient permissions (requires admin access)",
+      "NO_PERMISSION"
+    );
+  }
+
+  throw new FetcherError(`Failed to fetch tag protection: ${errorMessage}`, "API_ERROR");
 }
