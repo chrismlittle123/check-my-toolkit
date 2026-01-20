@@ -274,6 +274,27 @@ const namingConfigSchema = z
     rules: z.array(namingRuleSchema).optional(),
   })
   .strict()
+  .superRefine((data, ctx) => {
+    if (!data.rules || data.rules.length <= 1) {
+      return;
+    }
+
+    const extensionToRuleIndex = new Map<string, number>();
+    for (let i = 0; i < data.rules.length; i++) {
+      for (const ext of data.rules[i].extensions) {
+        const existing = extensionToRuleIndex.get(ext);
+        if (existing !== undefined) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: `Extension "${ext}" appears in multiple naming rules (rules ${existing + 1} and ${i + 1}). Each extension can only appear in one rule.`,
+            path: ["rules", i, "extensions"],
+          });
+        } else {
+          extensionToRuleIndex.set(ext, i);
+        }
+      }
+    }
+  })
   .optional();
 
 // =============================================================================

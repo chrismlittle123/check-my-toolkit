@@ -373,3 +373,125 @@ describe("#162 - forbidden_files glob pattern validation", () => {
     }
   });
 });
+
+describe("#140 - cross-rule duplicate extension validation", () => {
+  it("accepts rules with different extensions", () => {
+    const config = {
+      code: {
+        naming: {
+          enabled: true,
+          rules: [
+            { extensions: ["ts", "tsx"], file_case: "kebab-case", folder_case: "kebab-case" },
+            { extensions: ["py"], file_case: "snake_case", folder_case: "snake_case" },
+          ],
+        },
+      },
+    };
+    const result = configSchema.safeParse(config);
+    expect(result.success).toBe(true);
+  });
+
+  it("accepts single rule (no cross-rule validation needed)", () => {
+    const config = {
+      code: {
+        naming: {
+          enabled: true,
+          rules: [
+            { extensions: ["ts", "tsx"], file_case: "kebab-case", folder_case: "kebab-case" },
+          ],
+        },
+      },
+    };
+    const result = configSchema.safeParse(config);
+    expect(result.success).toBe(true);
+  });
+
+  it("accepts empty rules array", () => {
+    const config = {
+      code: {
+        naming: {
+          enabled: true,
+          rules: [],
+        },
+      },
+    };
+    const result = configSchema.safeParse(config);
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects duplicate extensions across rules", () => {
+    const config = {
+      code: {
+        naming: {
+          enabled: true,
+          rules: [
+            { extensions: ["ts"], file_case: "kebab-case", folder_case: "kebab-case" },
+            { extensions: ["ts"], file_case: "PascalCase", folder_case: "PascalCase" },
+          ],
+        },
+      },
+    };
+    const result = configSchema.safeParse(config);
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.errors[0].message).toContain("ts");
+      expect(result.error.errors[0].message).toContain("multiple naming rules");
+    }
+  });
+
+  it("rejects overlapping extensions in multi-extension rules", () => {
+    const config = {
+      code: {
+        naming: {
+          enabled: true,
+          rules: [
+            { extensions: ["ts", "tsx"], file_case: "kebab-case", folder_case: "kebab-case" },
+            { extensions: ["js", "ts"], file_case: "camelCase", folder_case: "camelCase" },
+          ],
+        },
+      },
+    };
+    const result = configSchema.safeParse(config);
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.errors[0].message).toContain("ts");
+    }
+  });
+
+  it("reports correct rule numbers in error message", () => {
+    const config = {
+      code: {
+        naming: {
+          enabled: true,
+          rules: [
+            { extensions: ["ts"], file_case: "kebab-case", folder_case: "kebab-case" },
+            { extensions: ["js"], file_case: "kebab-case", folder_case: "kebab-case" },
+            { extensions: ["ts"], file_case: "PascalCase", folder_case: "PascalCase" },
+          ],
+        },
+      },
+    };
+    const result = configSchema.safeParse(config);
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      // ts appears in rule 1 and rule 3
+      expect(result.error.errors[0].message).toContain("rules 1 and 3");
+    }
+  });
+
+  it("still validates duplicates within a single rule", () => {
+    const config = {
+      code: {
+        naming: {
+          enabled: true,
+          rules: [{ extensions: ["ts", "ts"], file_case: "kebab-case", folder_case: "kebab-case" }],
+        },
+      },
+    };
+    const result = configSchema.safeParse(config);
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.errors[0].message).toContain("Duplicate values not allowed");
+    }
+  });
+});
