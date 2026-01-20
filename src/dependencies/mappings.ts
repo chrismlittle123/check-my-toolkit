@@ -128,21 +128,3 @@ export const ALWAYS_TRACKED: string[] = [
   ".github/workflows/*.yaml",
   "repo-metadata.yaml",
 ];
-
-/**
- * Mapping from check.toml config path to tool ID for dependency lookup.
- * This handles the nested structure of check.toml where tools are organized
- * by category (linting, formatting, types, etc.)
- */
-export const CONFIG_PATH_TO_TOOL: Record<string, string> = {
-  "code.linting.eslint": "eslint",
-  "code.linting.ruff": "ruff",
-  "code.formatting.prettier": "prettier",
-  "code.types.tsc": "tsc",
-  "code.types.ty": "ty",
-  "code.unused.knip": "knip",
-  "code.unused.vulture": "vulture",
-  "code.security.secrets": "secrets",
-  "code.security.pnpmaudit": "pnpmaudit",
-  "code.security.pipaudit": "pipaudit",
-};
