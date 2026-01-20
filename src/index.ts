@@ -74,6 +74,8 @@ export {
   formatTierResultText,
   type RepoMetadata,
   type Tier,
+  type TierSourceDetail,
+  VALID_TIERS,
   type ValidateTierOptions,
   type ValidateTierResult,
   validateTierRuleset,

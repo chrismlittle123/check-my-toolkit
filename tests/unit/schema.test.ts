@@ -298,3 +298,78 @@ describe("defaultConfig", () => {
     expect(config).toBeDefined();
   });
 });
+
+describe("#162 - forbidden_files glob pattern validation", () => {
+  it("accepts valid glob patterns", () => {
+    const config = {
+      process: {
+        forbidden_files: {
+          enabled: true,
+          files: ["*.log", "**/*.tmp", "dist/**", ".env*", "!.env.example"],
+        },
+      },
+    };
+    const result = configSchema.safeParse(config);
+    expect(result.success).toBe(true);
+  });
+
+  it("accepts patterns with special characters", () => {
+    const config = {
+      process: {
+        forbidden_files: {
+          enabled: true,
+          files: ["file[1-9].txt", "test?.js", "config.{json,yaml}"],
+        },
+      },
+    };
+    const result = configSchema.safeParse(config);
+    expect(result.success).toBe(true);
+  });
+
+  it("accepts patterns with unclosed brackets (minimatch treats them as literals)", () => {
+    // Note: minimatch is lenient - unclosed brackets like "file[1.txt" are
+    // interpreted as literal strings (matches "file[1.txt" exactly).
+    // This is valid but may not be what the user expects.
+    const config = {
+      process: {
+        forbidden_files: {
+          enabled: true,
+          files: ["file[1.txt"],
+        },
+      },
+    };
+    const result = configSchema.safeParse(config);
+    // minimatch accepts this as valid, treating [ as a literal character
+    expect(result.success).toBe(true);
+  });
+
+  it("requires files to be strings", () => {
+    const config = {
+      process: {
+        forbidden_files: {
+          enabled: true,
+          // TypeScript would prevent this, but we test schema validation
+          files: [123, true],
+        },
+      },
+    };
+    const result = configSchema.safeParse(config);
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects empty string patterns", () => {
+    const config = {
+      process: {
+        forbidden_files: {
+          enabled: true,
+          files: ["valid.txt", ""], // Empty string is invalid
+        },
+      },
+    };
+    const result = configSchema.safeParse(config);
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.errors[0].message).toContain("Invalid glob pattern");
+    }
+  });
+});
