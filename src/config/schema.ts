@@ -1,5 +1,33 @@
 /* eslint-disable max-lines -- schema file contains all domain schemas and grows with features */
+import { minimatch } from "minimatch";
 import { z } from "zod";
+
+/**
+ * Validate that a string is a valid glob pattern
+ */
+function isValidGlobPattern(pattern: string): { valid: boolean; error?: string } {
+  try {
+    // minimatch.makeRe() returns false for empty patterns, RegExp for valid patterns
+    const result = minimatch.makeRe(pattern);
+    if (result === false) {
+      return { valid: false, error: "empty or invalid pattern" };
+    }
+    return { valid: true };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Invalid glob pattern";
+    return { valid: false, error: message };
+  }
+}
+
+/**
+ * Zod schema for a valid glob pattern string
+ */
+const globPatternSchema = z.string().refine(
+  (pattern) => isValidGlobPattern(pattern).valid,
+  (pattern) => ({
+    message: `Invalid glob pattern: "${pattern}" - ${isValidGlobPattern(pattern).error}`,
+  })
+);
 
 /**
  * Zod schema for check.toml configuration
@@ -525,7 +553,7 @@ const docsConfigSchema = z
 const forbiddenFilesConfigSchema = z
   .object({
     enabled: z.boolean().optional().default(false),
-    files: z.array(z.string()).optional(), // Glob patterns for files that must not exist
+    files: z.array(globPatternSchema).optional(), // Glob patterns for files that must not exist (validated)
     message: z.string().optional(), // Custom message explaining why these files are forbidden
   })
   .strict()

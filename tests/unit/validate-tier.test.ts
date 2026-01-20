@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   formatTierResultJson,
   formatTierResultText,
+  VALID_TIERS,
   validateTierRuleset,
 } from "../../src/validate/index.js";
 
@@ -402,5 +403,192 @@ describe("formatTierResultJson", () => {
 
     expect(parsed.valid).toBe(false);
     expect(parsed.error).toBeDefined();
+  });
+});
+
+describe("bug fixes", () => {
+  let tempDir: string;
+
+  beforeEach(() => {
+    tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "cm-tier-bugfix-"));
+  });
+
+  afterEach(() => {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  });
+
+  describe("#156 - YAML parse errors", () => {
+    it("includes parse error in warnings when YAML is invalid", () => {
+      const configPath = path.join(tempDir, "check.toml");
+      fs.writeFileSync(
+        configPath,
+        `[extends]
+registry = "./rulesets"
+rulesets = ["base-internal"]`
+      );
+      fs.writeFileSync(path.join(tempDir, "repo-metadata.yaml"), "tier: production\n  bad: yaml");
+
+      const result = validateTierRuleset({ config: configPath });
+
+      expect(result.tierSourceDetail).toBe("default (parse error)");
+      expect(result.warnings).toBeDefined();
+      expect(result.warnings?.some((w) => w.includes("Failed to parse"))).toBe(true);
+    });
+  });
+
+  describe("#158 - Empty file distinction", () => {
+    it("distinguishes empty file from missing file", () => {
+      const configPath = path.join(tempDir, "check.toml");
+      fs.writeFileSync(
+        configPath,
+        `[extends]
+registry = "./rulesets"
+rulesets = ["base-internal"]`
+      );
+      // Create empty file
+      fs.writeFileSync(path.join(tempDir, "repo-metadata.yaml"), "");
+
+      const result = validateTierRuleset({ config: configPath });
+
+      expect(result.tierSourceDetail).toBe("default (file empty)");
+    });
+
+    it("shows file not found when file is missing", () => {
+      const configPath = path.join(tempDir, "check.toml");
+      fs.writeFileSync(
+        configPath,
+        `[extends]
+registry = "./rulesets"
+rulesets = ["base-internal"]`
+      );
+      // Don't create repo-metadata.yaml
+
+      const result = validateTierRuleset({ config: configPath });
+
+      expect(result.tierSourceDetail).toBe("default (file not found)");
+    });
+
+    it("shows tier not specified when file exists but tier key is missing", () => {
+      const configPath = path.join(tempDir, "check.toml");
+      fs.writeFileSync(
+        configPath,
+        `[extends]
+registry = "./rulesets"
+rulesets = ["base-internal"]`
+      );
+      fs.writeFileSync(path.join(tempDir, "repo-metadata.yaml"), "name: my-project\nowner: team");
+
+      const result = validateTierRuleset({ config: configPath });
+
+      expect(result.tierSourceDetail).toBe("default (tier not specified)");
+    });
+  });
+
+  describe("#159 - Empty rulesets warning", () => {
+    it("warns when registry is set but rulesets is empty", () => {
+      const configPath = path.join(tempDir, "check.toml");
+      fs.writeFileSync(
+        configPath,
+        `[extends]
+registry = "github:example/standards"
+rulesets = []`
+      );
+      fs.writeFileSync(path.join(tempDir, "repo-metadata.yaml"), "tier: production");
+
+      const result = validateTierRuleset({ config: configPath });
+
+      expect(result.hasEmptyRulesets).toBe(true);
+      expect(result.registryUrl).toBe("github:example/standards");
+      expect(result.warnings).toBeDefined();
+      expect(result.warnings?.some((w) => w.includes("rulesets is empty"))).toBe(true);
+    });
+
+    it("shows correct message in text output for empty rulesets", () => {
+      const result = {
+        valid: true,
+        tier: "production" as const,
+        tierSource: "repo-metadata.yaml" as const,
+        rulesets: [],
+        expectedPattern: "*-production",
+        matchedRulesets: [],
+        hasEmptyRulesets: true,
+        registryUrl: "github:example/standards",
+        warnings: [
+          "[extends] is configured with registry 'github:example/standards' but rulesets is empty - no standards will be inherited",
+        ],
+      };
+
+      const output = formatTierResultText(result);
+
+      expect(output).toContain("No rulesets specified");
+      expect(output).not.toContain("No extends configured");
+      expect(output).toContain("Warning:");
+    });
+  });
+
+  describe("#161 - Invalid tier value", () => {
+    it("shows valid options when tier value is invalid", () => {
+      const configPath = path.join(tempDir, "check.toml");
+      fs.writeFileSync(
+        configPath,
+        `[extends]
+registry = "./rulesets"
+rulesets = ["base-production"]`
+      );
+      fs.writeFileSync(path.join(tempDir, "repo-metadata.yaml"), "tier: staging");
+
+      const result = validateTierRuleset({ config: configPath });
+
+      expect(result.tierSourceDetail).toBe("default (invalid value)");
+      expect(result.invalidTierValue).toBe("staging");
+      expect(result.warnings).toBeDefined();
+      expect(result.warnings?.some((w) => w.includes("Valid values are:"))).toBe(true);
+      expect(result.warnings?.some((w) => w.includes("production, internal, prototype"))).toBe(
+        true
+      );
+    });
+
+    it("includes hint in text output for invalid tier", () => {
+      const result = {
+        valid: false,
+        tier: "internal" as const,
+        tierSource: "default" as const,
+        tierSourceDetail: "default (invalid value)" as const,
+        rulesets: ["base-production"],
+        expectedPattern: "*-internal",
+        matchedRulesets: [],
+        error: "No ruleset matching pattern '*-internal' found",
+        invalidTierValue: "staging",
+        warnings: [
+          "Invalid tier 'staging' in repo-metadata.yaml. Valid values are: production, internal, prototype",
+        ],
+      };
+
+      const output = formatTierResultText(result);
+
+      expect(output).toContain("Hint:");
+      expect(output).toContain("production, internal, prototype");
+    });
+  });
+
+  describe("#147 - VALID_TIERS export", () => {
+    it("exports VALID_TIERS constant", () => {
+      expect(VALID_TIERS).toBeDefined();
+      expect(Array.isArray(VALID_TIERS)).toBe(true);
+    });
+
+    it("contains all expected tier values", () => {
+      expect(VALID_TIERS).toContain("production");
+      expect(VALID_TIERS).toContain("internal");
+      expect(VALID_TIERS).toContain("prototype");
+      expect(VALID_TIERS.length).toBe(3);
+    });
+
+    it("is a readonly typed array", () => {
+      // VALID_TIERS is typed as readonly Tier[] in TypeScript
+      // Verify it's an array that can be used for validation
+      expect(VALID_TIERS.includes("production")).toBe(true);
+      expect(VALID_TIERS.includes("invalid" as never)).toBe(false);
+    });
   });
 });
