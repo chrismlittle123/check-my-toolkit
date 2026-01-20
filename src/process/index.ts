@@ -71,6 +71,7 @@ function createCiRunner(config: Config): CiRunner {
       require_workflows: ciConfig.require_workflows,
       jobs: ciConfig.jobs,
       actions: ciConfig.actions,
+      commands: ciConfig.commands,
     });
   }
   return runner;
