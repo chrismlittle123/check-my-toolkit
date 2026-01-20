@@ -1,5 +1,6 @@
 import {
   type BranchProtectionSettings,
+  type BypassActor,
   type DesiredBranchProtection,
   type DesiredTagProtection,
   type RepoInfo,
@@ -64,11 +65,23 @@ export function computeDiff(
   desired: DesiredBranchProtection
 ): SyncDiffResult {
   const diffs = collectDiffs(current, desired);
+
+  // Add bypass_actors diff
+  const bypassDiff = compareBypassActors(
+    current.bypassActors,
+    desired.bypass_actors,
+    current.rulesetId
+  );
+  if (bypassDiff) {
+    diffs.push(bypassDiff);
+  }
+
   return {
     repoInfo,
     branch: current.branch,
     diffs,
     hasChanges: diffs.length > 0,
+    currentRulesetId: current.rulesetId,
   };
 }
 
@@ -136,6 +149,57 @@ function compareArrayValue(
     current: currentArray,
     desired,
     action: currentArray.length === 0 ? "add" : "change",
+  };
+}
+
+/** Compare bypass actors arrays */
+function compareBypassActors(
+  current: BypassActor[] | null,
+  desired: BypassActor[] | undefined,
+  rulesetId: number | null
+): SettingDiff | null {
+  if (desired === undefined) {
+    return null;
+  }
+
+  const currentActors = current ?? [];
+
+  // Normalize and sort for comparison
+  const sortKey = (a: BypassActor): string =>
+    `${a.actor_type}:${a.actor_id ?? ""}:${a.bypass_mode ?? "always"}`;
+
+  const sortedCurrent = [...currentActors].sort((a, b) => sortKey(a).localeCompare(sortKey(b)));
+  const sortedDesired = [...desired].sort((a, b) => sortKey(a).localeCompare(sortKey(b)));
+
+  // Normalize bypass_mode defaults for comparison
+  const normalize = (actors: BypassActor[]): BypassActor[] =>
+    actors.map((a) => ({
+      actor_type: a.actor_type,
+      actor_id: a.actor_id,
+      bypass_mode: a.bypass_mode ?? "always",
+    }));
+
+  const normalizedCurrent = normalize(sortedCurrent);
+  const normalizedDesired = normalize(sortedDesired);
+
+  const areEqual =
+    normalizedCurrent.length === normalizedDesired.length &&
+    normalizedCurrent.every(
+      (c, i) =>
+        c.actor_type === normalizedDesired[i].actor_type &&
+        c.actor_id === normalizedDesired[i].actor_id &&
+        c.bypass_mode === normalizedDesired[i].bypass_mode
+    );
+
+  if (areEqual) {
+    return null;
+  }
+
+  return {
+    setting: "bypass_actors",
+    current: currentActors,
+    desired,
+    action: rulesetId === null ? "add" : "change",
   };
 }
 

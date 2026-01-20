@@ -3,6 +3,13 @@ import { execa } from "execa";
 import { type CheckResult, type Violation } from "../../types/index.js";
 import { BaseProcessToolRunner } from "./base.js";
 
+/** Bypass actor configuration */
+interface BypassActorConfig {
+  actor_type: "Integration" | "OrganizationAdmin" | "RepositoryRole" | "Team" | "DeployKey";
+  actor_id?: number;
+  bypass_mode?: "always" | "pull_request";
+}
+
 /** Branch protection configuration */
 interface BranchProtectionConfig {
   branch?: string;
@@ -13,6 +20,7 @@ interface BranchProtectionConfig {
   require_branches_up_to_date?: boolean;
   require_signed_commits?: boolean;
   enforce_admins?: boolean;
+  bypass_actors?: BypassActorConfig[];
 }
 
 /** Tag protection configuration */
@@ -31,22 +39,22 @@ interface RepoConfig {
   tag_protection?: TagProtectionConfig;
 }
 
-/** GitHub API response for branch protection */
-interface BranchProtectionResponse {
-  required_pull_request_reviews?: {
+/** GitHub Ruleset bypass actor */
+interface RulesetBypassActor {
+  actor_id: number | null;
+  actor_type: string;
+  bypass_mode: string;
+}
+
+/** GitHub Ruleset rule */
+interface RulesetRule {
+  type: string;
+  parameters?: {
     required_approving_review_count?: number;
-    dismiss_stale_reviews?: boolean;
-    require_code_owner_reviews?: boolean;
-  };
-  required_status_checks?: {
-    strict?: boolean;
-    contexts?: string[];
-  };
-  required_signatures?: {
-    enabled?: boolean;
-  };
-  enforce_admins?: {
-    enabled?: boolean;
+    dismiss_stale_reviews_on_push?: boolean;
+    require_code_owner_review?: boolean;
+    required_status_checks?: { context: string }[];
+    strict_required_status_checks_policy?: boolean;
   };
 }
 
@@ -57,7 +65,8 @@ interface RulesetResponse {
   target: string;
   enforcement: string;
   conditions?: { ref_name?: { include?: string[]; exclude?: string[] } };
-  rules?: { type: string }[];
+  bypass_actors?: RulesetBypassActor[];
+  rules?: RulesetRule[];
 }
 
 /** Runner for repository settings validation */
@@ -155,16 +164,57 @@ export class RepoRunner extends BaseProcessToolRunner {
     try {
       const result = await execa("gh", [
         "api",
-        `repos/${repoInfo.owner}/${repoInfo.repo}/branches/${branch}/protection`,
-        "--jq",
-        ".",
+        `repos/${repoInfo.owner}/${repoInfo.repo}/rulesets`,
       ]);
 
-      const protection = JSON.parse(result.stdout) as BranchProtectionResponse;
-      return this.validateProtectionSettings(protection, branch);
+      const rulesets = JSON.parse(result.stdout) as RulesetResponse[];
+      const branchRuleset = this.findBranchRuleset(rulesets, branch);
+
+      if (!branchRuleset) {
+        return this.handleNoBranchRuleset(branch);
+      }
+
+      return this.validateBranchRulesetSettings(branchRuleset, branch);
     } catch (error) {
       return this.handleBranchProtectionError(error, branch);
     }
+  }
+
+  private findBranchRuleset(rulesets: RulesetResponse[], branch: string): RulesetResponse | undefined {
+    return rulesets.find(
+      (r) =>
+        r.target === "branch" &&
+        r.enforcement === "active" &&
+        this.matchesBranch(r.conditions?.ref_name?.include ?? [], branch)
+    );
+  }
+
+  private matchesBranch(patterns: string[], branch: string): boolean {
+    for (const pattern of patterns) {
+      const cleanPattern = pattern.replace(/^refs\/heads\//, "");
+      if (cleanPattern === branch) return true;
+      if (cleanPattern === "~DEFAULT_BRANCH" && branch === "main") return true;
+      if (cleanPattern === "~ALL") return true;
+      if (cleanPattern.includes("*")) {
+        const regex = new RegExp("^" + cleanPattern.replace(/\*/g, ".*") + "$");
+        if (regex.test(branch)) return true;
+      }
+    }
+    return false;
+  }
+
+  private handleNoBranchRuleset(branch: string): Violation[] {
+    if (this.config.require_branch_protection) {
+      return [
+        {
+          rule: `${this.rule}.branch_protection`,
+          tool: this.toolId,
+          message: `Branch '${branch}' does not have a branch protection ruleset`,
+          severity: "error",
+        },
+      ];
+    }
+    return [];
   }
 
   private handleBranchProtectionError(error: unknown, branch: string): Violation[] {
@@ -172,7 +222,7 @@ export class RepoRunner extends BaseProcessToolRunner {
     const v = (message: string, severity: "error" | "warning" = "error"): Violation[] => [
       { rule: `${this.rule}.branch_protection`, tool: this.toolId, message, severity },
     ];
-    if (msg.includes("404") || msg.includes("Branch not protected")) {
+    if (msg.includes("404")) {
       return this.config.require_branch_protection
         ? v(`Branch '${branch}' does not have branch protection enabled`)
         : [];
@@ -186,118 +236,92 @@ export class RepoRunner extends BaseProcessToolRunner {
     return v(`Failed to check branch protection: ${msg}`);
   }
 
-  private validateProtectionSettings(
-    protection: BranchProtectionResponse,
-    branch: string
-  ): Violation[] {
+  private validateBranchRulesetSettings(ruleset: RulesetResponse, branch: string): Violation[] {
     const bpConfig = this.config.branch_protection;
     if (!bpConfig) {
       return [];
     }
 
     const violations: Violation[] = [];
+    const rules = ruleset.rules ?? [];
 
-    violations.push(...this.checkReviewRequirements(protection, bpConfig, branch));
-    violations.push(...this.checkStatusCheckRequirements(protection, bpConfig, branch));
-    violations.push(...this.checkSecurityRequirements(protection, bpConfig, branch));
+    const prRule = rules.find((r) => r.type === "pull_request");
+    violations.push(...this.checkPullRequestRuleSettings(prRule, bpConfig, branch));
+
+    const statusRule = rules.find((r) => r.type === "required_status_checks");
+    violations.push(...this.checkStatusChecksRuleSettings(statusRule, bpConfig, branch));
+
+    if (bpConfig.require_signed_commits === true) {
+      if (!rules.some((r) => r.type === "required_signatures")) {
+        violations.push({
+          rule: `${this.rule}.branch_protection.require_signed_commits`,
+          tool: this.toolId,
+          message: `Branch '${branch}' does not require signed commits`,
+          severity: "error",
+        });
+      }
+    }
+
+    violations.push(...this.checkBypassActorsSettings(ruleset, bpConfig, branch));
 
     return violations;
   }
 
-  private checkReviewRequirements(
-    protection: BranchProtectionResponse,
+  private checkPullRequestRuleSettings(
+    prRule: RulesetRule | undefined,
     bpConfig: BranchProtectionConfig,
     branch: string
   ): Violation[] {
     const violations: Violation[] = [];
-    const prReviews = protection.required_pull_request_reviews;
+    const params = prRule?.parameters;
 
-    const reviewCountViolation = this.checkReviewCount(prReviews, bpConfig, branch);
-    if (reviewCountViolation) {
-      violations.push(reviewCountViolation);
+    if (bpConfig.required_reviews !== undefined) {
+      const actualReviews = params?.required_approving_review_count ?? 0;
+      if (actualReviews < bpConfig.required_reviews) {
+        violations.push({
+          rule: `${this.rule}.branch_protection.required_reviews`,
+          tool: this.toolId,
+          message: `Branch '${branch}' requires ${actualReviews} reviews, expected at least ${bpConfig.required_reviews}`,
+          severity: "error",
+        });
+      }
     }
 
-    const staleReviewViolation = this.checkStaleReviews(prReviews, bpConfig, branch);
-    if (staleReviewViolation) {
-      violations.push(staleReviewViolation);
+    if (bpConfig.dismiss_stale_reviews === true) {
+      if (!(params?.dismiss_stale_reviews_on_push ?? false)) {
+        violations.push({
+          rule: `${this.rule}.branch_protection.dismiss_stale_reviews`,
+          tool: this.toolId,
+          message: `Branch '${branch}' does not dismiss stale reviews on new commits`,
+          severity: "error",
+        });
+      }
     }
 
-    const codeOwnerViolation = this.checkCodeOwnerReviews(prReviews, bpConfig, branch);
-    if (codeOwnerViolation) {
-      violations.push(codeOwnerViolation);
+    if (bpConfig.require_code_owner_reviews === true) {
+      if (!(params?.require_code_owner_review ?? false)) {
+        violations.push({
+          rule: `${this.rule}.branch_protection.require_code_owner_reviews`,
+          tool: this.toolId,
+          message: `Branch '${branch}' does not require code owner reviews`,
+          severity: "error",
+        });
+      }
     }
 
     return violations;
   }
 
-  private checkReviewCount(
-    prReviews: BranchProtectionResponse["required_pull_request_reviews"],
-    bpConfig: BranchProtectionConfig,
-    branch: string
-  ): Violation | null {
-    if (bpConfig.required_reviews === undefined) {
-      return null;
-    }
-    const actualReviews = prReviews?.required_approving_review_count ?? 0;
-    if (actualReviews >= bpConfig.required_reviews) {
-      return null;
-    }
-    return {
-      rule: `${this.rule}.branch_protection.required_reviews`,
-      tool: this.toolId,
-      message: `Branch '${branch}' requires ${actualReviews} reviews, expected at least ${bpConfig.required_reviews}`,
-      severity: "error",
-    };
-  }
-
-  private checkStaleReviews(
-    prReviews: BranchProtectionResponse["required_pull_request_reviews"],
-    bpConfig: BranchProtectionConfig,
-    branch: string
-  ): Violation | null {
-    if (bpConfig.dismiss_stale_reviews !== true) {
-      return null;
-    }
-    if (prReviews?.dismiss_stale_reviews ?? false) {
-      return null;
-    }
-    return {
-      rule: `${this.rule}.branch_protection.dismiss_stale_reviews`,
-      tool: this.toolId,
-      message: `Branch '${branch}' does not dismiss stale reviews on new commits`,
-      severity: "error",
-    };
-  }
-
-  private checkCodeOwnerReviews(
-    prReviews: BranchProtectionResponse["required_pull_request_reviews"],
-    bpConfig: BranchProtectionConfig,
-    branch: string
-  ): Violation | null {
-    if (bpConfig.require_code_owner_reviews !== true) {
-      return null;
-    }
-    if (prReviews?.require_code_owner_reviews ?? false) {
-      return null;
-    }
-    return {
-      rule: `${this.rule}.branch_protection.require_code_owner_reviews`,
-      tool: this.toolId,
-      message: `Branch '${branch}' does not require code owner reviews`,
-      severity: "error",
-    };
-  }
-
-  private checkStatusCheckRequirements(
-    protection: BranchProtectionResponse,
+  private checkStatusChecksRuleSettings(
+    statusRule: RulesetRule | undefined,
     bpConfig: BranchProtectionConfig,
     branch: string
   ): Violation[] {
     const violations: Violation[] = [];
-    const statusChecks = protection.required_status_checks;
+    const params = statusRule?.parameters;
 
     if (bpConfig.require_status_checks && bpConfig.require_status_checks.length > 0) {
-      const actualChecks = statusChecks?.contexts ?? [];
+      const actualChecks = params?.required_status_checks?.map((c) => c.context) ?? [];
       const missingChecks = bpConfig.require_status_checks.filter(
         (check) => !actualChecks.includes(check)
       );
@@ -311,44 +335,55 @@ export class RepoRunner extends BaseProcessToolRunner {
       }
     }
 
-    if (bpConfig.require_branches_up_to_date === true && !(statusChecks?.strict ?? false)) {
-      violations.push({
-        rule: `${this.rule}.branch_protection.require_branches_up_to_date`,
-        tool: this.toolId,
-        message: `Branch '${branch}' does not require branches to be up to date before merging`,
-        severity: "error",
-      });
+    if (bpConfig.require_branches_up_to_date === true) {
+      if (!(params?.strict_required_status_checks_policy ?? false)) {
+        violations.push({
+          rule: `${this.rule}.branch_protection.require_branches_up_to_date`,
+          tool: this.toolId,
+          message: `Branch '${branch}' does not require branches to be up to date before merging`,
+          severity: "error",
+        });
+      }
     }
 
     return violations;
   }
 
-  private checkSecurityRequirements(
-    protection: BranchProtectionResponse,
+  private checkBypassActorsSettings(
+    ruleset: RulesetResponse,
     bpConfig: BranchProtectionConfig,
     branch: string
   ): Violation[] {
     const violations: Violation[] = [];
+    const actualBypass = ruleset.bypass_actors ?? [];
 
-    if (
-      bpConfig.require_signed_commits === true &&
-      !(protection.required_signatures?.enabled ?? false)
-    ) {
+    // enforce_admins means no bypass actors should be configured
+    if (bpConfig.enforce_admins === true && actualBypass.length > 0) {
       violations.push({
-        rule: `${this.rule}.branch_protection.require_signed_commits`,
+        rule: `${this.rule}.branch_protection.enforce_admins`,
         tool: this.toolId,
-        message: `Branch '${branch}' does not require signed commits`,
+        message: `Branch '${branch}' has bypass actors configured but enforce_admins requires no bypasses`,
         severity: "error",
       });
     }
 
-    if (bpConfig.enforce_admins === true && !(protection.enforce_admins?.enabled ?? false)) {
-      violations.push({
-        rule: `${this.rule}.branch_protection.enforce_admins`,
-        tool: this.toolId,
-        message: `Branch '${branch}' does not enforce rules for administrators`,
-        severity: "error",
-      });
+    // Check if configured bypass actors are present
+    if (bpConfig.bypass_actors && bpConfig.bypass_actors.length > 0) {
+      for (const expected of bpConfig.bypass_actors) {
+        const found = actualBypass.some(
+          (a) =>
+            a.actor_type === expected.actor_type &&
+            (expected.actor_id === undefined || a.actor_id === expected.actor_id)
+        );
+        if (!found) {
+          violations.push({
+            rule: `${this.rule}.branch_protection.bypass_actors`,
+            tool: this.toolId,
+            message: `Branch '${branch}' missing bypass actor: ${expected.actor_type}${expected.actor_id ? ` (id: ${expected.actor_id})` : ""}`,
+            severity: "error",
+          });
+        }
+      }
     }
 
     return violations;

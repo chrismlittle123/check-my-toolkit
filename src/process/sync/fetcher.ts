@@ -2,8 +2,9 @@ import { execa } from "execa";
 
 import {
   type BranchProtectionSettings,
-  type GitHubBranchProtection,
+  type BypassActor,
   type GitHubRuleset,
+  type GitHubRulesetBypassActor,
   type RepoInfo,
   type TagProtectionSettings,
 } from "./types.js";
@@ -42,7 +43,7 @@ export async function getRepoInfo(projectRoot: string): Promise<RepoInfo> {
   }
 }
 
-/** Fetch current branch protection settings from GitHub */
+/** Fetch current branch protection settings from GitHub Rulesets */
 export async function fetchBranchProtection(
   repoInfo: RepoInfo,
   branch: string
@@ -50,21 +51,22 @@ export async function fetchBranchProtection(
   try {
     const result = await execa("gh", [
       "api",
-      `repos/${repoInfo.owner}/${repoInfo.repo}/branches/${branch}/protection`,
+      `repos/${repoInfo.owner}/${repoInfo.repo}/rulesets`,
     ]);
 
-    const protection = JSON.parse(result.stdout) as GitHubBranchProtection;
-    return parseGitHubProtection(branch, protection);
+    const rulesets = JSON.parse(result.stdout) as GitHubRuleset[];
+    return parseBranchRuleset(rulesets, branch);
   } catch (error) {
-    return handleFetchError(error, branch);
+    return handleBranchFetchError(error, branch);
   }
 }
 
 /** Handle errors from fetching branch protection */
-function handleFetchError(error: unknown, branch: string): BranchProtectionSettings {
+function handleBranchFetchError(error: unknown, branch: string): BranchProtectionSettings {
   const errorMessage = error instanceof Error ? error.message : String(error);
 
-  if (errorMessage.includes("404") || errorMessage.includes("Branch not protected")) {
+  // 404 means no rulesets exist - return empty settings
+  if (errorMessage.includes("404")) {
     return createEmptySettings(branch);
   }
 
@@ -78,42 +80,77 @@ function handleFetchError(error: unknown, branch: string): BranchProtectionSetti
   throw new FetcherError(`Failed to fetch branch protection: ${errorMessage}`, "API_ERROR");
 }
 
-/** Parse GitHub API response into our settings format */
-function parseGitHubProtection(
-  branch: string,
-  protection: GitHubBranchProtection
-): BranchProtectionSettings {
+/** Find and parse the branch protection ruleset */
+function parseBranchRuleset(rulesets: GitHubRuleset[], branch: string): BranchProtectionSettings {
+  // Find ruleset targeting branches that includes the specified branch
+  const branchRuleset = rulesets.find(
+    (r) =>
+      r.target === "branch" &&
+      r.enforcement === "active" &&
+      matchesBranch(r.conditions?.ref_name?.include ?? [], branch)
+  );
+
+  if (!branchRuleset) {
+    return createEmptySettings(branch);
+  }
+
+  const rules = branchRuleset.rules ?? [];
+  const prRule = rules.find((r) => r.type === "pull_request");
+  const statusRule = rules.find((r) => r.type === "required_status_checks");
+  const signaturesRule = rules.find((r) => r.type === "required_signatures");
+
+  // Parse bypass actors
+  const bypassActors = parseBypassActors(branchRuleset.bypass_actors);
+
+  // enforceAdmins is true when there are no bypass actors
+  const enforceAdmins = bypassActors === null || bypassActors.length === 0;
+
   return {
     branch,
-    ...parsePullRequestReviews(protection.required_pull_request_reviews),
-    ...parseStatusChecks(protection.required_status_checks),
-    requireSignedCommits: protection.required_signatures?.enabled ?? null,
-    enforceAdmins: protection.enforce_admins?.enabled ?? null,
+    requiredReviews: prRule?.parameters?.required_approving_review_count ?? null,
+    dismissStaleReviews: prRule?.parameters?.dismiss_stale_reviews_on_push ?? null,
+    requireCodeOwnerReviews: prRule?.parameters?.require_code_owner_review ?? null,
+    requiredStatusChecks:
+      statusRule?.parameters?.required_status_checks?.map((c) => c.context) ?? null,
+    requireBranchesUpToDate:
+      statusRule?.parameters?.strict_required_status_checks_policy ?? null,
+    requireSignedCommits: signaturesRule !== undefined,
+    enforceAdmins,
+    bypassActors,
+    rulesetId: branchRuleset.id,
+    rulesetName: branchRuleset.name,
   };
 }
 
-/** Parse PR review settings */
-function parsePullRequestReviews(
-  prReviews: GitHubBranchProtection["required_pull_request_reviews"]
-): Pick<
-  BranchProtectionSettings,
-  "requiredReviews" | "dismissStaleReviews" | "requireCodeOwnerReviews"
-> {
-  return {
-    requiredReviews: prReviews?.required_approving_review_count ?? null,
-    dismissStaleReviews: prReviews?.dismiss_stale_reviews ?? null,
-    requireCodeOwnerReviews: prReviews?.require_code_owner_reviews ?? null,
-  };
+/** Check if branch matches any of the include patterns */
+function matchesBranch(patterns: string[], branch: string): boolean {
+  for (const pattern of patterns) {
+    const cleanPattern = pattern.replace(/^refs\/heads\//, "");
+    if (cleanPattern === branch) return true;
+    if (cleanPattern === "~DEFAULT_BRANCH" && branch === "main") return true;
+    if (cleanPattern === "~ALL") return true;
+    // Simple wildcard matching for patterns like "release/*"
+    if (cleanPattern.includes("*")) {
+      const regex = new RegExp("^" + cleanPattern.replace(/\*/g, ".*") + "$");
+      if (regex.test(branch)) return true;
+    }
+  }
+  return false;
 }
 
-/** Parse status check settings */
-function parseStatusChecks(
-  statusChecks: GitHubBranchProtection["required_status_checks"]
-): Pick<BranchProtectionSettings, "requiredStatusChecks" | "requireBranchesUpToDate"> {
-  return {
-    requiredStatusChecks: statusChecks?.contexts ?? null,
-    requireBranchesUpToDate: statusChecks?.strict ?? null,
-  };
+/** Parse bypass actors from GitHub API response */
+function parseBypassActors(
+  actors: GitHubRulesetBypassActor[] | undefined
+): BypassActor[] | null {
+  if (!actors || actors.length === 0) {
+    return null;
+  }
+
+  return actors.map((actor) => ({
+    actor_type: actor.actor_type,
+    actor_id: actor.actor_id ?? undefined,
+    bypass_mode: actor.bypass_mode,
+  }));
 }
 
 /** Create empty settings for unprotected branch */
@@ -127,6 +164,9 @@ function createEmptySettings(branch: string): BranchProtectionSettings {
     requireBranchesUpToDate: null,
     requireSignedCommits: null,
     enforceAdmins: null,
+    bypassActors: null,
+    rulesetId: null,
+    rulesetName: null,
   };
 }
 

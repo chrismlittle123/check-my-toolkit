@@ -61,7 +61,7 @@ async function applyChanges(options: SyncOptions, diffResult: SyncDiffResult): P
   const repoInfo = await getRepoInfo(projectRoot);
   const desired = config.process?.repo?.branch_protection ?? {};
 
-  return applyBranchProtection(repoInfo, diffResult.branch, desired, diffResult.diffs);
+  return applyBranchProtection(repoInfo, diffResult.branch, desired, diffResult);
 }
 
 /** Get the diff result (shared by diff and sync) */

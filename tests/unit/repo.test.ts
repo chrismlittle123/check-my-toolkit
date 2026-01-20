@@ -132,6 +132,23 @@ describe("RepoRunner", () => {
     });
 
     describe("branch protection check", () => {
+      // Helper to create a branch ruleset response
+      const createBranchRuleset = (
+        branch: string,
+        rules: Array<{ type: string; parameters?: Record<string, unknown> }>,
+        bypassActors: Array<{ actor_id: number | null; actor_type: string; bypass_mode: string }> = []
+      ) => [
+        {
+          id: 1,
+          name: "Branch Protection",
+          target: "branch",
+          enforcement: "active",
+          conditions: { ref_name: { include: [`refs/heads/${branch}`] } },
+          bypass_actors: bypassActors,
+          rules,
+        },
+      ];
+
       beforeEach(() => {
         // gh --version succeeds
         mockedExeca.mockResolvedValueOnce({ stdout: "gh version 2.0.0" } as never);
@@ -143,7 +160,7 @@ describe("RepoRunner", () => {
 
       it("fails when branch protection is not enabled", async () => {
         // gh api returns 404
-        mockedExeca.mockRejectedValueOnce(new Error("404 Branch not protected"));
+        mockedExeca.mockRejectedValueOnce(new Error("404"));
         runner.setConfig({ enabled: true, require_branch_protection: true });
 
         const result = await runner.run(tempDir);
@@ -167,9 +184,11 @@ describe("RepoRunner", () => {
 
       it("passes when branch protection exists and no specific requirements", async () => {
         mockedExeca.mockResolvedValueOnce({
-          stdout: JSON.stringify({
-            required_pull_request_reviews: { required_approving_review_count: 1 },
-          }),
+          stdout: JSON.stringify(
+            createBranchRuleset("main", [
+              { type: "pull_request", parameters: { required_approving_review_count: 1 } },
+            ])
+          ),
         } as never);
         runner.setConfig({ enabled: true, require_branch_protection: true });
 
@@ -180,9 +199,11 @@ describe("RepoRunner", () => {
 
       it("fails when required reviews not met", async () => {
         mockedExeca.mockResolvedValueOnce({
-          stdout: JSON.stringify({
-            required_pull_request_reviews: { required_approving_review_count: 1 },
-          }),
+          stdout: JSON.stringify(
+            createBranchRuleset("main", [
+              { type: "pull_request", parameters: { required_approving_review_count: 1 } },
+            ])
+          ),
         } as never);
         runner.setConfig({
           enabled: true,
@@ -196,9 +217,11 @@ describe("RepoRunner", () => {
 
       it("passes when required reviews met", async () => {
         mockedExeca.mockResolvedValueOnce({
-          stdout: JSON.stringify({
-            required_pull_request_reviews: { required_approving_review_count: 2 },
-          }),
+          stdout: JSON.stringify(
+            createBranchRuleset("main", [
+              { type: "pull_request", parameters: { required_approving_review_count: 2 } },
+            ])
+          ),
         } as never);
         runner.setConfig({
           enabled: true,
@@ -212,9 +235,11 @@ describe("RepoRunner", () => {
 
       it("fails when dismiss_stale_reviews not enabled", async () => {
         mockedExeca.mockResolvedValueOnce({
-          stdout: JSON.stringify({
-            required_pull_request_reviews: { dismiss_stale_reviews: false },
-          }),
+          stdout: JSON.stringify(
+            createBranchRuleset("main", [
+              { type: "pull_request", parameters: { dismiss_stale_reviews_on_push: false } },
+            ])
+          ),
         } as never);
         runner.setConfig({
           enabled: true,
@@ -228,9 +253,11 @@ describe("RepoRunner", () => {
 
       it("fails when require_code_owner_reviews not enabled", async () => {
         mockedExeca.mockResolvedValueOnce({
-          stdout: JSON.stringify({
-            required_pull_request_reviews: { require_code_owner_reviews: false },
-          }),
+          stdout: JSON.stringify(
+            createBranchRuleset("main", [
+              { type: "pull_request", parameters: { require_code_owner_review: false } },
+            ])
+          ),
         } as never);
         runner.setConfig({
           enabled: true,
@@ -246,9 +273,14 @@ describe("RepoRunner", () => {
 
       it("fails when required status checks are missing", async () => {
         mockedExeca.mockResolvedValueOnce({
-          stdout: JSON.stringify({
-            required_status_checks: { contexts: ["ci"] },
-          }),
+          stdout: JSON.stringify(
+            createBranchRuleset("main", [
+              {
+                type: "required_status_checks",
+                parameters: { required_status_checks: [{ context: "ci" }] },
+              },
+            ])
+          ),
         } as never);
         runner.setConfig({
           enabled: true,
@@ -262,9 +294,16 @@ describe("RepoRunner", () => {
 
       it("passes when all required status checks present", async () => {
         mockedExeca.mockResolvedValueOnce({
-          stdout: JSON.stringify({
-            required_status_checks: { contexts: ["ci", "lint", "test"] },
-          }),
+          stdout: JSON.stringify(
+            createBranchRuleset("main", [
+              {
+                type: "required_status_checks",
+                parameters: {
+                  required_status_checks: [{ context: "ci" }, { context: "lint" }, { context: "test" }],
+                },
+              },
+            ])
+          ),
         } as never);
         runner.setConfig({
           enabled: true,
@@ -278,9 +317,14 @@ describe("RepoRunner", () => {
 
       it("fails when require_branches_up_to_date not enabled", async () => {
         mockedExeca.mockResolvedValueOnce({
-          stdout: JSON.stringify({
-            required_status_checks: { strict: false },
-          }),
+          stdout: JSON.stringify(
+            createBranchRuleset("main", [
+              {
+                type: "required_status_checks",
+                parameters: { strict_required_status_checks_policy: false },
+              },
+            ])
+          ),
         } as never);
         runner.setConfig({
           enabled: true,
@@ -296,9 +340,7 @@ describe("RepoRunner", () => {
 
       it("fails when require_signed_commits not enabled", async () => {
         mockedExeca.mockResolvedValueOnce({
-          stdout: JSON.stringify({
-            required_signatures: { enabled: false },
-          }),
+          stdout: JSON.stringify(createBranchRuleset("main", [])),
         } as never);
         runner.setConfig({
           enabled: true,
@@ -310,11 +352,13 @@ describe("RepoRunner", () => {
         expect(result.violations.some((v) => v.rule.includes("require_signed_commits"))).toBe(true);
       });
 
-      it("fails when enforce_admins not enabled", async () => {
+      it("fails when enforce_admins not enabled (has bypass actors)", async () => {
         mockedExeca.mockResolvedValueOnce({
-          stdout: JSON.stringify({
-            enforce_admins: { enabled: false },
-          }),
+          stdout: JSON.stringify(
+            createBranchRuleset("main", [], [
+              { actor_id: 5, actor_type: "RepositoryRole", bypass_mode: "always" },
+            ])
+          ),
         } as never);
         runner.setConfig({
           enabled: true,
@@ -328,9 +372,11 @@ describe("RepoRunner", () => {
 
       it("uses custom branch name", async () => {
         mockedExeca.mockResolvedValueOnce({
-          stdout: JSON.stringify({
-            required_pull_request_reviews: { required_approving_review_count: 1 },
-          }),
+          stdout: JSON.stringify(
+            createBranchRuleset("develop", [
+              { type: "pull_request", parameters: { required_approving_review_count: 1 } },
+            ])
+          ),
         } as never);
         runner.setConfig({
           enabled: true,
@@ -339,11 +385,46 @@ describe("RepoRunner", () => {
 
         const result = await runner.run(tempDir);
         expect(result.passed).toBe(true);
-        // Verify the API was called with the custom branch
+        // Verify the API was called with rulesets endpoint
         expect(mockedExeca).toHaveBeenCalledWith(
           "gh",
-          expect.arrayContaining([expect.stringContaining("develop/protection")])
+          expect.arrayContaining([expect.stringContaining("/rulesets")])
         );
+      });
+
+      it("validates bypass_actors configuration", async () => {
+        mockedExeca.mockResolvedValueOnce({
+          stdout: JSON.stringify(
+            createBranchRuleset("main", [], [
+              { actor_id: 123, actor_type: "Integration", bypass_mode: "always" },
+            ])
+          ),
+        } as never);
+        runner.setConfig({
+          enabled: true,
+          branch_protection: {
+            bypass_actors: [{ actor_type: "Integration", actor_id: 123 }],
+          },
+        });
+
+        const result = await runner.run(tempDir);
+        expect(result.passed).toBe(true);
+      });
+
+      it("fails when expected bypass_actor is missing", async () => {
+        mockedExeca.mockResolvedValueOnce({
+          stdout: JSON.stringify(createBranchRuleset("main", [], [])),
+        } as never);
+        runner.setConfig({
+          enabled: true,
+          branch_protection: {
+            bypass_actors: [{ actor_type: "Integration", actor_id: 123 }],
+          },
+        });
+
+        const result = await runner.run(tempDir);
+        expect(result.passed).toBe(false);
+        expect(result.violations.some((v) => v.rule.includes("bypass_actors"))).toBe(true);
       });
     });
 

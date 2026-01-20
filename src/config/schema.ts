@@ -497,7 +497,31 @@ const coverageConfigSchema = z
   .strict()
   .optional();
 
-/** Branch protection settings configuration */
+/** Bypass actor type for GitHub Rulesets */
+const bypassActorTypeSchema = z.enum([
+  "Integration", // GitHub App
+  "OrganizationAdmin", // Org admin role
+  "RepositoryRole", // Repository role (1=read, 2=triage, 3=write, 4=maintain, 5=admin)
+  "Team", // GitHub team
+  "DeployKey", // Deploy key
+]);
+
+/** Bypass mode - when the actor can bypass */
+const bypassModeSchema = z.enum([
+  "always", // Can always bypass
+  "pull_request", // Can bypass only via pull request
+]);
+
+/** Single bypass actor configuration */
+const bypassActorSchema = z
+  .object({
+    actor_type: bypassActorTypeSchema,
+    actor_id: z.number().int().positive().optional(), // Actor ID (required except for DeployKey)
+    bypass_mode: bypassModeSchema.optional().default("always"),
+  })
+  .strict();
+
+/** Branch protection settings configuration (uses GitHub Rulesets API) */
 const branchProtectionConfigSchema = z
   .object({
     branch: z.string().optional().default("main"), // Branch to check (default: main)
@@ -507,7 +531,8 @@ const branchProtectionConfigSchema = z
     require_status_checks: z.array(z.string()).optional(), // Required status checks
     require_branches_up_to_date: z.boolean().optional(), // Require branch to be up to date
     require_signed_commits: z.boolean().optional(), // Require signed commits
-    enforce_admins: z.boolean().optional(), // Enforce rules for admins too
+    enforce_admins: z.boolean().optional(), // Enforce rules for admins (no bypass actors when true)
+    bypass_actors: z.array(bypassActorSchema).optional(), // Actors that can bypass rules
   })
   .strict()
   .optional();
