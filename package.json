@@ -1,6 +1,6 @@
 {
   "name": "check-my-toolkit",
-  "version": "1.5.1",
+  "version": "1.5.2",
   "description": "Unified project health checks - code, process, and infra",
   "type": "module",
   "packageManager": "pnpm@9.15.4",

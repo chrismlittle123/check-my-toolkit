@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.5.2
+
+### Patch Changes
+
+- e1e7474: Fix sync applier to always include `enforce_admins` field (required by GitHub API), defaulting to `false` so CI/release workflows can merge to protected branches.
+
 ## 1.5.1
 
 ### Patch Changes
