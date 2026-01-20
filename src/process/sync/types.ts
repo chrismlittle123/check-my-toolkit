@@ -76,3 +76,49 @@ export interface DesiredBranchProtection {
   require_signed_commits?: boolean;
   enforce_admins?: boolean;
 }
+
+// =============================================================================
+// Tag Protection Types (GitHub Rulesets API)
+// =============================================================================
+
+/** GitHub Ruleset response */
+export interface GitHubRuleset {
+  id: number;
+  name: string;
+  target: "branch" | "tag";
+  enforcement: "active" | "evaluate" | "disabled";
+  conditions?: {
+    ref_name?: {
+      include?: string[];
+      exclude?: string[];
+    };
+  };
+  rules?: {
+    type: "deletion" | "update" | "creation" | string;
+    parameters?: Record<string, unknown>;
+  }[];
+}
+
+/** Current tag protection settings from GitHub */
+export interface TagProtectionSettings {
+  patterns: string[];
+  preventDeletion: boolean;
+  preventUpdate: boolean;
+  rulesetId: number | null;
+  rulesetName: string | null;
+}
+
+/** Desired tag protection settings from config */
+export interface DesiredTagProtection {
+  patterns?: string[];
+  prevent_deletion?: boolean;
+  prevent_update?: boolean;
+}
+
+/** Tag protection diff result */
+export interface TagProtectionDiffResult {
+  repoInfo: RepoInfo;
+  diffs: SettingDiff[];
+  hasChanges: boolean;
+  currentRulesetId: number | null;
+}

@@ -1,8 +1,19 @@
 import { getProjectRoot, loadConfig } from "../../config/loader.js";
-import { ApplierError, applyBranchProtection } from "./applier.js";
-import { computeDiff, formatValue } from "./differ.js";
-import { fetchBranchProtection, FetcherError, getRepoInfo, isGhAvailable } from "./fetcher.js";
-import { type SyncDiffResult, type SyncOptions, type SyncResult } from "./types.js";
+import { ApplierError, applyBranchProtection, applyTagProtection } from "./applier.js";
+import { computeDiff, computeTagDiff, formatValue } from "./differ.js";
+import {
+  fetchBranchProtection,
+  FetcherError,
+  fetchTagProtection,
+  getRepoInfo,
+  isGhAvailable,
+} from "./fetcher.js";
+import {
+  type SyncDiffResult,
+  type SyncOptions,
+  type SyncResult,
+  type TagProtectionDiffResult,
+} from "./types.js";
 
 /** Helper to write to stdout */
 function writeLine(text: string): void {
@@ -219,4 +230,182 @@ function extractErrorInfo(error: unknown): { message: string; code: string } {
     return { message: error.message, code: "ERROR" };
   }
   return { message: String(error), code: "ERROR" };
+}
+
+// =============================================================================
+// Tag Protection Sync
+// =============================================================================
+
+/** Run tag protection diff command - show what would change */
+export async function runTagDiff(options: SyncOptions): Promise<void> {
+  try {
+    const diffResult = await getTagDiffResult(options);
+    outputTagDiff(diffResult, options.format);
+    process.exit(diffResult.hasChanges ? 1 : 0);
+  } catch (error) {
+    handleError(error, options.format);
+  }
+}
+
+/** Run tag protection sync command - apply changes (or preview if --apply not set) */
+export async function runTagSync(options: SyncOptions): Promise<void> {
+  try {
+    const diffResult = await getTagDiffResult(options);
+
+    if (!diffResult.hasChanges) {
+      outputTagNoChanges(diffResult, options.format);
+      process.exit(0);
+    }
+
+    if (!options.apply) {
+      outputTagPreview(diffResult, options.format);
+      process.exit(0);
+    }
+
+    const result = await applyTagChanges(options, diffResult);
+    outputTagSyncResult(diffResult, result, options.format);
+    process.exit(result.success ? 0 : 1);
+  } catch (error) {
+    handleError(error, options.format);
+  }
+}
+
+/** Get the tag diff result */
+async function getTagDiffResult(options: SyncOptions): Promise<TagProtectionDiffResult> {
+  if (!(await isGhAvailable())) {
+    throw new FetcherError("GitHub CLI (gh) not available", "NO_GH");
+  }
+
+  const { config, configPath } = loadConfig(options.config);
+  const projectRoot = getProjectRoot(configPath);
+  const repoInfo = await getRepoInfo(projectRoot);
+
+  const repoConfig = config.process?.repo;
+  if (!repoConfig?.tag_protection?.patterns || repoConfig.tag_protection.patterns.length === 0) {
+    throw new Error("No [process.repo.tag_protection] patterns configured in check.toml");
+  }
+
+  const desired = repoConfig.tag_protection;
+  const current = await fetchTagProtection(repoInfo);
+
+  return computeTagDiff(repoInfo, current, desired);
+}
+
+/** Apply tag protection changes to GitHub */
+async function applyTagChanges(
+  options: SyncOptions,
+  diffResult: TagProtectionDiffResult
+): Promise<SyncResult> {
+  const { config } = loadConfig(options.config);
+  const desired = config.process?.repo?.tag_protection ?? {};
+
+  return applyTagProtection(diffResult.repoInfo, desired, diffResult);
+}
+
+/** Output tag diff result */
+function outputTagDiff(result: TagProtectionDiffResult, format: "text" | "json"): void {
+  if (format === "json") {
+    writeLine(JSON.stringify(result, null, 2));
+  } else {
+    outputTagDiffText(result);
+  }
+}
+
+/** Output tag diff in text format */
+function outputTagDiffText(result: TagProtectionDiffResult): void {
+  writeTagRepoHeader(result);
+
+  if (!result.hasChanges) {
+    writeLine("No changes needed. Tag protection settings match configuration.");
+    return;
+  }
+
+  writeTagDiffTable(result);
+  writeLine("");
+  writeLine(
+    `${result.diffs.length} setting(s) differ. Run 'cm process sync-tags --apply' to apply changes.`
+  );
+}
+
+/** Write tag repository header */
+function writeTagRepoHeader(result: TagProtectionDiffResult): void {
+  writeLine(`Repository: ${result.repoInfo.owner}/${result.repoInfo.repo}`);
+  writeLine(`Target: Tag Protection Ruleset`);
+  writeLine("");
+}
+
+/** Write tag diff table */
+function writeTagDiffTable(result: TagProtectionDiffResult): void {
+  const settingWidth = Math.max(...result.diffs.map((d) => d.setting.length), 7);
+  const currentWidth = Math.max(...result.diffs.map((d) => formatValue(d.current).length), 7);
+
+  writeLine(`${"Setting".padEnd(settingWidth)}  ${"Current".padEnd(currentWidth)}  Desired`);
+  writeLine("-".repeat(settingWidth + currentWidth + 20));
+
+  for (const diff of result.diffs) {
+    const currentStr = formatValue(diff.current);
+    const desiredStr = formatValue(diff.desired);
+    writeLine(
+      `${diff.setting.padEnd(settingWidth)}  ${currentStr.padEnd(currentWidth)}  ${desiredStr}`
+    );
+  }
+}
+
+/** Output when no tag changes are needed */
+function outputTagNoChanges(result: TagProtectionDiffResult, format: "text" | "json"): void {
+  if (format === "json") {
+    writeLine(JSON.stringify({ ...result, message: "No changes needed" }, null, 2));
+  } else {
+    writeTagRepoHeader(result);
+    writeLine("No changes needed. Tag protection settings match configuration.");
+  }
+}
+
+/** Output tag preview (sync without --apply) */
+function outputTagPreview(result: TagProtectionDiffResult, format: "text" | "json"): void {
+  if (format === "json") {
+    writeLine(JSON.stringify({ ...result, preview: true }, null, 2));
+  } else {
+    writeTagRepoHeader(result);
+    writeLine("Would apply the following changes:");
+    for (const diff of result.diffs) {
+      writeLine(`  ${diff.setting}: ${formatValue(diff.current)} -> ${formatValue(diff.desired)}`);
+    }
+    writeLine("");
+    writeLine("Run with --apply to make these changes.");
+  }
+}
+
+/** Output tag sync result */
+function outputTagSyncResult(
+  diffResult: TagProtectionDiffResult,
+  result: SyncResult,
+  format: "text" | "json"
+): void {
+  if (format === "json") {
+    writeLine(JSON.stringify({ repoInfo: diffResult.repoInfo, ...result }, null, 2));
+  } else {
+    outputTagSyncResultText(diffResult, result);
+  }
+}
+
+/** Output tag sync result in text format */
+function outputTagSyncResultText(diffResult: TagProtectionDiffResult, result: SyncResult): void {
+  writeTagRepoHeader(diffResult);
+  writeLine("Applying tag protection changes...");
+
+  for (const diff of result.applied) {
+    writeLine(`  + ${diff.setting}: ${formatValue(diff.current)} -> ${formatValue(diff.desired)}`);
+  }
+
+  for (const { diff, error } of result.failed) {
+    writeLine(`  x ${diff.setting}: ${error}`);
+  }
+
+  writeLine("");
+  if (result.success) {
+    writeLine(`+ ${result.applied.length} setting(s) synchronized successfully.`);
+  } else {
+    writeLine(`x ${result.failed.length} setting(s) failed to sync.`);
+  }
 }

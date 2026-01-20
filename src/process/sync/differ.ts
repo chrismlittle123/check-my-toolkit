@@ -1,9 +1,12 @@
 import {
   type BranchProtectionSettings,
   type DesiredBranchProtection,
+  type DesiredTagProtection,
   type RepoInfo,
   type SettingDiff,
   type SyncDiffResult,
+  type TagProtectionDiffResult,
+  type TagProtectionSettings,
 } from "./types.js";
 
 /** Field mapping for comparison */
@@ -145,4 +148,71 @@ export function formatValue(value: unknown): string {
     return value.length === 0 ? "[]" : `[${value.join(", ")}]`;
   }
   return String(value);
+}
+
+// =============================================================================
+// Tag Protection Diff
+// =============================================================================
+
+/** Compare current tag protection with desired and generate diffs */
+export function computeTagDiff(
+  repoInfo: RepoInfo,
+  current: TagProtectionSettings,
+  desired: DesiredTagProtection
+): TagProtectionDiffResult {
+  const diffs: SettingDiff[] = [];
+  const rulesetId = current.rulesetId;
+
+  collectPatternDiff(diffs, current, desired);
+  collectBooleanDiff(diffs, {
+    s: "prevent_deletion",
+    c: current.preventDeletion,
+    d: desired.prevent_deletion,
+    r: rulesetId,
+  });
+  collectBooleanDiff(diffs, {
+    s: "prevent_update",
+    c: current.preventUpdate,
+    d: desired.prevent_update,
+    r: rulesetId,
+  });
+
+  return { repoInfo, diffs, hasChanges: diffs.length > 0, currentRulesetId: rulesetId };
+}
+
+/** Collect pattern diff if patterns don't match */
+function collectPatternDiff(
+  diffs: SettingDiff[],
+  current: TagProtectionSettings,
+  desired: DesiredTagProtection
+): void {
+  if (desired.patterns === undefined) {
+    return;
+  }
+  const curr = [...current.patterns].sort();
+  const des = [...desired.patterns].sort();
+  const match = curr.length === des.length && curr.every((v, i) => v === des[i]);
+  if (!match) {
+    diffs.push({
+      setting: "patterns",
+      current: current.patterns,
+      desired: desired.patterns,
+      action: curr.length === 0 ? "add" : "change",
+    });
+  }
+}
+
+/** Collect boolean setting diff (s=setting, c=current, d=desired, r=rulesetId) */
+function collectBooleanDiff(
+  diffs: SettingDiff[],
+  o: { s: string; c: boolean; d: boolean | undefined; r: number | null }
+): void {
+  if (o.d !== undefined && o.c !== o.d) {
+    diffs.push({
+      setting: o.s,
+      current: o.c,
+      desired: o.d,
+      action: o.r === null ? "add" : "change",
+    });
+  }
 }

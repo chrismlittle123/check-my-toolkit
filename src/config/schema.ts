@@ -498,6 +498,16 @@ const branchProtectionConfigSchema = z
   .strict()
   .optional();
 
+/** Tag protection ruleset configuration */
+const tagProtectionConfigSchema = z
+  .object({
+    patterns: z.array(z.string()).optional(), // Tag patterns to protect (e.g., ["v*"])
+    prevent_deletion: z.boolean().optional().default(true), // Prevent tag deletion
+    prevent_update: z.boolean().optional().default(true), // Prevent tag updates (force-push)
+  })
+  .strict()
+  .optional();
+
 /** Repository settings configuration */
 const repoConfigSchema = z
   .object({
@@ -505,6 +515,7 @@ const repoConfigSchema = z
     require_branch_protection: z.boolean().optional().default(false), // Check branch protection exists
     require_codeowners: z.boolean().optional().default(false), // Check CODEOWNERS file exists
     branch_protection: branchProtectionConfigSchema, // Detailed branch protection requirements
+    tag_protection: tagProtectionConfigSchema, // Tag protection via GitHub rulesets
   })
   .strict()
   .optional();

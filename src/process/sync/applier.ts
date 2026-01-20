@@ -2,9 +2,11 @@ import { execa } from "execa";
 
 import {
   type DesiredBranchProtection,
+  type DesiredTagProtection,
   type RepoInfo,
   type SettingDiff,
   type SyncResult,
+  type TagProtectionDiffResult,
 } from "./types.js";
 
 /** Error thrown when applier encounters an issue */
@@ -135,5 +137,98 @@ function buildStatusChecksSection(
     ...(desired.require_branches_up_to_date !== undefined && {
       strict: desired.require_branches_up_to_date,
     }),
+  };
+}
+
+// =============================================================================
+// Tag Protection (GitHub Rulesets API)
+// =============================================================================
+
+/** Apply tag protection ruleset to GitHub */
+export async function applyTagProtection(
+  repoInfo: RepoInfo,
+  desired: DesiredTagProtection,
+  diffResult: TagProtectionDiffResult
+): Promise<SyncResult> {
+  if (!diffResult.hasChanges) {
+    return { success: true, applied: [], failed: [] };
+  }
+
+  const requestBody = buildTagRulesetBody(desired);
+
+  try {
+    if (diffResult.currentRulesetId === null) {
+      // Create new ruleset
+      await execa(
+        "gh",
+        ["api", `repos/${repoInfo.owner}/${repoInfo.repo}/rulesets`, "-X", "POST", "--input", "-"],
+        { input: JSON.stringify(requestBody) }
+      );
+    } else {
+      // Update existing ruleset
+      await execa(
+        "gh",
+        [
+          "api",
+          `repos/${repoInfo.owner}/${repoInfo.repo}/rulesets/${diffResult.currentRulesetId}`,
+          "-X",
+          "PUT",
+          "--input",
+          "-",
+        ],
+        { input: JSON.stringify(requestBody) }
+      );
+    }
+
+    return { success: true, applied: diffResult.diffs, failed: [] };
+  } catch (error) {
+    return handleTagApplyError(error, diffResult.diffs);
+  }
+}
+
+/** Build GitHub API request body for tag ruleset */
+function buildTagRulesetBody(desired: DesiredTagProtection): Record<string, unknown> {
+  const rules: { type: string }[] = [];
+
+  // Default to true if not specified
+  if (desired.prevent_deletion !== false) {
+    rules.push({ type: "deletion" });
+  }
+  if (desired.prevent_update !== false) {
+    rules.push({ type: "update" });
+  }
+
+  const patterns = desired.patterns ?? ["v*"];
+  const includePatterns = patterns.map((p) => `refs/tags/${p}`);
+
+  return {
+    name: "Tag Protection",
+    target: "tag",
+    enforcement: "active",
+    conditions: {
+      ref_name: {
+        include: includePatterns,
+        exclude: [],
+      },
+    },
+    rules,
+  };
+}
+
+/** Handle errors from applying tag protection */
+function handleTagApplyError(error: unknown, diffs: SettingDiff[]): SyncResult {
+  const errorMessage = error instanceof Error ? error.message : String(error);
+
+  if (errorMessage.includes("403") || errorMessage.includes("Must have admin rights")) {
+    throw new ApplierError(
+      "Cannot update tag protection: insufficient permissions (requires admin access)",
+      "NO_PERMISSION"
+    );
+  }
+
+  return {
+    success: false,
+    applied: [],
+    failed: diffs.map((diff) => ({ diff, error: errorMessage })),
   };
 }
