@@ -1,5 +1,5 @@
 /** Quote state for tracking string contexts */
-export interface QuoteState {
+interface QuoteState {
   single: boolean;
   double: boolean;
   template: boolean;
@@ -11,14 +11,14 @@ export const KNOWN_EXTENSIONS = new Set(["py", "ts", "tsx", "js", "jsx"]);
 /**
  * Check if a character at the given index starts a block comment.
  */
-export function isBlockCommentStart(line: string, index: number): boolean {
+function isBlockCommentStart(line: string, index: number): boolean {
   return line[index] === "/" && line[index + 1] === "*";
 }
 
 /**
  * Check if a character at the given index starts a line comment.
  */
-export function isLineCommentStart(line: string, index: number): boolean {
+function isLineCommentStart(line: string, index: number): boolean {
   return line[index] === "/" && line[index + 1] === "/";
 }
 
@@ -61,12 +61,7 @@ function canToggle(char: string, target: string, state: QuoteState, isPython: bo
 /**
  * Update quote state based on current character.
  */
-export function updateQuotes(
-  char: string,
-  prev: string,
-  state: QuoteState,
-  isPython: boolean
-): void {
+function updateQuotes(char: string, prev: string, state: QuoteState, isPython: boolean): void {
   if (prev === "\\") {
     return;
   }
@@ -82,7 +77,7 @@ export function updateQuotes(
 /**
  * Check if currently inside a string based on quote state.
  */
-export function inString(state: QuoteState): boolean {
+function inString(state: QuoteState): boolean {
   return state.single || state.double || state.template;
 }
 
