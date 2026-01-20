@@ -130,6 +130,64 @@ export default tseslint.config(
       "@typescript-eslint/await-thenable": "error",
 
       // ============================================
+      // Naming conventions
+      // ============================================
+      "@typescript-eslint/naming-convention": [
+        "error",
+        // Enum members must be UPPER_CASE
+        {
+          selector: "enumMember",
+          format: ["UPPER_CASE"],
+        },
+        // Types (class, interface, typeAlias, enum, typeParameter) must be PascalCase
+        {
+          selector: "typeLike",
+          format: ["PascalCase"],
+        },
+        // Variables must be camelCase, UPPER_CASE (constants), or PascalCase (builder objects)
+        // Allow leading/trailing underscores for unused vars and Node.js conventions
+        {
+          selector: "variable",
+          format: ["camelCase", "UPPER_CASE", "PascalCase"],
+          leadingUnderscore: "allow",
+          trailingUnderscore: "allow",
+          // Allow Node.js conventions like __dirname, __filename
+          filter: {
+            regex: "^__",
+            match: false,
+          },
+        },
+        // Allow __dirname, __filename (Node.js conventions)
+        {
+          selector: "variable",
+          format: null,
+          filter: {
+            regex: "^__(dirname|filename)$",
+            match: true,
+          },
+        },
+        {
+          selector: "function",
+          format: ["camelCase"],
+        },
+        // Parameters must be camelCase, allow leading underscore for unused
+        {
+          selector: "parameter",
+          format: ["camelCase"],
+          leadingUnderscore: "allow",
+        },
+        // Class members (methods, properties) must be camelCase
+        {
+          selector: "classMethod",
+          format: ["camelCase"],
+        },
+        {
+          selector: "classProperty",
+          format: ["camelCase", "UPPER_CASE"],
+        },
+      ],
+
+      // ============================================
       // File and function size limits
       // ============================================
 
