@@ -1,9 +1,8 @@
 # check-my-toolkit configuration
 
-# NOTE: Registry extends temporarily disabled - registry needs update for pnpmaudit
-# [extends]
-# registry = "github:chrismlittle123/check-my-toolkit-registry-community"
-# rulesets = ["typescript-internal"]
+[extends]
+registry = "github:chrismlittle123/check-my-toolkit-registry-community"
+rulesets = ["typescript-internal"]
 
 # Local overrides
 [code.linting.eslint]
