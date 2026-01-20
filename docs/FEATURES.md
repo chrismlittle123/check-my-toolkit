@@ -416,18 +416,19 @@ lint = ["npm run lint"]
 test = ["npm test"]
 ```
 
-| Property            | Value                                                         |
-| ------------------- | ------------------------------------------------------------- |
-| `require_workflows` | List of required workflow files in `.github/workflows/`       |
-| `jobs`              | Map of workflow file to required job names                    |
-| `actions`           | Map of workflow file to required action uses                  |
-| `commands`          | Map of workflow file to required shell commands (see below)   |
+| Property            | Value                                                       |
+| ------------------- | ----------------------------------------------------------- |
+| `require_workflows` | List of required workflow files in `.github/workflows/`     |
+| `jobs`              | Map of workflow file to required job names                  |
+| `actions`           | Map of workflow file to required action uses                |
+| `commands`          | Map of workflow file to required shell commands (see below) |
 
 ### Required Commands (`[process.ci.commands]`)
 
 Enforce that specific shell commands run unconditionally in CI workflows on PRs to main.
 
 **Validation checks:**
+
 - Workflow must trigger on `pull_request` to main/master (or `push`)
 - Job must not have conditions that skip on PRs
 - Step must not have conditions that skip on PRs
@@ -435,6 +436,7 @@ Enforce that specific shell commands run unconditionally in CI workflows on PRs 
 - Substring match: `cm code check` matches `cm code check --format json`
 
 **Command targeting:**
+
 - Workflow-level: `"ci.yml" = ["cmd"]` - commands required anywhere in workflow
 - Job-level: `"ci.yml".test = ["cmd"]` - commands required in specific job
 
