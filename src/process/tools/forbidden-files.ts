@@ -1,5 +1,6 @@
 import { glob } from "glob";
 
+import { DEFAULT_FORBIDDEN_FILES_IGNORE } from "../../config/schema.js";
 import { type CheckResult, type Violation } from "../../types/index.js";
 import { BaseProcessToolRunner } from "./base.js";
 
@@ -7,6 +8,7 @@ import { BaseProcessToolRunner } from "./base.js";
 interface ForbiddenFilesConfig {
   enabled?: boolean;
   files?: string[];
+  ignore?: string[];
   message?: string;
 }
 
@@ -53,12 +55,15 @@ export class ForbiddenFilesRunner extends BaseProcessToolRunner {
    * Find files matching a forbidden pattern
    */
   private async findForbiddenFiles(projectRoot: string, pattern: string): Promise<string[]> {
+    // Use configured ignore patterns, or fall back to defaults
+    const ignorePatterns = this.config.ignore ?? DEFAULT_FORBIDDEN_FILES_IGNORE;
+
     try {
       const matches = await glob(pattern, {
         cwd: projectRoot,
         dot: true,
         nodir: true,
-        ignore: ["**/node_modules/**", "**/.git/**"],
+        ignore: ignorePatterns,
       });
       return matches;
     } catch {

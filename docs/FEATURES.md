@@ -14,11 +14,11 @@ check-my-toolkit (`cm`) provides a single CLI to run multiple code quality, proc
 
 ## Quick Reference
 
-| Domain  | Tools                                                                                            | Config        |
-| ------- | ------------------------------------------------------------------------------------------------ | ------------- |
-| CODE    | ESLint, Ruff, Prettier, tsc, ty, Knip, Vulture, Gitleaks, pnpm-audit, pip-audit                  | `[code.*]`    |
+| Domain  | Tools                                                                                                             | Config        |
+| ------- | ----------------------------------------------------------------------------------------------------------------- | ------------- |
+| CODE    | ESLint, Ruff, Prettier, tsc, ty, Knip, Vulture, Gitleaks, pnpm-audit, pip-audit                                   | `[code.*]`    |
 | PROCESS | Hooks, CI, Branches, Commits, Changesets, PR, Tickets, Coverage, Repo, Backups, CODEOWNERS, Docs, Forbidden Files | `[process.*]` |
-| INFRA   | AWS Tagging                                                                                      | `[infra.*]`   |
+| INFRA   | AWS Tagging                                                                                                       | `[infra.*]`   |
 
 ---
 
@@ -57,17 +57,17 @@ Run checks for a specific domain:
 
 ### Utility Commands
 
-| Command                    | Description                               |
-| -------------------------- | ----------------------------------------- |
-| `cm validate config`       | Validate check.toml syntax and schema     |
-| `cm validate registry`     | Validate registry structure               |
-| `cm validate tier`         | Validate tier-ruleset alignment           |
-| `cm schema config`         | Output JSON schema for check.toml         |
-| `cm projects detect`       | Discover projects in monorepo             |
-| `cm projects detect --fix` | Create missing check.toml files           |
-| `cm dependencies`          | List all tracked dependency files         |
-| `cm dependencies --json`   | Output dependency files as JSON           |
-| `cm dependencies --check`  | Filter by specific tool (eslint, tsc, etc)|
+| Command                    | Description                                |
+| -------------------------- | ------------------------------------------ |
+| `cm validate config`       | Validate check.toml syntax and schema      |
+| `cm validate registry`     | Validate registry structure                |
+| `cm validate tier`         | Validate tier-ruleset alignment            |
+| `cm schema config`         | Output JSON schema for check.toml          |
+| `cm projects detect`       | Discover projects in monorepo              |
+| `cm projects detect --fix` | Create missing check.toml files            |
+| `cm dependencies`          | List all tracked dependency files          |
+| `cm dependencies --json`   | Output dependency files as JSON            |
+| `cm dependencies --check`  | Filter by specific tool (eslint, tsc, etc) |
 
 ### Output Formats
 
@@ -380,12 +380,12 @@ pre-commit = ["lint-staged"]
 pre-push = ["npm test"]
 ```
 
-| Property              | Value                                                                      |
-| --------------------- | -------------------------------------------------------------------------- |
-| `require_husky`       | Require `.husky/` directory exists                                         |
-| `require_hooks`       | List of required hook files (e.g., `pre-commit`, `pre-push`, `commit-msg`) |
-| `commands`            | Map of hook name to required commands in that hook file                    |
-| `protected_branches`  | List of branches that pre-push hook should prevent direct pushes to        |
+| Property             | Value                                                                      |
+| -------------------- | -------------------------------------------------------------------------- |
+| `require_husky`      | Require `.husky/` directory exists                                         |
+| `require_hooks`      | List of required hook files (e.g., `pre-commit`, `pre-push`, `commit-msg`) |
+| `commands`           | Map of hook name to required commands in that hook file                    |
+| `protected_branches` | List of branches that pre-push hook should prevent direct pushes to        |
 
 **Violations detected:** Missing husky installation, missing hook files, hooks missing required commands, pre-push hook missing protected branch detection.
 
@@ -647,13 +647,17 @@ Enforce that certain files must NOT exist anywhere in the repository. Scans the 
 [process.forbidden_files]
 enabled = true
 files = ["**/.env", "**/.env.*", "**/.env.example"]
+ignore = ["**/node_modules/**", "**/.git/**", "**/dist/**"]  # Optional, overrides defaults
 message = "Use AWS Secrets Manager for secrets and TypeScript config for settings"
 ```
 
 | Property  | Value                                                           |
 | --------- | --------------------------------------------------------------- |
 | `files`   | Glob patterns for files that must not exist (scans entire repo) |
+| `ignore`  | Glob patterns to exclude from scan (overrides defaults if set)  |
 | `message` | Custom message explaining why these files are forbidden         |
+
+**Default ignore patterns:** `**/node_modules/**`, `**/.git/**`
 
 **Glob Pattern Examples:**
 
@@ -667,7 +671,7 @@ message = "Use AWS Secrets Manager for secrets and TypeScript config for setting
 **Validation:**
 
 - Scans entire repository recursively for matching files
-- Automatically ignores `node_modules/` and `.git/` directories
+- Uses configured `ignore` patterns, or defaults to `node_modules/` and `.git/`
 - Reports all matching files with custom message
 
 **Why avoid .env files:**
@@ -855,11 +859,11 @@ enabled = true
 
 **Private Registry Authentication:**
 
-| Method        | URL Format              | Credentials                                |
-| ------------- | ----------------------- | ------------------------------------------ |
-| Token         | `github+token:org/repo` | `GITHUB_TOKEN` or `CM_REGISTRY_TOKEN` env  |
-| SSH           | `github+ssh:org/repo`   | SSH agent (`SSH_AUTH_SOCK`)                |
-| Auto-detect   | `github:org/repo`       | Tries token, then SSH, then public         |
+| Method      | URL Format              | Credentials                               |
+| ----------- | ----------------------- | ----------------------------------------- |
+| Token       | `github+token:org/repo` | `GITHUB_TOKEN` or `CM_REGISTRY_TOKEN` env |
+| SSH         | `github+ssh:org/repo`   | SSH agent (`SSH_AUTH_SOCK`)               |
+| Auto-detect | `github:org/repo`       | Tries token, then SSH, then public        |
 
 **Registry Structure:**
 
@@ -1101,15 +1105,15 @@ Environment = ["dev", "stag", "prod"]
 
 Some features require environment variables to be set:
 
-| Variable                | Used By                             | Purpose                                 |
-| ----------------------- | ----------------------------------- | --------------------------------------- |
-| `GITHUB_TOKEN`          | `process.repo`, `process diff/sync`, registry | GitHub API access for branch protection and private registries |
-| `CM_REGISTRY_TOKEN`     | Registry extends                    | Alternative token for private registries (takes precedence over GITHUB_TOKEN) |
-| `SSH_AUTH_SOCK`         | Registry extends                    | SSH agent socket for SSH-based registry auth |
-| `GITHUB_EVENT_PATH`     | `process.pr`                        | PR context in GitHub Actions            |
-| `AWS_REGION`            | `infra.tagging`, `process.backups`  | AWS region (can also use config)        |
-| `AWS_ACCESS_KEY_ID`     | `infra.tagging`, `process.backups`  | AWS credentials                         |
-| `AWS_SECRET_ACCESS_KEY` | `infra.tagging`, `process.backups`  | AWS credentials                         |
+| Variable                | Used By                                       | Purpose                                                                       |
+| ----------------------- | --------------------------------------------- | ----------------------------------------------------------------------------- |
+| `GITHUB_TOKEN`          | `process.repo`, `process diff/sync`, registry | GitHub API access for branch protection and private registries                |
+| `CM_REGISTRY_TOKEN`     | Registry extends                              | Alternative token for private registries (takes precedence over GITHUB_TOKEN) |
+| `SSH_AUTH_SOCK`         | Registry extends                              | SSH agent socket for SSH-based registry auth                                  |
+| `GITHUB_EVENT_PATH`     | `process.pr`                                  | PR context in GitHub Actions                                                  |
+| `AWS_REGION`            | `infra.tagging`, `process.backups`            | AWS region (can also use config)                                              |
+| `AWS_ACCESS_KEY_ID`     | `infra.tagging`, `process.backups`            | AWS credentials                                                               |
+| `AWS_SECRET_ACCESS_KEY` | `infra.tagging`, `process.backups`            | AWS credentials                                                               |
 
 **GitHub Actions example:**
 
@@ -1135,15 +1139,15 @@ cm dependencies --project packages/api  # Specify project path
 
 **Built-in mappings:**
 
-| Tool       | Tracked Files                                      |
-| ---------- | -------------------------------------------------- |
-| eslint     | `eslint.config.js`, `.eslintrc.*`, `package.json`  |
-| prettier   | `.prettierrc`, `prettier.config.js`, `package.json`|
-| tsc        | `tsconfig.json`, `tsconfig.*.json`                 |
-| knip       | `knip.json`, `knip.config.ts`, `package.json`      |
-| vitest     | `vitest.config.ts`, `package.json`                 |
-| pytest     | `pyproject.toml`, `pytest.ini`, `conftest.py`      |
-| ruff       | `ruff.toml`, `pyproject.toml`                      |
+| Tool     | Tracked Files                                       |
+| -------- | --------------------------------------------------- |
+| eslint   | `eslint.config.js`, `.eslintrc.*`, `package.json`   |
+| prettier | `.prettierrc`, `prettier.config.js`, `package.json` |
+| tsc      | `tsconfig.json`, `tsconfig.*.json`                  |
+| knip     | `knip.json`, `knip.config.ts`, `package.json`       |
+| vitest   | `vitest.config.ts`, `package.json`                  |
+| pytest   | `pyproject.toml`, `pytest.ini`, `conftest.py`       |
+| ruff     | `ruff.toml`, `pyproject.toml`                       |
 
 **Always tracked:** `check.toml`, `.github/workflows/*.yml`, `repo-metadata.yaml`
 
