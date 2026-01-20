@@ -483,4 +483,170 @@ describe("DisableCommentsRunner", () => {
       expect(result.violations[0].message.length).toBeLessThan(longComment.length + 50);
     });
   });
+
+  describe("block comment detection (#138)", () => {
+    it("detects eslint-disable in single-line block comment", async () => {
+      fs.writeFileSync(path.join(tempDir, "bad.ts"), `/* eslint-disable */\nconst x = 1;\n`);
+
+      const result = await runner.run(tempDir);
+
+      expect(result.passed).toBe(false);
+      expect(result.violations).toHaveLength(1);
+      expect(result.violations[0].message).toContain("eslint-disable");
+      expect(result.violations[0].line).toBe(1);
+    });
+
+    it("detects eslint-disable in block comment with code after", async () => {
+      fs.writeFileSync(path.join(tempDir, "bad.ts"), `/* eslint-disable */ const x = 1;\n`);
+
+      const result = await runner.run(tempDir);
+
+      expect(result.passed).toBe(false);
+      expect(result.violations).toHaveLength(1);
+    });
+
+    it("detects @ts-nocheck in JSDoc-style block comment", async () => {
+      fs.writeFileSync(path.join(tempDir, "bad.ts"), `/**\n * @ts-nocheck\n */\nconst x = 1;\n`);
+
+      const result = await runner.run(tempDir);
+
+      expect(result.passed).toBe(false);
+      expect(result.violations).toHaveLength(1);
+      expect(result.violations[0].message).toContain("@ts-nocheck");
+      expect(result.violations[0].line).toBe(2);
+    });
+
+    it("detects eslint-disable in multi-line block comment (opening line)", async () => {
+      fs.writeFileSync(
+        path.join(tempDir, "bad.ts"),
+        `/* eslint-disable\n * more comment\n */\nconst x = 1;\n`
+      );
+
+      const result = await runner.run(tempDir);
+
+      expect(result.passed).toBe(false);
+      expect(result.violations).toHaveLength(1);
+      expect(result.violations[0].line).toBe(1);
+    });
+
+    it("detects eslint-disable in multi-line block comment (middle line)", async () => {
+      fs.writeFileSync(path.join(tempDir, "bad.ts"), `/*\n * eslint-disable\n */\nconst x = 1;\n`);
+
+      const result = await runner.run(tempDir);
+
+      expect(result.passed).toBe(false);
+      expect(result.violations).toHaveLength(1);
+      expect(result.violations[0].line).toBe(2);
+    });
+
+    it("detects eslint-disable in multi-line block comment (closing line)", async () => {
+      fs.writeFileSync(
+        path.join(tempDir, "bad.ts"),
+        `/*\n * some comment\n eslint-disable */\nconst x = 1;\n`
+      );
+
+      const result = await runner.run(tempDir);
+
+      expect(result.passed).toBe(false);
+      expect(result.violations).toHaveLength(1);
+      expect(result.violations[0].line).toBe(3);
+    });
+
+    it("does not flag patterns in block comment syntax inside strings", async () => {
+      fs.writeFileSync(path.join(tempDir, "clean.ts"), `const msg = "/* eslint-disable */";\n`);
+
+      const result = await runner.run(tempDir);
+
+      expect(result.passed).toBe(true);
+      expect(result.violations).toEqual([]);
+    });
+
+    it("handles mixed line and block comments on same line (reports first only)", async () => {
+      fs.writeFileSync(
+        path.join(tempDir, "bad.ts"),
+        `/* eslint-disable-next-line */ const x = 1; // @ts-ignore\n`
+      );
+
+      const result = await runner.run(tempDir);
+
+      expect(result.passed).toBe(false);
+      // Only reports first pattern per line (matching original behavior)
+      expect(result.violations).toHaveLength(1);
+      expect(result.violations[0].message).toContain("eslint-disable-next-line");
+    });
+
+    it("handles multiple block comments on same line (reports first only)", async () => {
+      fs.writeFileSync(
+        path.join(tempDir, "bad.ts"),
+        `/* eslint-disable */ const x = 1; /* @ts-ignore */\n`
+      );
+
+      const result = await runner.run(tempDir);
+
+      expect(result.passed).toBe(false);
+      // Only reports first pattern per line (matching original behavior)
+      expect(result.violations).toHaveLength(1);
+      expect(result.violations[0].message).toContain("eslint-disable");
+    });
+
+    it("handles code between block comments", async () => {
+      fs.writeFileSync(
+        path.join(tempDir, "clean.ts"),
+        `/* comment */ const x = 1; /* another comment */\n`
+      );
+
+      const result = await runner.run(tempDir);
+
+      expect(result.passed).toBe(true);
+    });
+
+    it("does not flag patterns outside block comments", async () => {
+      fs.writeFileSync(
+        path.join(tempDir, "clean.ts"),
+        `/* comment */ const eslintDisable = "value"; /* end */\n`
+      );
+
+      const result = await runner.run(tempDir);
+
+      expect(result.passed).toBe(true);
+    });
+
+    it("handles block comment spanning three lines", async () => {
+      fs.writeFileSync(
+        path.join(tempDir, "bad.ts"),
+        `/*\n * @ts-expect-error\n * More comment\n */\nconst x = 1;\n`
+      );
+
+      const result = await runner.run(tempDir);
+
+      expect(result.passed).toBe(false);
+      expect(result.violations).toHaveLength(1);
+      expect(result.violations[0].line).toBe(2);
+    });
+
+    it("handles block comment with pattern on first and last line", async () => {
+      fs.writeFileSync(
+        path.join(tempDir, "bad.ts"),
+        `/* eslint-disable\n * middle\n @ts-ignore */\n`
+      );
+
+      const result = await runner.run(tempDir);
+
+      expect(result.passed).toBe(false);
+      // Reports one violation per line (lines 1 and 3)
+      expect(result.violations).toHaveLength(2);
+      expect(result.violations[0].line).toBe(1);
+      expect(result.violations[1].line).toBe(3);
+    });
+
+    it("still detects line comments after block comment ends", async () => {
+      fs.writeFileSync(path.join(tempDir, "bad.ts"), `/* comment */ // eslint-disable\n`);
+
+      const result = await runner.run(tempDir);
+
+      expect(result.passed).toBe(false);
+      expect(result.violations).toHaveLength(1);
+      expect(result.violations[0].message).toContain("eslint-disable");
+    });
+  });
 });
