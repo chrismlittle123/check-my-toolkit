@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.5.0
+
+### Minor Changes
+
+- 5eafad7: Support array-format ESLint rules in check.toml schema, enabling complex rules like `@typescript-eslint/naming-convention`
+- 5b7207b: Add `@typescript-eslint/naming-convention` rules to enforce consistent naming in TypeScript code:
+  - Enum members must be UPPER_CASE
+  - Types must be PascalCase
+  - Variables: camelCase, UPPER_CASE, or PascalCase
+  - Functions and class methods: camelCase
+
 ## 1.4.0
 
 ### Minor Changes
