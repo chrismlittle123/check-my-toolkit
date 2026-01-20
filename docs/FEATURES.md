@@ -1,4 +1,4 @@
-# Features - check-my-toolkit v0.30.0
+# Features - check-my-toolkit v1.5.5
 
 Unified project health checks for code quality, process compliance, and infrastructure validation.
 
@@ -7,7 +7,7 @@ Unified project health checks for code quality, process compliance, and infrastr
 check-my-toolkit (`cm`) provides a single CLI to run multiple code quality, process, and infrastructure tools with unified configuration via `check.toml`. Three domains are fully implemented:
 
 - **CODE** - 14 integrated tools for linting, formatting, type checking, security, and more
-- **PROCESS** - 12 workflow checks for git hooks, CI, PRs, branches, commits, documentation, and repository settings
+- **PROCESS** - 13 workflow checks for git hooks, CI, PRs, branches, commits, documentation, and repository settings
 - **INFRA** - AWS resource tagging validation
 
 ---
@@ -17,7 +17,7 @@ check-my-toolkit (`cm`) provides a single CLI to run multiple code quality, proc
 | Domain  | Tools                                                                                            | Config        |
 | ------- | ------------------------------------------------------------------------------------------------ | ------------- |
 | CODE    | ESLint, Ruff, Prettier, tsc, ty, Knip, Vulture, Gitleaks, pnpm-audit, pip-audit                  | `[code.*]`    |
-| PROCESS | Hooks, CI, Branches, Commits, Changesets, PR, Tickets, Coverage, Repo, Backups, CODEOWNERS, Docs | `[process.*]` |
+| PROCESS | Hooks, CI, Branches, Commits, Changesets, PR, Tickets, Coverage, Repo, Backups, CODEOWNERS, Docs, Forbidden Files | `[process.*]` |
 | INFRA   | AWS Tagging                                                                                      | `[infra.*]`   |
 
 ---
@@ -57,13 +57,17 @@ Run checks for a specific domain:
 
 ### Utility Commands
 
-| Command                    | Description                           |
-| -------------------------- | ------------------------------------- |
-| `cm validate config`       | Validate check.toml syntax and schema |
-| `cm validate registry`     | Validate registry structure           |
-| `cm schema config`         | Output JSON schema for check.toml     |
-| `cm projects detect`       | Discover projects in monorepo         |
-| `cm projects detect --fix` | Create missing check.toml files       |
+| Command                    | Description                               |
+| -------------------------- | ----------------------------------------- |
+| `cm validate config`       | Validate check.toml syntax and schema     |
+| `cm validate registry`     | Validate registry structure               |
+| `cm validate tier`         | Validate tier-ruleset alignment           |
+| `cm schema config`         | Output JSON schema for check.toml         |
+| `cm projects detect`       | Discover projects in monorepo             |
+| `cm projects detect --fix` | Create missing check.toml files           |
+| `cm dependencies`          | List all tracked dependency files         |
+| `cm dependencies --json`   | Output dependency files as JSON           |
+| `cm dependencies --check`  | Filter by specific tool (eslint, tsc, etc)|
 
 ### Output Formats
 
@@ -369,19 +373,21 @@ Verify Husky git hooks are installed and configured.
 enabled = true
 require_husky = true
 require_hooks = ["pre-commit", "pre-push"]
+protected_branches = ["main", "master"]  # Validate pre-push prevents direct pushes
 
 [process.hooks.commands]
 pre-commit = ["lint-staged"]
 pre-push = ["npm test"]
 ```
 
-| Property        | Value                                                                      |
-| --------------- | -------------------------------------------------------------------------- |
-| `require_husky` | Require `.husky/` directory exists                                         |
-| `require_hooks` | List of required hook files (e.g., `pre-commit`, `pre-push`, `commit-msg`) |
-| `commands`      | Map of hook name to required commands in that hook file                    |
+| Property              | Value                                                                      |
+| --------------------- | -------------------------------------------------------------------------- |
+| `require_husky`       | Require `.husky/` directory exists                                         |
+| `require_hooks`       | List of required hook files (e.g., `pre-commit`, `pre-push`, `commit-msg`) |
+| `commands`            | Map of hook name to required commands in that hook file                    |
+| `protected_branches`  | List of branches that pre-push hook should prevent direct pushes to        |
 
-**Violations detected:** Missing husky installation, missing hook files, hooks missing required commands.
+**Violations detected:** Missing husky installation, missing hook files, hooks missing required commands, pre-push hook missing protected branch detection.
 
 ---
 
@@ -842,8 +848,18 @@ enabled = true
 
 **Registry Formats:**
 
-- GitHub: `github:owner/repo` or `github:owner/repo@v1.0.0`
+- GitHub (public): `github:owner/repo` or `github:owner/repo@v1.0.0`
+- GitHub (private, token): `github+token:owner/repo`
+- GitHub (private, SSH): `github+ssh:owner/repo`
 - Local: `/path/to/registry`
+
+**Private Registry Authentication:**
+
+| Method        | URL Format              | Credentials                                |
+| ------------- | ----------------------- | ------------------------------------------ |
+| Token         | `github+token:org/repo` | `GITHUB_TOKEN` or `CM_REGISTRY_TOKEN` env  |
+| SSH           | `github+ssh:org/repo`   | SSH agent (`SSH_AUTH_SOCK`)                |
+| Auto-detect   | `github:org/repo`       | Tries token, then SSH, then public         |
 
 **Registry Structure:**
 
@@ -1087,7 +1103,9 @@ Some features require environment variables to be set:
 
 | Variable                | Used By                             | Purpose                                 |
 | ----------------------- | ----------------------------------- | --------------------------------------- |
-| `GITHUB_TOKEN`          | `process.repo`, `process diff/sync` | GitHub API access for branch protection |
+| `GITHUB_TOKEN`          | `process.repo`, `process diff/sync`, registry | GitHub API access for branch protection and private registries |
+| `CM_REGISTRY_TOKEN`     | Registry extends                    | Alternative token for private registries (takes precedence over GITHUB_TOKEN) |
+| `SSH_AUTH_SOCK`         | Registry extends                    | SSH agent socket for SSH-based registry auth |
 | `GITHUB_EVENT_PATH`     | `process.pr`                        | PR context in GitHub Actions            |
 | `AWS_REGION`            | `infra.tagging`, `process.backups`  | AWS region (can also use config)        |
 | `AWS_ACCESS_KEY_ID`     | `infra.tagging`, `process.backups`  | AWS credentials                         |
@@ -1100,6 +1118,68 @@ Some features require environment variables to be set:
   env:
     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   run: cm check
+```
+
+---
+
+# Dependency Tracking (`cm dependencies`)
+
+List all files that tools depend on, useful for drift detection and CI caching.
+
+```bash
+cm dependencies              # List all tracked files
+cm dependencies --json       # JSON output for scripts
+cm dependencies --check eslint  # Filter by specific tool
+cm dependencies --project packages/api  # Specify project path
+```
+
+**Built-in mappings:**
+
+| Tool       | Tracked Files                                      |
+| ---------- | -------------------------------------------------- |
+| eslint     | `eslint.config.js`, `.eslintrc.*`, `package.json`  |
+| prettier   | `.prettierrc`, `prettier.config.js`, `package.json`|
+| tsc        | `tsconfig.json`, `tsconfig.*.json`                 |
+| knip       | `knip.json`, `knip.config.ts`, `package.json`      |
+| vitest     | `vitest.config.ts`, `package.json`                 |
+| pytest     | `pyproject.toml`, `pytest.ini`, `conftest.py`      |
+| ruff       | `ruff.toml`, `pyproject.toml`                      |
+
+**Always tracked:** `check.toml`, `.github/workflows/*.yml`, `repo-metadata.yaml`
+
+**Custom dependencies:** Add `dependencies = [...]` to any tool config in check.toml.
+
+---
+
+# Tier Validation (`cm validate tier`)
+
+Validate that project tier matches the configured rulesets.
+
+```bash
+cm validate tier              # Check tier-ruleset alignment
+cm validate tier --format json  # JSON output
+```
+
+**How it works:**
+
+1. Reads project tier from `repo-metadata.yaml` (defaults to `internal` if missing)
+2. Checks that check.toml extends rulesets matching the tier:
+   - `production` tier → requires `*-production` ruleset
+   - `internal` tier → requires `*-internal` ruleset
+   - `prototype` tier → requires `*-prototype` ruleset
+
+**Example repo-metadata.yaml:**
+
+```yaml
+tier: production
+```
+
+**Example check.toml:**
+
+```toml
+[extends]
+registry = "github:myorg/standards"
+rulesets = ["typescript-production"]  # Must match tier
 ```
 
 ---
