@@ -79,7 +79,8 @@ function buildRequestBody(desired: DesiredBranchProtection): Record<string, unkn
   return {
     ...(prReviews && { required_pull_request_reviews: prReviews }),
     ...(statusChecks && { required_status_checks: statusChecks }),
-    ...(desired.enforce_admins !== undefined && { enforce_admins: desired.enforce_admins }),
+    // enforce_admins is required by GitHub API - default to false so CI/release workflows can merge
+    enforce_admins: desired.enforce_admins ?? false,
     ...(desired.require_signed_commits !== undefined && {
       required_signatures: desired.require_signed_commits,
     }),

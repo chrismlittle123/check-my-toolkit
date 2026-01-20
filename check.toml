@@ -81,3 +81,4 @@ branch = "main"
 required_reviews = 0
 require_branches_up_to_date = true
 require_status_checks = ["test (20)", "test (22)"]
+enforce_admins = false
