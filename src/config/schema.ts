@@ -24,23 +24,11 @@ const eslintRuleWithOptions = z
   .catchall(z.unknown()); // Allow any additional options (max, skipBlankLines, etc.)
 
 /**
- * ESLint rule with array format for complex rules like naming-convention.
- * Example: ["error", { selector: "enumMember", format: ["UPPER_CASE"] }]
- * First element is severity, rest are rule-specific option objects.
- */
-const eslintRuleArray = z
-  .array(z.unknown())
-  .refine((arr) => arr.length >= 1 && ["off", "warn", "error"].includes(arr[0] as string), {
-    message: "Array rules must start with severity: 'off', 'warn', or 'error'",
-  });
-
-/**
  * ESLint rule value - can be:
  * - severity string: "error"
  * - object with severity and options: { severity: "error", max: 10 }
- * - array with severity and options: ["error", { selector: "...", format: [...] }]
  */
-const eslintRuleValue = z.union([eslintRuleSeverity, eslintRuleWithOptions, eslintRuleArray]);
+const eslintRuleValue = z.union([eslintRuleSeverity, eslintRuleWithOptions]);
 
 /** ESLint rules configuration */
 const eslintRulesSchema = z.record(z.string(), eslintRuleValue).optional();

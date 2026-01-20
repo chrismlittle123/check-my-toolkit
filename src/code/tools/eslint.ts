@@ -30,15 +30,8 @@ interface ESLintRuleWithOptions {
   [key: string]: unknown;
 }
 
-/**
- * ESLint rule with array format for complex rules like naming-convention.
- * Example: ["error", { selector: "enumMember", format: ["UPPER_CASE"] }]
- * First element should be severity, followed by rule-specific options.
- */
-type ESLintRuleArray = unknown[];
-
-/** ESLint rule value - severity string, object with options, or array format */
-type ESLintRuleValue = "off" | "warn" | "error" | ESLintRuleWithOptions | ESLintRuleArray;
+/** ESLint rule value - severity string or object with options */
+type ESLintRuleValue = "off" | "warn" | "error" | ESLintRuleWithOptions;
 
 /** ESLint configuration options */
 interface ESLintConfig {
@@ -214,23 +207,11 @@ export class ESLintRunner extends BaseToolRunner {
   }
 
   /**
-   * Check if a value is an ESLint rule array format
-   */
-  private isRuleArray(value: unknown): value is ESLintRuleArray {
-    return Array.isArray(value) && value.length >= 1;
-  }
-
-  /**
    * Extract options from a rule value (excludes severity)
    */
   private extractRuleOptions(value: ESLintRuleValue): unknown[] | null {
     if (typeof value === "string") {
       return null; // No options for severity-only rules
-    }
-    if (this.isRuleArray(value)) {
-      // For array format, return all elements after severity
-      const [_severity, ...options] = value;
-      return options.length > 0 ? options : null;
     }
     if (this.isRuleWithOptions(value)) {
       // For object format, convert to array format for comparison
