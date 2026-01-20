@@ -337,6 +337,532 @@ jobs:
         ).toBe(true);
       });
     });
+
+    describe("required commands check", () => {
+      beforeEach(() => {
+        fs.mkdirSync(path.join(tempDir, ".github/workflows"), { recursive: true });
+      });
+
+      describe("workflow-level commands", () => {
+        it("passes when command exists in unconditional step", async () => {
+          const workflow = `
+name: CI
+on: pull_request
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - run: cm code check
+`;
+          fs.writeFileSync(path.join(tempDir, ".github/workflows/ci.yml"), workflow);
+          runner.setConfig({
+            enabled: true,
+            commands: { "ci.yml": ["cm code check"] },
+          });
+
+          const result = await runner.run(tempDir);
+          expect(result.passed).toBe(true);
+          expect(result.violations).toHaveLength(0);
+        });
+
+        it("fails when command is not present", async () => {
+          const workflow = `
+name: CI
+on: pull_request
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - run: npm test
+`;
+          fs.writeFileSync(path.join(tempDir, ".github/workflows/ci.yml"), workflow);
+          runner.setConfig({
+            enabled: true,
+            commands: { "ci.yml": ["cm code check"] },
+          });
+
+          const result = await runner.run(tempDir);
+          expect(result.passed).toBe(false);
+          expect(result.violations).toHaveLength(1);
+          expect(result.violations[0].message).toContain(
+            "Required command 'cm code check' not found in workflow 'ci.yml'"
+          );
+        });
+
+        it("fails when workflow does not trigger on PRs", async () => {
+          const workflow = `
+name: CI
+on: schedule
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - run: cm code check
+`;
+          fs.writeFileSync(path.join(tempDir, ".github/workflows/ci.yml"), workflow);
+          runner.setConfig({
+            enabled: true,
+            commands: { "ci.yml": ["cm code check"] },
+          });
+
+          const result = await runner.run(tempDir);
+          expect(result.passed).toBe(false);
+          expect(result.violations).toHaveLength(1);
+          expect(result.violations[0].message).toContain(
+            "does not trigger on pull_request to main/master"
+          );
+        });
+
+        it("passes with pull_request trigger with main branch filter", async () => {
+          const workflow = `
+name: CI
+on:
+  pull_request:
+    branches: [main]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - run: cm code check
+`;
+          fs.writeFileSync(path.join(tempDir, ".github/workflows/ci.yml"), workflow);
+          runner.setConfig({
+            enabled: true,
+            commands: { "ci.yml": ["cm code check"] },
+          });
+
+          const result = await runner.run(tempDir);
+          expect(result.passed).toBe(true);
+        });
+
+        it("passes with push trigger", async () => {
+          const workflow = `
+name: CI
+on: push
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - run: cm code check
+`;
+          fs.writeFileSync(path.join(tempDir, ".github/workflows/ci.yml"), workflow);
+          runner.setConfig({
+            enabled: true,
+            commands: { "ci.yml": ["cm code check"] },
+          });
+
+          const result = await runner.run(tempDir);
+          expect(result.passed).toBe(true);
+        });
+
+        it("passes with array trigger syntax", async () => {
+          const workflow = `
+name: CI
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - run: cm code check
+`;
+          fs.writeFileSync(path.join(tempDir, ".github/workflows/ci.yml"), workflow);
+          runner.setConfig({
+            enabled: true,
+            commands: { "ci.yml": ["cm code check"] },
+          });
+
+          const result = await runner.run(tempDir);
+          expect(result.passed).toBe(true);
+        });
+
+        it("fails when command is in conditional step", async () => {
+          const workflow = `
+name: CI
+on: pull_request
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - run: cm code check
+        if: github.event_name == 'push'
+`;
+          fs.writeFileSync(path.join(tempDir, ".github/workflows/ci.yml"), workflow);
+          runner.setConfig({
+            enabled: true,
+            commands: { "ci.yml": ["cm code check"] },
+          });
+
+          const result = await runner.run(tempDir);
+          expect(result.passed).toBe(false);
+          expect(result.violations).toHaveLength(1);
+          expect(result.violations[0].message).toContain("may not execute on PRs");
+          expect(result.violations[0].message).toContain("github.event_name == 'push'");
+        });
+
+        it("fails when job is conditional", async () => {
+          const workflow = `
+name: CI
+on: pull_request
+jobs:
+  test:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - run: cm code check
+`;
+          fs.writeFileSync(path.join(tempDir, ".github/workflows/ci.yml"), workflow);
+          runner.setConfig({
+            enabled: true,
+            commands: { "ci.yml": ["cm code check"] },
+          });
+
+          const result = await runner.run(tempDir);
+          expect(result.passed).toBe(false);
+          expect(result.violations[0].message).toContain("may not execute on PRs");
+        });
+
+        it("passes when step has success() condition", async () => {
+          const workflow = `
+name: CI
+on: pull_request
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - run: cm code check
+        if: success()
+`;
+          fs.writeFileSync(path.join(tempDir, ".github/workflows/ci.yml"), workflow);
+          runner.setConfig({
+            enabled: true,
+            commands: { "ci.yml": ["cm code check"] },
+          });
+
+          const result = await runner.run(tempDir);
+          expect(result.passed).toBe(true);
+        });
+
+        it("passes when step has always() condition", async () => {
+          const workflow = `
+name: CI
+on: pull_request
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - run: cm code check
+        if: always()
+`;
+          fs.writeFileSync(path.join(tempDir, ".github/workflows/ci.yml"), workflow);
+          runner.setConfig({
+            enabled: true,
+            commands: { "ci.yml": ["cm code check"] },
+          });
+
+          const result = await runner.run(tempDir);
+          expect(result.passed).toBe(true);
+        });
+
+        it("detects commented out command", async () => {
+          const workflow = `
+name: CI
+on: pull_request
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          npm install
+          # cm code check
+          npm test
+`;
+          fs.writeFileSync(path.join(tempDir, ".github/workflows/ci.yml"), workflow);
+          runner.setConfig({
+            enabled: true,
+            commands: { "ci.yml": ["cm code check"] },
+          });
+
+          const result = await runner.run(tempDir);
+          expect(result.passed).toBe(false);
+          expect(result.violations[0].message).toContain("appears commented out");
+        });
+
+        it("matches command with additional flags (substring match)", async () => {
+          const workflow = `
+name: CI
+on: pull_request
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - run: cm code check --format json
+`;
+          fs.writeFileSync(path.join(tempDir, ".github/workflows/ci.yml"), workflow);
+          runner.setConfig({
+            enabled: true,
+            commands: { "ci.yml": ["cm code check"] },
+          });
+
+          const result = await runner.run(tempDir);
+          expect(result.passed).toBe(true);
+        });
+
+        it("finds command in multi-line run block", async () => {
+          const workflow = `
+name: CI
+on: pull_request
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          npm install
+          cm code check
+          npm test
+`;
+          fs.writeFileSync(path.join(tempDir, ".github/workflows/ci.yml"), workflow);
+          runner.setConfig({
+            enabled: true,
+            commands: { "ci.yml": ["cm code check"] },
+          });
+
+          const result = await runner.run(tempDir);
+          expect(result.passed).toBe(true);
+        });
+
+        it("finds command across multiple jobs", async () => {
+          const workflow = `
+name: CI
+on: pull_request
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - run: npm run lint
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - run: cm code check
+`;
+          fs.writeFileSync(path.join(tempDir, ".github/workflows/ci.yml"), workflow);
+          runner.setConfig({
+            enabled: true,
+            commands: { "ci.yml": ["cm code check"] },
+          });
+
+          const result = await runner.run(tempDir);
+          expect(result.passed).toBe(true);
+        });
+
+        it("checks multiple required commands", async () => {
+          const workflow = `
+name: CI
+on: pull_request
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - run: cm code check
+`;
+          fs.writeFileSync(path.join(tempDir, ".github/workflows/ci.yml"), workflow);
+          runner.setConfig({
+            enabled: true,
+            commands: { "ci.yml": ["cm code check", "cm code audit"] },
+          });
+
+          const result = await runner.run(tempDir);
+          expect(result.passed).toBe(false);
+          expect(result.violations).toHaveLength(1);
+          expect(result.violations[0].message).toContain("cm code audit");
+        });
+      });
+
+      describe("job-level commands", () => {
+        it("passes when command exists in specific job", async () => {
+          const workflow = `
+name: CI
+on: pull_request
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - run: npm run lint
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - run: cm code check
+`;
+          fs.writeFileSync(path.join(tempDir, ".github/workflows/ci.yml"), workflow);
+          runner.setConfig({
+            enabled: true,
+            commands: { "ci.yml": { check: ["cm code check"] } },
+          });
+
+          const result = await runner.run(tempDir);
+          expect(result.passed).toBe(true);
+        });
+
+        it("fails when command is in wrong job", async () => {
+          const workflow = `
+name: CI
+on: pull_request
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - run: cm code check
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - run: npm test
+`;
+          fs.writeFileSync(path.join(tempDir, ".github/workflows/ci.yml"), workflow);
+          runner.setConfig({
+            enabled: true,
+            commands: { "ci.yml": { check: ["cm code check"] } },
+          });
+
+          const result = await runner.run(tempDir);
+          expect(result.passed).toBe(false);
+          expect(result.violations[0].message).toContain(
+            "not found in job 'check' of workflow 'ci.yml'"
+          );
+        });
+
+        it("fails when job does not exist", async () => {
+          const workflow = `
+name: CI
+on: pull_request
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - run: npm test
+`;
+          fs.writeFileSync(path.join(tempDir, ".github/workflows/ci.yml"), workflow);
+          runner.setConfig({
+            enabled: true,
+            commands: { "ci.yml": { lint: ["cm code check"] } },
+          });
+
+          const result = await runner.run(tempDir);
+          expect(result.passed).toBe(false);
+          expect(result.violations[0].message).toContain(
+            "Job 'lint' not found in workflow 'ci.yml'"
+          );
+        });
+
+        it("reports reusable workflow jobs as unsupported", async () => {
+          const workflow = `
+name: CI
+on: pull_request
+jobs:
+  test:
+    uses: ./.github/workflows/test.yml
+`;
+          fs.writeFileSync(path.join(tempDir, ".github/workflows/ci.yml"), workflow);
+          runner.setConfig({
+            enabled: true,
+            commands: { "ci.yml": { test: ["cm code check"] } },
+          });
+
+          const result = await runner.run(tempDir);
+          expect(result.passed).toBe(false);
+          expect(result.violations[0].message).toContain("uses a reusable workflow");
+        });
+
+        it("checks commands in multiple jobs", async () => {
+          const workflow = `
+name: CI
+on: pull_request
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - run: cm code check
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - run: npm test
+`;
+          fs.writeFileSync(path.join(tempDir, ".github/workflows/ci.yml"), workflow);
+          runner.setConfig({
+            enabled: true,
+            commands: {
+              "ci.yml": {
+                lint: ["cm code check"],
+                test: ["npm test"],
+              },
+            },
+          });
+
+          const result = await runner.run(tempDir);
+          expect(result.passed).toBe(true);
+        });
+      });
+
+      describe("edge cases", () => {
+        it("skips command check for missing workflows", async () => {
+          runner.setConfig({
+            enabled: true,
+            commands: { "nonexistent.yml": ["cm code check"] },
+          });
+
+          const result = await runner.run(tempDir);
+          expect(result.passed).toBe(true);
+        });
+
+        it("reports YAML parse errors", async () => {
+          fs.writeFileSync(
+            path.join(tempDir, ".github/workflows/ci.yml"),
+            "invalid: yaml: content:"
+          );
+          runner.setConfig({
+            enabled: true,
+            commands: { "ci.yml": ["cm code check"] },
+          });
+
+          const result = await runner.run(tempDir);
+          expect(result.passed).toBe(false);
+          expect(result.violations[0].message).toContain("Invalid YAML");
+        });
+
+        it("handles workflow with no jobs", async () => {
+          const workflow = `
+name: CI
+on: pull_request
+`;
+          fs.writeFileSync(path.join(tempDir, ".github/workflows/ci.yml"), workflow);
+          runner.setConfig({
+            enabled: true,
+            commands: { "ci.yml": ["cm code check"] },
+          });
+
+          const result = await runner.run(tempDir);
+          expect(result.passed).toBe(false);
+          expect(result.violations[0].message).toContain("not found");
+        });
+
+        it("handles job with no steps", async () => {
+          const workflow = `
+name: CI
+on: pull_request
+jobs:
+  test:
+    runs-on: ubuntu-latest
+`;
+          fs.writeFileSync(path.join(tempDir, ".github/workflows/ci.yml"), workflow);
+          runner.setConfig({
+            enabled: true,
+            commands: { "ci.yml": ["cm code check"] },
+          });
+
+          const result = await runner.run(tempDir);
+          expect(result.passed).toBe(false);
+          expect(result.violations[0].message).toContain("not found");
+        });
+      });
+    });
   });
 
   describe("audit", () => {

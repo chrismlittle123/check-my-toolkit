@@ -3,30 +3,62 @@ import * as yaml from "js-yaml";
 import { type CheckResult, type Violation } from "../../types/index.js";
 import { BaseProcessToolRunner } from "./base.js";
 
+/** Commands configuration value - workflow-level or job-level */
+type CommandsValue = string[] | Record<string, string[]>;
+
 /** CI configuration from check.toml */
 interface CiConfig {
   enabled?: boolean;
   require_workflows?: string[];
   jobs?: Record<string, string[]>;
   actions?: Record<string, string[]>;
+  commands?: Record<string, CommandsValue>;
 }
 
 /** Parsed GitHub Actions workflow structure */
 interface WorkflowFile {
+  on?: WorkflowTriggers;
   jobs?: Record<string, WorkflowJob>;
 }
 
+/** Workflow triggers - can be string, array, or object */
+type WorkflowTriggers =
+  | string
+  | string[]
+  | {
+      pull_request?: TriggerConfig;
+      pull_request_target?: TriggerConfig;
+      push?: TriggerConfig;
+      [key: string]: unknown;
+    };
+
+interface TriggerConfig {
+  branches?: string[];
+}
+
 interface WorkflowJob {
+  if?: string;
   steps?: WorkflowStep[];
+  uses?: string; // Reusable workflow reference
 }
 
 interface WorkflowStep {
+  if?: string;
+  run?: string;
   uses?: string;
+}
+
+/** Result of searching for a command in a workflow */
+interface CommandSearchResult {
+  found: boolean;
+  conditional: boolean;
+  conditionExpression?: string;
+  commentedOut: boolean;
 }
 
 /**
  * CI/CD workflow validation runner.
- * Checks that GitHub Actions workflows exist and contain required jobs/actions.
+ * Checks that GitHub Actions workflows exist and contain required jobs/actions/commands.
  */
 export class CiRunner extends BaseProcessToolRunner {
   readonly name = "CI";
@@ -37,14 +69,10 @@ export class CiRunner extends BaseProcessToolRunner {
     enabled: false,
   };
 
-  /**
-   * Set configuration from check.toml
-   */
   setConfig(config: CiConfig): void {
     this.config = { ...this.config, ...config };
   }
 
-  /** Check if .github/workflows directory exists */
   private checkWorkflowsDirectory(projectRoot: string): Violation | null {
     if (this.directoryExists(projectRoot, ".github/workflows")) {
       return null;
@@ -57,7 +85,6 @@ export class CiRunner extends BaseProcessToolRunner {
     };
   }
 
-  /** Check that required workflow files exist */
   private checkRequiredWorkflows(projectRoot: string): Violation[] {
     const workflows = this.config.require_workflows ?? [];
     return workflows
@@ -71,7 +98,6 @@ export class CiRunner extends BaseProcessToolRunner {
       }));
   }
 
-  /** Result of parsing a workflow file */
   private parseWorkflow(
     projectRoot: string,
     workflowFile: string
@@ -88,108 +114,324 @@ export class CiRunner extends BaseProcessToolRunner {
     }
   }
 
-  /** Check that required jobs exist in workflows */
-  private checkRequiredJobs(projectRoot: string): Violation[] {
-    const jobsConfig = this.config.jobs ?? {};
-    const violations: Violation[] = [];
+  private triggersPRToMain(workflow: WorkflowFile): boolean {
+    const triggers = workflow.on;
+    if (!triggers) {
+      return false;
+    }
 
-    for (const [workflowFile, requiredJobs] of Object.entries(jobsConfig)) {
-      const { workflow, parseError } = this.parseWorkflow(projectRoot, workflowFile);
+    if (typeof triggers === "string") {
+      return ["pull_request", "pull_request_target", "push"].includes(triggers);
+    }
 
-      // Report YAML parse errors instead of silently skipping
-      if (parseError) {
-        violations.push({
-          rule: `${this.rule}.yaml`,
-          tool: this.toolId,
-          file: `.github/workflows/${workflowFile}`,
-          message: `Invalid YAML in workflow '${workflowFile}': ${parseError}`,
-          severity: "error",
-        });
-        continue;
+    if (Array.isArray(triggers)) {
+      return triggers.some((t) => ["pull_request", "pull_request_target", "push"].includes(t));
+    }
+
+    const checkBranches = (config: TriggerConfig | undefined): boolean => {
+      if (!config) {
+        return false;
       }
-
-      if (!workflow) {
-        continue; // Skip if workflow file doesn't exist
+      const branches = config.branches;
+      if (!branches || branches.length === 0) {
+        return true;
       }
+      return branches.some((b) => ["main", "master", "*"].includes(b));
+    };
 
-      const existingJobs = Object.keys(workflow.jobs ?? {});
-      for (const requiredJob of requiredJobs) {
-        if (!existingJobs.includes(requiredJob)) {
-          violations.push({
-            rule: `${this.rule}.jobs`,
-            tool: this.toolId,
-            file: `.github/workflows/${workflowFile}`,
-            message: `Workflow '${workflowFile}' missing required job: ${requiredJob}`,
-            severity: "error",
-          });
-        }
+    return (
+      checkBranches(triggers.pull_request as TriggerConfig) ||
+      checkBranches(triggers.pull_request_target as TriggerConfig) ||
+      checkBranches(triggers.push as TriggerConfig)
+    );
+  }
+
+  private isUnconditionalExpression(expression: string | undefined): boolean {
+    if (!expression) {
+      return true;
+    }
+    const expr = expression.trim().toLowerCase();
+    return ["true", "success()", "always()"].includes(expr);
+  }
+
+  private extractRunCommands(runContent: string): string[] {
+    return runContent
+      .split("\n")
+      .map((line) => line.trim())
+      .filter((line) => line && !line.startsWith("#"));
+  }
+
+  private commandMatches(actual: string, required: string): boolean {
+    return actual.includes(required);
+  }
+
+  /** Check if run content has a commented version of the command */
+  private hasCommentedCommand(runContent: string, command: string): boolean {
+    return runContent
+      .split("\n")
+      .some((line) => line.trim().startsWith("#") && this.commandMatches(line, command));
+  }
+
+  /** Search for a command in a single step */
+  private searchCommandInStep(
+    step: WorkflowStep,
+    requiredCommand: string,
+    jobConditional: boolean,
+    jobCondition: string | undefined
+  ): CommandSearchResult | null {
+    if (!step.run) {
+      return null;
+    }
+
+    const commentedOut = this.hasCommentedCommand(step.run, requiredCommand);
+    const commands = this.extractRunCommands(step.run);
+    const found = commands.some((cmd) => this.commandMatches(cmd, requiredCommand));
+
+    if (!found) {
+      return commentedOut ? { found: false, conditional: false, commentedOut: true } : null;
+    }
+
+    const stepConditional = !this.isUnconditionalExpression(step.if);
+    const conditional = jobConditional || stepConditional;
+    const conditionExpression = jobConditional ? jobCondition : step.if;
+
+    return { found: true, conditional, conditionExpression, commentedOut };
+  }
+
+  private searchCommandInJob(job: WorkflowJob, requiredCommand: string): CommandSearchResult {
+    const jobConditional = !this.isUnconditionalExpression(job.if);
+    let commentedOut = false;
+
+    for (const step of job.steps ?? []) {
+      const result = this.searchCommandInStep(step, requiredCommand, jobConditional, job.if);
+      if (result?.commentedOut) {
+        commentedOut = true;
+      }
+      if (result?.found) {
+        return result;
       }
     }
 
-    return violations;
+    return { found: false, conditional: false, commentedOut };
   }
 
-  /** Extract all action names used in a workflow (without version tags) */
-  private extractUsedActions(workflow: WorkflowFile): string[] {
-    const usedActions: string[] = [];
+  private searchCommandInWorkflow(
+    workflow: WorkflowFile,
+    requiredCommand: string
+  ): CommandSearchResult {
+    let commentedOut = false;
+    let conditionalResult: CommandSearchResult | null = null;
+
     for (const job of Object.values(workflow.jobs ?? {})) {
-      for (const step of job.steps ?? []) {
-        if (step.uses) {
-          // Extract action name (e.g., "actions/checkout@v4" -> "actions/checkout")
-          usedActions.push(step.uses.split("@")[0]);
-        }
-      }
-    }
-    return usedActions;
-  }
-
-  /** Check that required actions are used in workflows */
-  private checkRequiredActions(projectRoot: string): Violation[] {
-    const actionsConfig = this.config.actions ?? {};
-    const violations: Violation[] = [];
-
-    for (const [workflowFile, requiredActions] of Object.entries(actionsConfig)) {
-      const { workflow, parseError } = this.parseWorkflow(projectRoot, workflowFile);
-
-      // Report YAML parse errors instead of silently skipping
-      if (parseError) {
-        violations.push({
-          rule: `${this.rule}.yaml`,
-          tool: this.toolId,
-          file: `.github/workflows/${workflowFile}`,
-          message: `Invalid YAML in workflow '${workflowFile}': ${parseError}`,
-          severity: "error",
-        });
+      if (job.uses) {
         continue;
       }
-
-      if (!workflow) {
-        continue; // Skip if workflow file doesn't exist
+      const result = this.searchCommandInJob(job, requiredCommand);
+      if (result.commentedOut) {
+        commentedOut = true;
       }
+      if (result.found && !result.conditional) {
+        return result;
+      }
+      if (result.found && !conditionalResult) {
+        conditionalResult = result;
+      }
+    }
+    return conditionalResult ?? { found: false, conditional: false, commentedOut };
+  }
 
-      const usedActions = this.extractUsedActions(workflow);
-      for (const requiredAction of requiredActions) {
-        if (!usedActions.includes(requiredAction)) {
-          violations.push({
-            rule: `${this.rule}.actions`,
-            tool: this.toolId,
-            file: `.github/workflows/${workflowFile}`,
-            message: `Workflow '${workflowFile}' missing required action: ${requiredAction}`,
-            severity: "error",
-          });
+  private cmdViolation(workflowFile: string, msg: string): Violation {
+    return {
+      rule: `${this.rule}.commands`,
+      tool: this.toolId,
+      file: `.github/workflows/${workflowFile}`,
+      message: msg,
+      severity: "error",
+    };
+  }
+
+  private workflowCmdViolation(wf: string, cmd: string, r: CommandSearchResult): Violation | null {
+    if (!r.found && r.commentedOut) {
+      return this.cmdViolation(wf, `Command '${cmd}' appears commented out in workflow '${wf}'`);
+    }
+    if (!r.found) {
+      return this.cmdViolation(wf, `Required command '${cmd}' not found in workflow '${wf}'`);
+    }
+    if (r.conditional) {
+      return this.cmdViolation(
+        wf,
+        `Command '${cmd}' in workflow '${wf}' may not execute on PRs (has condition: ${r.conditionExpression})`
+      );
+    }
+    return null;
+  }
+
+  private jobCmdViolation(
+    wf: string,
+    jobId: string,
+    cmd: string,
+    r: CommandSearchResult
+  ): Violation | null {
+    if (!r.found && r.commentedOut) {
+      return this.cmdViolation(
+        wf,
+        `Command '${cmd}' appears commented out in job '${jobId}' of workflow '${wf}'`
+      );
+    }
+    if (!r.found) {
+      return this.cmdViolation(
+        wf,
+        `Required command '${cmd}' not found in job '${jobId}' of workflow '${wf}'`
+      );
+    }
+    if (r.conditional) {
+      return this.cmdViolation(
+        wf,
+        `Command '${cmd}' in job '${jobId}' of workflow '${wf}' may not execute on PRs (has condition: ${r.conditionExpression})`
+      );
+    }
+    return null;
+  }
+
+  private checkWorkflowLevelCommands(
+    workflow: WorkflowFile,
+    wf: string,
+    commands: string[]
+  ): Violation[] {
+    return commands
+      .map((cmd) => this.workflowCmdViolation(wf, cmd, this.searchCommandInWorkflow(workflow, cmd)))
+      .filter((v): v is Violation => v !== null);
+  }
+
+  private checkJobLevelCommands(
+    workflow: WorkflowFile,
+    wf: string,
+    jobCommands: Record<string, string[]>
+  ): Violation[] {
+    const violations: Violation[] = [];
+    for (const [jobId, commands] of Object.entries(jobCommands)) {
+      const job = workflow.jobs?.[jobId];
+      if (!job) {
+        violations.push(this.cmdViolation(wf, `Job '${jobId}' not found in workflow '${wf}'`));
+        continue;
+      }
+      if (job.uses) {
+        violations.push(
+          this.cmdViolation(
+            wf,
+            `Job '${jobId}' in workflow '${wf}' uses a reusable workflow - command validation not supported`
+          )
+        );
+        continue;
+      }
+      for (const cmd of commands) {
+        const v = this.jobCmdViolation(wf, jobId, cmd, this.searchCommandInJob(job, cmd));
+        if (v) {
+          violations.push(v);
         }
       }
     }
-
     return violations;
   }
 
-  /** Run CI/CD workflow validation */
+  private yamlErrorViolation(wf: string, parseError: string): Violation {
+    return {
+      rule: `${this.rule}.yaml`,
+      tool: this.toolId,
+      file: `.github/workflows/${wf}`,
+      message: `Invalid YAML in workflow '${wf}': ${parseError}`,
+      severity: "error",
+    };
+  }
+
+  private checkWorkflowCommands(projectRoot: string): Violation[] {
+    const violations: Violation[] = [];
+    for (const [wf, commandsValue] of Object.entries(this.config.commands ?? {})) {
+      const { workflow, parseError } = this.parseWorkflow(projectRoot, wf);
+      if (parseError) {
+        violations.push(this.yamlErrorViolation(wf, parseError));
+        continue;
+      }
+      if (!workflow) {
+        continue;
+      }
+      if (!this.triggersPRToMain(workflow)) {
+        violations.push(
+          this.cmdViolation(wf, `Workflow '${wf}' does not trigger on pull_request to main/master`)
+        );
+        continue;
+      }
+      violations.push(
+        ...(Array.isArray(commandsValue)
+          ? this.checkWorkflowLevelCommands(workflow, wf, commandsValue)
+          : this.checkJobLevelCommands(workflow, wf, commandsValue))
+      );
+    }
+    return violations;
+  }
+
+  private checkRequiredJobs(projectRoot: string): Violation[] {
+    const violations: Violation[] = [];
+    for (const [workflowFile, requiredJobs] of Object.entries(this.config.jobs ?? {})) {
+      const { workflow, parseError } = this.parseWorkflow(projectRoot, workflowFile);
+      if (parseError) {
+        violations.push(this.yamlErrorViolation(workflowFile, parseError));
+        continue;
+      }
+      if (!workflow) {
+        continue;
+      }
+      const existingJobs = Object.keys(workflow.jobs ?? {});
+      for (const job of requiredJobs.filter((j) => !existingJobs.includes(j))) {
+        violations.push({
+          rule: `${this.rule}.jobs`,
+          tool: this.toolId,
+          file: `.github/workflows/${workflowFile}`,
+          message: `Workflow '${workflowFile}' missing required job: ${job}`,
+          severity: "error",
+        });
+      }
+    }
+    return violations;
+  }
+
+  private extractUsedActions(workflow: WorkflowFile): string[] {
+    return Object.values(workflow.jobs ?? {}).flatMap((job) =>
+      (job.steps ?? [])
+        .map((s) => s.uses?.split("@")[0])
+        .filter((u): u is string => u !== undefined)
+    );
+  }
+
+  private checkRequiredActions(projectRoot: string): Violation[] {
+    const violations: Violation[] = [];
+    for (const [workflowFile, requiredActions] of Object.entries(this.config.actions ?? {})) {
+      const { workflow, parseError } = this.parseWorkflow(projectRoot, workflowFile);
+      if (parseError) {
+        violations.push(this.yamlErrorViolation(workflowFile, parseError));
+        continue;
+      }
+      if (!workflow) {
+        continue;
+      }
+      const usedActions = this.extractUsedActions(workflow);
+      for (const action of requiredActions.filter((a) => !usedActions.includes(a))) {
+        violations.push({
+          rule: `${this.rule}.actions`,
+          tool: this.toolId,
+          file: `.github/workflows/${workflowFile}`,
+          message: `Workflow '${workflowFile}' missing required action: ${action}`,
+          severity: "error",
+        });
+      }
+    }
+    return violations;
+  }
+
   async run(projectRoot: string): Promise<CheckResult> {
     const startTime = Date.now();
     const elapsed = (): number => Date.now() - startTime;
 
-    // Check workflows directory first - if not present, can't check workflows
     const directoryViolation = this.checkWorkflowsDirectory(projectRoot);
     if (directoryViolation) {
       return this.fromViolations([directoryViolation], elapsed());
@@ -199,6 +441,7 @@ export class CiRunner extends BaseProcessToolRunner {
       ...this.checkRequiredWorkflows(projectRoot),
       ...this.checkRequiredJobs(projectRoot),
       ...this.checkRequiredActions(projectRoot),
+      ...this.checkWorkflowCommands(projectRoot),
     ];
 
     return this.fromViolations(violations, elapsed());

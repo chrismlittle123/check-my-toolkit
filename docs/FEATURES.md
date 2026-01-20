@@ -393,7 +393,7 @@ pre-push = ["npm test"]
 
 ## CI Workflows (`[process.ci]`)
 
-Verify GitHub Actions workflows exist with required jobs and actions.
+Verify GitHub Actions workflows exist with required jobs, actions, and commands.
 
 ```toml
 [process.ci]
@@ -405,15 +405,40 @@ require_workflows = ["ci.yml", "release.yml"]
 
 [process.ci.actions]
 "ci.yml" = ["actions/checkout", "actions/setup-node"]
+
+# Workflow-level: commands required anywhere in workflow
+[process.ci.commands]
+"ci.yml" = ["cm code check", "cm code audit"]
+
+# Job-level: commands required in specific jobs
+[process.ci.commands."pr-checks.yml"]
+lint = ["npm run lint"]
+test = ["npm test"]
 ```
 
-| Property            | Value                                                   |
-| ------------------- | ------------------------------------------------------- |
-| `require_workflows` | List of required workflow files in `.github/workflows/` |
-| `jobs`              | Map of workflow file to required job names              |
-| `actions`           | Map of workflow file to required action uses            |
+| Property            | Value                                                         |
+| ------------------- | ------------------------------------------------------------- |
+| `require_workflows` | List of required workflow files in `.github/workflows/`       |
+| `jobs`              | Map of workflow file to required job names                    |
+| `actions`           | Map of workflow file to required action uses                  |
+| `commands`          | Map of workflow file to required shell commands (see below)   |
 
-**Violations detected:** Missing workflow files, missing jobs, missing actions.
+### Required Commands (`[process.ci.commands]`)
+
+Enforce that specific shell commands run unconditionally in CI workflows on PRs to main.
+
+**Validation checks:**
+- Workflow must trigger on `pull_request` to main/master (or `push`)
+- Job must not have conditions that skip on PRs
+- Step must not have conditions that skip on PRs
+- Command must appear in `run:` block (not commented out)
+- Substring match: `cm code check` matches `cm code check --format json`
+
+**Command targeting:**
+- Workflow-level: `"ci.yml" = ["cmd"]` - commands required anywhere in workflow
+- Job-level: `"ci.yml".test = ["cmd"]` - commands required in specific job
+
+**Violations detected:** Missing workflow files, missing jobs, missing actions, command not found, command may not execute (conditional), command commented out, workflow doesn't trigger on PRs.
 
 ---
 

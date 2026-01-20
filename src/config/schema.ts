@@ -393,6 +393,19 @@ const hooksConfigSchema = z
   .strict()
   .optional();
 
+/**
+ * CI commands configuration value - can be:
+ * - Array of strings: commands required anywhere in workflow
+ * - Record mapping job names to arrays: commands required in specific jobs
+ */
+const ciCommandsValueSchema = z.union([
+  z.array(z.string()), // Workflow-level: ["cmd1", "cmd2"]
+  z.record(z.string(), z.array(z.string())), // Job-level: { jobName: ["cmd1"] }
+]);
+
+/** CI commands schema - maps workflow file to required commands */
+const ciCommandsSchema = z.record(z.string(), ciCommandsValueSchema).optional();
+
 /** CI/CD workflows configuration */
 const ciConfigSchema = z
   .object({
@@ -400,6 +413,7 @@ const ciConfigSchema = z
     require_workflows: z.array(z.string()).optional(), // e.g., ["ci.yml", "release.yml"]
     jobs: z.record(z.string(), z.array(z.string())).optional(), // e.g., { "ci.yml": ["test", "lint"] }
     actions: z.record(z.string(), z.array(z.string())).optional(), // e.g., { "ci.yml": ["actions/checkout"] }
+    commands: ciCommandsSchema, // e.g., { "ci.yml": ["cm code check"] } or { "ci.yml": { "test": ["npm test"] } }
   })
   .strict()
   .optional();
