@@ -530,22 +530,22 @@ prevent_update = true       # Prevent tag updates (default: true)
 
 ### Branch Protection Properties
 
-| Property                     | Value                                         |
-| ---------------------------- | --------------------------------------------- |
-| `branch`                     | Target branch to protect (default: "main")    |
-| `required_reviews`           | Minimum required approving reviews            |
-| `dismiss_stale_reviews`      | Dismiss stale reviews on new commits          |
-| `require_code_owner_reviews` | Require CODEOWNER approval                    |
-| `require_status_checks`      | Array of required CI status checks            |
-| `require_branches_up_to_date`| Require branch to be up to date before merge  |
-| `enforce_admins`             | Apply rules to administrators too             |
+| Property                      | Value                                        |
+| ----------------------------- | -------------------------------------------- |
+| `branch`                      | Target branch to protect (default: "main")   |
+| `required_reviews`            | Minimum required approving reviews           |
+| `dismiss_stale_reviews`       | Dismiss stale reviews on new commits         |
+| `require_code_owner_reviews`  | Require CODEOWNER approval                   |
+| `require_status_checks`       | Array of required CI status checks           |
+| `require_branches_up_to_date` | Require branch to be up to date before merge |
+| `enforce_admins`              | Apply rules to administrators too            |
 
 ### Tag Protection Properties
 
-| Property           | Value                                          |
-| ------------------ | ---------------------------------------------- |
-| `patterns`         | Array of tag patterns to protect (e.g., `["v*"]`) |
-| `prevent_deletion` | Prevent matching tags from being deleted (default: true) |
+| Property           | Value                                                         |
+| ------------------ | ------------------------------------------------------------- |
+| `patterns`         | Array of tag patterns to protect (e.g., `["v*"]`)             |
+| `prevent_deletion` | Prevent matching tags from being deleted (default: true)      |
 | `prevent_update`   | Prevent matching tags from being force-pushed (default: true) |
 
 **Note:** Tag protection uses GitHub Rulesets API. Requires admin permissions.
