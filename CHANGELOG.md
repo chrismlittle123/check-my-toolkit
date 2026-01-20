@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.5.3
+
+### Patch Changes
+
+- c1473f7: Re-enable community registry (typescript-internal ruleset) in check.toml
+
 ## 1.5.2
 
 ### Patch Changes
