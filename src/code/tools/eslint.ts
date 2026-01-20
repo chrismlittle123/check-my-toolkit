@@ -30,8 +30,15 @@ interface ESLintRuleWithOptions {
   [key: string]: unknown;
 }
 
-/** ESLint rule value - severity string or object with severity and options */
-type ESLintRuleValue = "off" | "warn" | "error" | ESLintRuleWithOptions;
+/**
+ * ESLint rule with array format for complex rules like naming-convention.
+ * Example: ["error", { selector: "enumMember", format: ["UPPER_CASE"] }]
+ * First element should be severity, followed by rule-specific options.
+ */
+type ESLintRuleArray = unknown[];
+
+/** ESLint rule value - severity string, object with options, or array format */
+type ESLintRuleValue = "off" | "warn" | "error" | ESLintRuleWithOptions | ESLintRuleArray;
 
 /** ESLint configuration options */
 interface ESLintConfig {
@@ -207,16 +214,28 @@ export class ESLintRunner extends BaseToolRunner {
   }
 
   /**
+   * Check if a value is an ESLint rule array format
+   */
+  private isRuleArray(value: unknown): value is ESLintRuleArray {
+    return Array.isArray(value) && value.length >= 1;
+  }
+
+  /**
    * Extract options from a rule value (excludes severity)
    */
-  private extractRuleOptions(value: ESLintRuleValue): Record<string, unknown> | null {
+  private extractRuleOptions(value: ESLintRuleValue): unknown[] | null {
     if (typeof value === "string") {
       return null; // No options for severity-only rules
     }
+    if (this.isRuleArray(value)) {
+      // For array format, return all elements after severity
+      const [_severity, ...options] = value;
+      return options.length > 0 ? options : null;
+    }
     if (this.isRuleWithOptions(value)) {
-      // Extract all keys except 'severity'
+      // For object format, convert to array format for comparison
       const { severity: _, ...options } = value;
-      return Object.keys(options).length > 0 ? options : null;
+      return Object.keys(options).length > 0 ? [options] : null;
     }
     return null;
   }
@@ -242,42 +261,49 @@ export class ESLintRunner extends BaseToolRunner {
   }
 
   /**
-   * Compare rule options between required and effective config
+   * Compare rule options between required and effective config.
    */
   private compareRuleOptions(
     ruleName: string,
-    requiredOptions: Record<string, unknown>,
+    requiredOptions: unknown[],
     effectiveRule: unknown[],
     configFile: string | undefined
   ): Violation[] {
+    const effectiveOptions = effectiveRule.slice(1);
+    if (this.deepEqual(requiredOptions, effectiveOptions)) {
+      return [];
+    }
+    // For single-object rules, try detailed comparison
+    if (requiredOptions.length === 1 && typeof requiredOptions[0] === "object") {
+      return this.compareObjectOptions(ruleName, requiredOptions[0], effectiveOptions, configFile);
+    }
+    // For complex rules, show full mismatch
+    const msg = `Rule "${ruleName}": options mismatch`;
+    return [this.createAuditViolation(msg, "error", configFile)];
+  }
+
+  /** Compare single-object rule options for detailed error messages */
+  private compareObjectOptions(
+    ruleName: string,
+    reqObj: unknown,
+    effectiveOptions: unknown[],
+    configFile: string | undefined
+  ): Violation[] {
     const violations: Violation[] = [];
-
-    // ESLint effective config format: [severity, options]
-    // Options can be a single object, a primitive, or multiple values
-    const effectiveOptions = effectiveRule.length > 1 ? effectiveRule[1] : {};
-
-    for (const [optionName, requiredValue] of Object.entries(requiredOptions)) {
-      const effectiveValue = this.getEffectiveOptionValue(effectiveOptions, optionName);
-
-      if (effectiveValue === undefined) {
+    const required = reqObj as Record<string, unknown>;
+    const effective = typeof effectiveOptions[0] === "object" ? effectiveOptions[0] : {};
+    for (const [key, reqVal] of Object.entries(required)) {
+      const effVal = this.getEffectiveOptionValue(effective, key);
+      if (effVal === undefined) {
         violations.push(
-          this.createAuditViolation(
-            `Rule "${ruleName}": option "${optionName}" is required but not configured`,
-            "error",
-            configFile
-          )
+          this.createAuditViolation(`Rule "${ruleName}": "${key}" required`, "error", configFile)
         );
-      } else if (!this.deepEqual(requiredValue, effectiveValue)) {
+      } else if (!this.deepEqual(reqVal, effVal)) {
         violations.push(
-          this.createAuditViolation(
-            `Rule "${ruleName}": option "${optionName}" expected ${JSON.stringify(requiredValue)}, got ${JSON.stringify(effectiveValue)}`,
-            "error",
-            configFile
-          )
+          this.createAuditViolation(`Rule "${ruleName}": "${key}" mismatch`, "error", configFile)
         );
       }
     }
-
     return violations;
   }
 
