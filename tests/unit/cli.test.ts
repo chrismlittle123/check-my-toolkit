@@ -29,6 +29,8 @@ vi.mock("commander", () => {
     cmd.option = vi.fn().mockReturnValue(cmd);
     cmd.addOption = vi.fn().mockReturnValue(cmd);
     cmd.addCommand = vi.fn().mockReturnValue(cmd);
+    cmd.exitOverride = vi.fn().mockReturnValue(cmd);
+    cmd.configureOutput = vi.fn().mockReturnValue(cmd);
     cmd.parse = vi.fn();
     cmd.command = vi.fn().mockImplementation((name: string) => {
       const subCmd = createMockCommand(parentName || name);
@@ -62,9 +64,21 @@ vi.mock("commander", () => {
     return opt;
   };
 
+  // Mock CommanderError class
+  class MockCommanderError extends Error {
+    code: string;
+    exitCode: number;
+    constructor(exitCode: number, code: string, message: string) {
+      super(message);
+      this.exitCode = exitCode;
+      this.code = code;
+    }
+  }
+
   return {
     Command: vi.fn().mockImplementation((name?: string) => createMockCommand(name)),
     Option: vi.fn().mockImplementation(() => createMockOption()),
+    CommanderError: MockCommanderError,
   };
 });
 

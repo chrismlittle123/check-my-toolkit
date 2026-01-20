@@ -5,7 +5,7 @@ import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import chalk from "chalk";
-import { Command, Option } from "commander";
+import { Command, type CommanderError, Option } from "commander";
 import { zodToJsonSchema } from "zod-to-json-schema";
 
 import { auditCodeConfig, runCodeChecks } from "./code/index.js";
@@ -27,7 +27,28 @@ const VERSION = packageJson.version;
 
 const program = new Command();
 
-program.name("cm").description("Unified project health checks for code quality").version(VERSION);
+program
+  .name("cm")
+  .description("Unified project health checks for code quality")
+  .version(VERSION)
+  .exitOverride((err: CommanderError) => {
+    // Commander uses exit code 1 for all errors by default
+    // We want to use exit code 2 (CONFIG_ERROR) for argument/option errors
+    if (
+      err.code === "commander.invalidArgument" ||
+      err.code === "commander.optionMissingArgument"
+    ) {
+      process.exit(ExitCode.CONFIG_ERROR);
+    }
+    // For other Commander errors (help, version), use the default exit code
+    process.exit(err.exitCode);
+  })
+  .configureOutput({
+    writeErr: (str: string) => {
+      // Write errors to stderr without the default "error:" prefix duplication
+      process.stderr.write(str);
+    },
+  });
 
 // =============================================================================
 // Shared action handlers

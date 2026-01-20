@@ -647,13 +647,17 @@ Enforce that certain files must NOT exist anywhere in the repository. Scans the 
 [process.forbidden_files]
 enabled = true
 files = ["**/.env", "**/.env.*", "**/.env.example"]
+ignore = ["**/node_modules/**", "**/.git/**", "**/dist/**"]  # Optional, overrides defaults
 message = "Use AWS Secrets Manager for secrets and TypeScript config for settings"
 ```
 
 | Property  | Value                                                           |
 | --------- | --------------------------------------------------------------- |
 | `files`   | Glob patterns for files that must not exist (scans entire repo) |
+| `ignore`  | Glob patterns to exclude from scan (overrides defaults if set)  |
 | `message` | Custom message explaining why these files are forbidden         |
+
+**Default ignore patterns:** `**/node_modules/**`, `**/.git/**`
 
 **Glob Pattern Examples:**
 
@@ -667,7 +671,7 @@ message = "Use AWS Secrets Manager for secrets and TypeScript config for setting
 **Validation:**
 
 - Scans entire repository recursively for matching files
-- Automatically ignores `node_modules/` and `.git/` directories
+- Uses configured `ignore` patterns, or defaults to `node_modules/` and `.git/`
 - Reports all matching files with custom message
 
 **Why avoid .env files:**

@@ -287,5 +287,13 @@ export default tseslint.config(
       // Require spread instead of .apply()
       "prefer-spread": "error",
     },
+  },
+
+  // Override for CLI entry point - needs more lines to register all commands
+  {
+    files: ["src/cli.ts"],
+    rules: {
+      "max-lines": ["error", { max: 550, skipBlankLines: true, skipComments: true }],
+    },
   }
 );

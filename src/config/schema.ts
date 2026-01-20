@@ -570,15 +570,21 @@ const docsConfigSchema = z
   .strict()
   .optional();
 
+/** Default ignore patterns for forbidden files scan */
+const DEFAULT_FORBIDDEN_FILES_IGNORE = ["**/node_modules/**", "**/.git/**"];
+
 /** Forbidden files configuration - files that must NOT exist */
 const forbiddenFilesConfigSchema = z
   .object({
     enabled: z.boolean().optional().default(false),
     files: z.array(globPatternSchema).optional(), // Glob patterns for files that must not exist (validated)
+    ignore: z.array(z.string()).optional(), // Glob patterns to ignore (overrides defaults if provided)
     message: z.string().optional(), // Custom message explaining why these files are forbidden
   })
   .strict()
   .optional();
+
+export { DEFAULT_FORBIDDEN_FILES_IGNORE };
 
 /** Process domain configuration */
 const processSchema = z
