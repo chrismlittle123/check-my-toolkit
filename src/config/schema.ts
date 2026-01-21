@@ -581,9 +581,6 @@ const rulesetConfigSchema = z
   .strict()
   .optional();
 
-/** @deprecated Use rulesetConfigSchema instead */
-const branchProtectionConfigSchema = rulesetConfigSchema;
-
 /** Tag protection ruleset configuration */
 const tagProtectionConfigSchema = z
   .object({
@@ -600,8 +597,7 @@ const repoConfigSchema = z
     enabled: z.boolean().optional().default(false),
     require_branch_protection: z.boolean().optional().default(false), // Check branch protection exists
     require_codeowners: z.boolean().optional().default(false), // Check CODEOWNERS file exists
-    ruleset: rulesetConfigSchema, // GitHub Ruleset configuration (preferred)
-    branch_protection: branchProtectionConfigSchema, // @deprecated - use 'ruleset' instead
+    ruleset: rulesetConfigSchema, // GitHub Ruleset configuration
     tag_protection: tagProtectionConfigSchema, // Tag protection via GitHub rulesets
   })
   .strict()

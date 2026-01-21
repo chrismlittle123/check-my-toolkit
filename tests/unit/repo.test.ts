@@ -211,7 +211,7 @@ describe("RepoRunner", () => {
         } as never);
         runner.setConfig({
           enabled: true,
-          branch_protection: { required_reviews: 2 },
+          ruleset: { required_reviews: 2 },
         });
 
         const result = await runner.run(tempDir);
@@ -229,7 +229,7 @@ describe("RepoRunner", () => {
         } as never);
         runner.setConfig({
           enabled: true,
-          branch_protection: { required_reviews: 2 },
+          ruleset: { required_reviews: 2 },
         });
 
         const result = await runner.run(tempDir);
@@ -247,7 +247,7 @@ describe("RepoRunner", () => {
         } as never);
         runner.setConfig({
           enabled: true,
-          branch_protection: { dismiss_stale_reviews: true },
+          ruleset: { dismiss_stale_reviews: true },
         });
 
         const result = await runner.run(tempDir);
@@ -265,7 +265,7 @@ describe("RepoRunner", () => {
         } as never);
         runner.setConfig({
           enabled: true,
-          branch_protection: { require_code_owner_reviews: true },
+          ruleset: { require_code_owner_reviews: true },
         });
 
         const result = await runner.run(tempDir);
@@ -288,7 +288,7 @@ describe("RepoRunner", () => {
         } as never);
         runner.setConfig({
           enabled: true,
-          branch_protection: { require_status_checks: ["ci", "lint", "test"] },
+          ruleset: { require_status_checks: ["ci", "lint", "test"] },
         });
 
         const result = await runner.run(tempDir);
@@ -315,7 +315,7 @@ describe("RepoRunner", () => {
         } as never);
         runner.setConfig({
           enabled: true,
-          branch_protection: { require_status_checks: ["ci", "lint"] },
+          ruleset: { require_status_checks: ["ci", "lint"] },
         });
 
         const result = await runner.run(tempDir);
@@ -336,7 +336,7 @@ describe("RepoRunner", () => {
         } as never);
         runner.setConfig({
           enabled: true,
-          branch_protection: { require_branches_up_to_date: true },
+          ruleset: { require_branches_up_to_date: true },
         });
 
         const result = await runner.run(tempDir);
@@ -352,7 +352,7 @@ describe("RepoRunner", () => {
         } as never);
         runner.setConfig({
           enabled: true,
-          branch_protection: { require_signed_commits: true },
+          ruleset: { require_signed_commits: true },
         });
 
         const result = await runner.run(tempDir);
@@ -372,7 +372,7 @@ describe("RepoRunner", () => {
         } as never);
         runner.setConfig({
           enabled: true,
-          branch_protection: { enforce_admins: true },
+          ruleset: { enforce_admins: true },
         });
 
         const result = await runner.run(tempDir);
@@ -390,7 +390,7 @@ describe("RepoRunner", () => {
         } as never);
         runner.setConfig({
           enabled: true,
-          branch_protection: { branch: "develop", required_reviews: 1 },
+          ruleset: { branch: "develop", required_reviews: 1 },
         });
 
         const result = await runner.run(tempDir);
@@ -414,7 +414,7 @@ describe("RepoRunner", () => {
         } as never);
         runner.setConfig({
           enabled: true,
-          branch_protection: {
+          ruleset: {
             bypass_actors: [{ actor_type: "Integration", actor_id: 123 }],
           },
         });
@@ -429,7 +429,7 @@ describe("RepoRunner", () => {
         } as never);
         runner.setConfig({
           enabled: true,
-          branch_protection: {
+          ruleset: {
             bypass_actors: [{ actor_type: "Integration", actor_id: 123 }],
           },
         });
@@ -472,38 +472,6 @@ describe("RepoRunner", () => {
         runner.setConfig({
           enabled: true,
           ruleset: { required_reviews: 2 },
-        });
-
-        const result = await runner.run(tempDir);
-        expect(result.passed).toBe(true);
-        expect(result.violations).toHaveLength(0);
-      });
-
-      it("prefers ruleset over branch_protection when both are set", async () => {
-        mockedExeca.mockResolvedValueOnce({
-          stdout: JSON.stringify([
-            {
-              id: 1,
-              name: "Branch Protection",
-              target: "branch",
-              enforcement: "active",
-              conditions: { ref_name: { include: ["refs/heads/main"] } },
-              bypass_actors: [],
-              rules: [
-                {
-                  type: "pull_request",
-                  parameters: { required_approving_review_count: 2 },
-                },
-              ],
-            },
-          ]),
-        } as never);
-        // ruleset requires 2, branch_protection requires 3
-        // Should use ruleset (2) and pass
-        runner.setConfig({
-          enabled: true,
-          ruleset: { required_reviews: 2 },
-          branch_protection: { required_reviews: 3 },
         });
 
         const result = await runner.run(tempDir);

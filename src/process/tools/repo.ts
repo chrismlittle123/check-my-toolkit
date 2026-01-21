@@ -26,9 +26,6 @@ interface RulesetConfig {
   bypass_actors?: BypassActorConfig[];
 }
 
-/** @deprecated Use RulesetConfig instead */
-type BranchProtectionConfig = RulesetConfig;
-
 /** Tag protection configuration */
 interface TagProtectionConfig {
   patterns?: string[];
@@ -42,8 +39,6 @@ interface RepoConfig {
   require_branch_protection?: boolean;
   require_codeowners?: boolean;
   ruleset?: RulesetConfig;
-  /** @deprecated Use ruleset instead */
-  branch_protection?: BranchProtectionConfig;
   tag_protection?: TagProtectionConfig;
 }
 
@@ -116,11 +111,7 @@ export class RepoRunner extends BaseProcessToolRunner {
     if (this.config.require_codeowners) {
       violations.push(...this.checkCodeowners(projectRoot));
     }
-    if (
-      this.config.require_branch_protection ||
-      this.config.ruleset ||
-      this.config.branch_protection
-    ) {
+    if (this.config.require_branch_protection || this.config.ruleset) {
       violations.push(...(await this.checkBranchProtection(repoInfo)));
     }
     if (this.config.tag_protection?.patterns?.length) {
@@ -171,8 +162,7 @@ export class RepoRunner extends BaseProcessToolRunner {
     owner: string;
     repo: string;
   }): Promise<Violation[]> {
-    // Use ruleset config, fall back to deprecated branch_protection
-    const rulesetConfig = this.config.ruleset ?? this.config.branch_protection;
+    const rulesetConfig = this.config.ruleset;
     const branch = rulesetConfig?.branch ?? "main";
 
     try {
@@ -262,8 +252,7 @@ export class RepoRunner extends BaseProcessToolRunner {
   }
 
   private validateBranchRulesetSettings(ruleset: RulesetResponse, branch: string): Violation[] {
-    // Use ruleset config, fall back to deprecated branch_protection
-    const bpConfig = this.config.ruleset ?? this.config.branch_protection;
+    const bpConfig = this.config.ruleset;
     if (!bpConfig) {
       return [];
     }
@@ -296,7 +285,7 @@ export class RepoRunner extends BaseProcessToolRunner {
   // eslint-disable-next-line complexity
   private checkPullRequestRuleSettings(
     prRule: RulesetRule | undefined,
-    bpConfig: BranchProtectionConfig,
+    bpConfig: RulesetConfig,
     branch: string
   ): Violation[] {
     const violations: Violation[] = [];
@@ -342,7 +331,7 @@ export class RepoRunner extends BaseProcessToolRunner {
   // eslint-disable-next-line complexity
   private checkStatusChecksRuleSettings(
     statusRule: RulesetRule | undefined,
-    bpConfig: BranchProtectionConfig,
+    bpConfig: RulesetConfig,
     branch: string
   ): Violation[] {
     const violations: Violation[] = [];
@@ -379,7 +368,7 @@ export class RepoRunner extends BaseProcessToolRunner {
 
   private checkBypassActorsSettings(
     ruleset: RulesetResponse,
-    bpConfig: BranchProtectionConfig,
+    bpConfig: RulesetConfig,
     branch: string
   ): Violation[] {
     const violations: Violation[] = [];

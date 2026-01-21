@@ -317,41 +317,11 @@ function mergeProcessCoverage(
   return mergeProcessSection(defaultCoverage, dcp?.coverage, cp?.coverage);
 }
 
-/** Emit deprecation warning for branch_protection config */
-let deprecationWarningShown = false;
-function warnDeprecatedBranchProtection(): void {
-  if (!deprecationWarningShown) {
-    console.warn(
-      "\x1b[33mWarning: [process.repo.branch_protection] is deprecated. " +
-        "Use [process.repo.ruleset] instead. This will be removed in v2.0.0.\x1b[0m"
-    );
-    deprecationWarningShown = true;
-  }
-}
-
-// eslint-disable-next-line complexity
 function mergeProcessRepo(
   cp: ProcessConfig | undefined,
   dcp: ProcessConfig | undefined
 ): RepoConfig {
-  const merged = mergeProcessSection(defaultRepo, dcp?.repo, cp?.repo);
-
-  // Check for deprecated branch_protection usage
-  const hasBranchProtection = cp?.repo?.branch_protection ?? dcp?.repo?.branch_protection;
-  const hasRuleset = cp?.repo?.ruleset ?? dcp?.repo?.ruleset;
-
-  if (hasBranchProtection && !hasRuleset) {
-    warnDeprecatedBranchProtection();
-  }
-
-  // Normalize: prefer ruleset, fall back to branch_protection
-  const ruleset = merged.ruleset ?? merged.branch_protection;
-
-  return {
-    ...merged,
-    ruleset,
-    branch_protection: undefined, // Clear deprecated field internally
-  };
+  return mergeProcessSection(defaultRepo, dcp?.repo, cp?.repo);
 }
 
 function mergeProcessBackups(
