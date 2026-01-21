@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.10.0
+
+### Minor Changes
+
+- a4d5c03: Remove Prettier and Ruff Format from CODE domain
+
+  - Remove Prettier formatting check (`[code.formatting.prettier]`)
+  - Remove Ruff Format check (`format = true` in `[code.linting.ruff]`)
+  - CODE domain now has 12 tools (down from 14)
+
+  This is a breaking change for users who have these tools enabled in their `check.toml`. Remove any `[code.formatting.prettier]` sections and `format = true` from `[code.linting.ruff]` sections.
+
 ## [Unreleased]
 
 ### Removed
@@ -22,6 +34,7 @@
 ### Patch Changes
 
 - c3dd4e8: docs: clarify check.toml configuration philosophy and Gitleaks custom rules
+
   - Add "Configuration Philosophy" section explaining that check.toml is the source of truth for lint rules
   - Add note to Ruff section clarifying that ruff.toml rules are not used by cm code check
   - Update Gitleaks documentation with what is/isn't detected by default
@@ -77,17 +90,20 @@
 - 26e7918: Complete GitHub Rulesets migration (Issue #163)
 
   **New Features:**
+
   - Rename config from `[process.repo.branch_protection]` to `[process.repo.ruleset]`
   - Add `name` and `enforcement` fields to ruleset configuration
   - Add bypass actor validation with `--validate-actors` flag
   - Add cleanup commands: `cm process list-rules` and `cm process cleanup-rules`
 
   **Migration:**
+
   - `[process.repo.branch_protection]` is now deprecated (still works in v1.x)
   - Use `[process.repo.ruleset]` instead
   - See `docs/MIGRATION.md` for migration guide
 
   **New CLI Commands:**
+
   - `cm process list-rules` - List all protection rules (classic + rulesets)
   - `cm process cleanup-rules [--apply]` - Remove orphaned classic branch protection
   - `cm process sync --validate-actors` - Validate bypass actors before applying
@@ -99,6 +115,7 @@
 - 336d91b: Add `[process.ci.commands]` configuration to enforce that specific shell commands run unconditionally in CI workflows on PRs to main.
 
   Features:
+
   - Workflow-level commands: require commands anywhere in workflow
   - Job-level commands: require commands in specific jobs
   - Validates workflow triggers on pull_request/push to main
@@ -191,6 +208,7 @@
 - 38263d1: Fix 12 bugs across CODE and PROCESS domains
 
   CODE domain fixes:
+
   - Add duplicate extension validation in schema (#127)
   - Handle undefined exitCode in coverage-run (#125)
   - Add vulture exclusion patterns for virtual environments (#123)
@@ -199,6 +217,7 @@
   - Add comment-aware pattern detection to avoid false positives (#128)
 
   PROCESS domain fixes:
+
   - Use non-greedy scope regex in commits (#116)
   - Add word boundary to issue reference regex (#115)
   - Split frontmatter delimiter error messages (#120)
@@ -207,6 +226,7 @@
   - Generate dynamic branch examples from config (#121)
 
 - 734b549: Fix inconsistent projectRoot vs process.cwd() usage in PROCESS domain
+
   - changesets.ts: Pass projectRoot to checkDirectoryExists() instead of using process.cwd()
   - changesets.ts: Pass projectRoot to checkChangesRequireChangeset() instead of using process.cwd()
   - check-branch.ts: Pass projectRoot to runBranchValidation() instead of using process.cwd()
@@ -214,6 +234,7 @@
   These fixes ensure consistent behavior when running from subdirectories or in monorepos.
 
 - a63bc8a: Add comprehensive unit tests for process domain tools
+
   - commits.test.ts: 30 tests for conventional commit validation
   - docs-helpers.test.ts: 43 tests for markdown/export parsing helpers
   - changesets.test.ts: 39 tests for changeset format validation
@@ -221,6 +242,7 @@
   - infra-index.test.ts: 8 tests for infra domain orchestration
 
   Coverage improvements:
+
   - Overall: 77.33% → 85.79%
   - Process tools: 19.5% → 95.87%
 
@@ -281,6 +303,7 @@
 - 1c28cd4: feat: implement process.docs documentation governance
 
   Adds documentation governance feature to the PROCESS domain with:
+
   - Structure enforcement (allowlist, max_files, max_file_lines, max_total_kb)
   - Content validation (frontmatter, required sections, internal links)
   - Freshness tracking (git-based staleness detection)
@@ -322,11 +345,13 @@
   **Breaking Change**: The `[code.tests]` configuration is no longer supported. Use `[code.coverage_run]` instead, which actually runs tests and validates coverage thresholds.
 
   **Test workflow improvements**:
+
   - CI now runs unit and e2e tests as separate steps for better visibility
   - Pre-push hook no longer runs tests (faster local workflow)
   - Default `pnpm test` now runs only unit tests (~43s vs ~7min)
 
   New test scripts:
+
   - `pnpm test` - Unit tests only (fast, for local dev)
   - `pnpm test:watch` - Unit tests in watch mode
   - `pnpm test:e2e` - E2E tests only
@@ -423,6 +448,7 @@
 ### Minor Changes
 
 - ea95bfb: Add hook-specific commands for git workflow validation
+
   - `cm process check-branch` - Validates current branch name against configured pattern (for pre-push hooks)
   - `cm process check-commit <file>` - Validates commit message format and ticket references (for commit-msg hooks)
 
@@ -459,6 +485,7 @@
 - ad3c045: Add infra.tagging for AWS resource tag validation
 
   New INFRA domain with AWS resource tagging enforcement:
+
   - Uses AWS Resource Groups Tagging API to verify resources have required tags
   - Supports allowed values validation for specific tags
   - New CLI commands: `cm infra check` and `cm infra audit`
@@ -550,11 +577,13 @@
   Introduces the PROCESS domain for workflow enforcement, starting with git hooks validation:
 
   **New Features:**
+
   - `cm process check` - Run workflow validation (hooks, CI, etc.)
   - `cm process audit` - Verify workflow configs exist
   - `cm check` now runs both CODE and PROCESS domains
 
   **Git Hooks Configuration (`[process.hooks]`):**
+
   - `require_husky` - Verify .husky/ directory exists
   - `require_hooks` - List of required hook files (e.g., pre-commit, pre-push)
   - `commands` - Verify hooks contain specific commands
@@ -573,6 +602,7 @@
   ```
 
   **Violations Detected:**
+
   - Missing husky installation
   - Missing required hook files
   - Hook files missing required commands
@@ -586,12 +616,14 @@
   New check under `[code.quality.disable-comments]` that detects and reports disable comments across multiple linters:
 
   **Default patterns detected:**
+
   - ESLint: `eslint-disable`, `eslint-disable-line`, `eslint-disable-next-line`
   - TypeScript: `@ts-ignore`, `@ts-expect-error`, `@ts-nocheck`
   - Python: `# noqa`, `# type: ignore`, `# pylint: disable`, `# pragma: no cover`
   - Prettier: `prettier-ignore`
 
   **Configuration options:**
+
   - `patterns` - Override default patterns to detect
   - `extensions` - File extensions to scan (default: ts, tsx, js, jsx, py)
   - `exclude` - Glob patterns to exclude from scanning
@@ -609,7 +641,9 @@
 ### Patch Changes
 
 - d667914: fix: documentation and schema validation bugs
+
   - **README.md**: Fixed incorrect config names in documentation
+
     - `[code.security.gitleaks]` → `[code.security.secrets]`
     - `[code.security.npm-audit]` → `[code.security.npmaudit]`
     - `[code.security.pip-audit]` → `[code.security.pipaudit]`
@@ -642,6 +676,7 @@
   Added eslint-plugin-import and configured 8 high-signal rules that catch real bugs:
 
   **Bug Prevention:**
+
   - `import/no-cycle` - Detect circular dependencies (architecture rot)
   - `array-callback-return` - Catch missing returns in .map(), .filter(), etc.
   - `no-template-curly-in-string` - Catch wrong quotes on template literals
@@ -651,6 +686,7 @@
   - `@typescript-eslint/no-non-null-assertion` - Prevent false confidence from ! assertions
 
   **Code Quality:**
+
   - `max-params` - Force better function design (max 4 parameters)
 
   All rules are now audited via `cm code audit` to ensure eslint.config.js matches requirements.
@@ -777,6 +813,7 @@
 - c6441a4: Add naming conventions validation for file and folder names.
 
   Features:
+
   - Support for kebab-case, snake_case, camelCase, PascalCase
   - Configure rules per file extension (e.g., .ts, .py, .tsx)
   - Validates both file names and containing folder names
@@ -806,6 +843,7 @@
 - af31ddf: Add config value auditing for tsconfig.json
 
   **Config Audit (`cm code audit`):**
+
   - Audit tsconfig.json compiler options against expected values from check.toml
   - Support `[code.types.tsc.require]` section to specify required compiler options
   - Reports violations with "expected X, got Y" messages for mismatched values
@@ -830,17 +868,20 @@
 - d552bdb: Add registry validation and extends functionality
 
   **Registry Validation (`cm validate registry`):**
+
   - Validates registry structure with `rulesets/*.toml` and `prompts/*.md`
   - Checks all TOML files conform to check.toml schema
   - Checks all prompt files have `.md` extension
 
   **Registry Extends (`[extends]` in check.toml):**
+
   - Extend configuration from remote registries
   - Support GitHub (`github:owner/repo` or `github:owner/repo@ref`) and local paths
   - Merge multiple rulesets in order with local overrides
   - Cache GitHub repositories in `/tmp/cm-registry-cache/`
 
   **Command changes:**
+
   - `cm validate` → `cm validate config` (validate check.toml)
   - `cm validate registry` (new - validate registry structure)
 
