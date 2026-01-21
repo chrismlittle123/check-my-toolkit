@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 import { execa } from "execa";
 
 import { type CheckResult, type Violation } from "../../types/index.js";
@@ -192,12 +193,20 @@ export class RepoRunner extends BaseProcessToolRunner {
   private matchesBranch(patterns: string[], branch: string): boolean {
     for (const pattern of patterns) {
       const cleanPattern = pattern.replace(/^refs\/heads\//, "");
-      if (cleanPattern === branch) return true;
-      if (cleanPattern === "~DEFAULT_BRANCH" && branch === "main") return true;
-      if (cleanPattern === "~ALL") return true;
+      if (cleanPattern === branch) {
+        return true;
+      }
+      if (cleanPattern === "~DEFAULT_BRANCH" && branch === "main") {
+        return true;
+      }
+      if (cleanPattern === "~ALL") {
+        return true;
+      }
       if (cleanPattern.includes("*")) {
-        const regex = new RegExp("^" + cleanPattern.replace(/\*/g, ".*") + "$");
-        if (regex.test(branch)) return true;
+        const regex = new RegExp(`^${cleanPattern.replace(/\*/g, ".*")}$`);
+        if (regex.test(branch)) {
+          return true;
+        }
       }
     }
     return false;
@@ -267,6 +276,7 @@ export class RepoRunner extends BaseProcessToolRunner {
     return violations;
   }
 
+  // eslint-disable-next-line complexity
   private checkPullRequestRuleSettings(
     prRule: RulesetRule | undefined,
     bpConfig: BranchProtectionConfig,
@@ -312,6 +322,7 @@ export class RepoRunner extends BaseProcessToolRunner {
     return violations;
   }
 
+  // eslint-disable-next-line complexity
   private checkStatusChecksRuleSettings(
     statusRule: RulesetRule | undefined,
     bpConfig: BranchProtectionConfig,

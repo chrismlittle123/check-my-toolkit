@@ -87,7 +87,7 @@ function buildBranchRulesetBody(
   branch: string,
   desired: DesiredBranchProtection
 ): Record<string, unknown> {
-  const rules: Array<{ type: string; parameters?: Record<string, unknown> }> = [];
+  const rules: { type: string; parameters?: Record<string, unknown> }[] = [];
 
   // Build pull_request rule if any review settings specified
   const pullRequestRule = buildPullRequestRule(desired);

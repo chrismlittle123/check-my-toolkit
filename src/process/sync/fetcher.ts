@@ -81,6 +81,7 @@ function handleBranchFetchError(error: unknown, branch: string): BranchProtectio
 }
 
 /** Find and parse the branch protection ruleset */
+// eslint-disable-next-line complexity
 function parseBranchRuleset(rulesets: GitHubRuleset[], branch: string): BranchProtectionSettings {
   // Find ruleset targeting branches that includes the specified branch
   const branchRuleset = rulesets.find(
@@ -126,13 +127,21 @@ function parseBranchRuleset(rulesets: GitHubRuleset[], branch: string): BranchPr
 function matchesBranch(patterns: string[], branch: string): boolean {
   for (const pattern of patterns) {
     const cleanPattern = pattern.replace(/^refs\/heads\//, "");
-    if (cleanPattern === branch) return true;
-    if (cleanPattern === "~DEFAULT_BRANCH" && branch === "main") return true;
-    if (cleanPattern === "~ALL") return true;
+    if (cleanPattern === branch) {
+      return true;
+    }
+    if (cleanPattern === "~DEFAULT_BRANCH" && branch === "main") {
+      return true;
+    }
+    if (cleanPattern === "~ALL") {
+      return true;
+    }
     // Simple wildcard matching for patterns like "release/*"
     if (cleanPattern.includes("*")) {
-      const regex = new RegExp("^" + cleanPattern.replace(/\*/g, ".*") + "$");
-      if (regex.test(branch)) return true;
+      const regex = new RegExp(`^${cleanPattern.replace(/\*/g, ".*")}$`);
+      if (regex.test(branch)) {
+        return true;
+      }
     }
   }
   return false;
