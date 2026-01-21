@@ -61,6 +61,7 @@ vi.mock("commander", () => {
     const opt: Record<string, unknown> = {};
     opt.choices = vi.fn().mockReturnValue(opt);
     opt.default = vi.fn().mockReturnValue(opt);
+    opt.makeOptionMandatory = vi.fn().mockReturnValue(opt);
     return opt;
   };
 

@@ -36,6 +36,23 @@ cm process check              # Run all checks
 cm process check --format json   # JSON output
 ```
 
+### `cm process scan`
+
+Scan remote repository settings via GitHub API without needing to clone the repo.
+
+```bash
+cm process scan --repo owner/repo         # Scan remote repository
+cm process scan --repo owner/repo --json  # JSON output
+```
+
+**Requires:** `GITHUB_TOKEN` environment variable or `gh` CLI authentication.
+
+**What it checks:**
+
+- Repository rulesets (branch protection, tag protection)
+- Required file existence (CODEOWNERS, README, PR templates)
+- Ruleset settings validation against `check.toml` configuration
+
 ### `cm process audit`
 
 Verify all process tool configs exist (doesn't run checks).
@@ -322,13 +339,20 @@ region = "us-east-1"                           # AWS region
 ## Programmatic API
 
 ```typescript
-import { runProcessChecks, auditProcessConfig } from "check-my-toolkit";
+import { runProcessChecks, auditProcessConfig, validateProcess } from "check-my-toolkit";
 
 // Run all process checks
 const result = await runProcessChecks(projectPath, config);
 
 // Audit config only
 const auditResult = await auditProcessConfig(projectPath, config);
+
+// Validate remote repository (cm process scan --repo equivalent)
+const scanResult = await validateProcess({
+  repo: "owner/repo",
+  config: "./check.toml", // optional
+});
+console.log(scanResult.summary); // { totalChecks, passedChecks, failedChecks, totalViolations, exitCode }
 ```
 
 ---
