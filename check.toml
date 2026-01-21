@@ -36,10 +36,9 @@ exclude = ["tests/**", "src/code/tools/disable-comments.ts", "src/projects/detec
 [process.hooks]
 enabled = true
 require_husky = true
-require_hooks = ["pre-commit", "pre-push", "commit-msg"]
+require_hooks = ["pre-push", "commit-msg"]
 
 [process.hooks.commands]
-pre-commit = ["lint-staged"]
 pre-push = ["process check-branch", "npm run typecheck", "npm run lint", "npm run build"]
 commit-msg = ["process check-commit"]
 
