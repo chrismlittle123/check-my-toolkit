@@ -1,4 +1,4 @@
-# Features - check-my-toolkit v1.12.0
+# Features - check-my-toolkit v2.0.0
 
 Unified project health checks for code quality and process compliance.
 
@@ -562,8 +562,8 @@ ci_job = "test"
 
 Verify GitHub Rulesets, tag protection, and CODEOWNERS.
 
-> **Migration Note:** `[process.repo.branch_protection]` is deprecated.
-> Use `[process.repo.ruleset]` instead. The old name will be removed in v2.0.0.
+> **Note:** As of v2.0.0, use `[process.repo.ruleset]` for branch protection configuration.
+> The deprecated `[process.repo.branch_protection]` name has been removed.
 
 ```toml
 [process.repo]
