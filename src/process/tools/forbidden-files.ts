@@ -47,7 +47,18 @@ export class ForbiddenFilesRunner extends BaseProcessToolRunner {
       })
     );
 
-    const violations = results.flat();
+    // Deduplicate violations by file path (fix #181)
+    // Keep only the first violation for each file
+    const allViolations = results.flat();
+    const seenFiles = new Set<string>();
+    const violations: Violation[] = [];
+    for (const violation of allViolations) {
+      if (violation.file && !seenFiles.has(violation.file)) {
+        seenFiles.add(violation.file);
+        violations.push(violation);
+      }
+    }
+
     return this.fromViolations(violations, elapsed());
   }
 
@@ -55,8 +66,10 @@ export class ForbiddenFilesRunner extends BaseProcessToolRunner {
    * Find files matching a forbidden pattern
    */
   private async findForbiddenFiles(projectRoot: string, pattern: string): Promise<string[]> {
-    // Use configured ignore patterns, or fall back to defaults
-    const ignorePatterns = this.config.ignore ?? DEFAULT_FORBIDDEN_FILES_IGNORE;
+    // Determine ignore patterns:
+    // - If ignore is explicitly set (including empty array), use it (fix #185)
+    // - If ignore is undefined (not set), use defaults
+    const ignorePatterns = this.getIgnorePatterns();
 
     try {
       const matches = await glob(pattern, {
@@ -69,6 +82,21 @@ export class ForbiddenFilesRunner extends BaseProcessToolRunner {
     } catch {
       return [];
     }
+  }
+
+  /**
+   * Get ignore patterns, respecting explicit empty array override
+   * - undefined: use defaults (node_modules, .git)
+   * - []: no ignores (scan everything)
+   * - [...]: use custom ignores
+   */
+  private getIgnorePatterns(): string[] {
+    // Check if ignore was explicitly set (including empty array)
+    // Object.hasOwn checks if the property exists, even if value is []
+    if (Object.hasOwn(this.config, "ignore") && this.config.ignore !== undefined) {
+      return this.config.ignore;
+    }
+    return DEFAULT_FORBIDDEN_FILES_IGNORE;
   }
 
   /**

@@ -215,6 +215,200 @@ describe("ForbiddenFilesRunner", () => {
         expect(result.violations).toHaveLength(0);
       });
     });
+
+    describe("custom ignore patterns (fix #180)", () => {
+      it("respects custom ignore patterns for directories", async () => {
+        // Create files in a directory that should be ignored
+        fs.mkdirSync(path.join(tempDir, "test-exceptions"), { recursive: true });
+        fs.writeFileSync(path.join(tempDir, "test-exceptions", ".env"), "content");
+        fs.writeFileSync(path.join(tempDir, "test-exceptions", "secrets.json"), "{}");
+        // Also create a file that should NOT be ignored
+        fs.writeFileSync(path.join(tempDir, ".env"), "root content");
+
+        runner.setConfig({
+          enabled: true,
+          files: ["**/.env", "**/secrets.json"],
+          ignore: ["**/test-exceptions/**"],
+        });
+
+        const result = await runner.run(tempDir);
+        expect(result.passed).toBe(false);
+        expect(result.violations).toHaveLength(1);
+        expect(result.violations[0].file).toBe(".env");
+      });
+
+      it("respects custom ignore patterns without ** prefix", async () => {
+        fs.mkdirSync(path.join(tempDir, "exceptions"), { recursive: true });
+        fs.writeFileSync(path.join(tempDir, "exceptions", ".env"), "content");
+        fs.writeFileSync(path.join(tempDir, ".env"), "root content");
+
+        runner.setConfig({
+          enabled: true,
+          files: ["**/.env"],
+          ignore: ["exceptions/**"],
+        });
+
+        const result = await runner.run(tempDir);
+        expect(result.passed).toBe(false);
+        expect(result.violations).toHaveLength(1);
+        expect(result.violations[0].file).toBe(".env");
+      });
+
+      it("respects multiple custom ignore patterns", async () => {
+        fs.mkdirSync(path.join(tempDir, "fixtures"), { recursive: true });
+        fs.mkdirSync(path.join(tempDir, "snapshots"), { recursive: true });
+        fs.writeFileSync(path.join(tempDir, "fixtures", ".env"), "content");
+        fs.writeFileSync(path.join(tempDir, "snapshots", ".env"), "content");
+        fs.writeFileSync(path.join(tempDir, ".env"), "root content");
+
+        runner.setConfig({
+          enabled: true,
+          files: ["**/.env"],
+          ignore: ["**/fixtures/**", "**/snapshots/**"],
+        });
+
+        const result = await runner.run(tempDir);
+        expect(result.passed).toBe(false);
+        expect(result.violations).toHaveLength(1);
+        expect(result.violations[0].file).toBe(".env");
+      });
+    });
+
+    describe("deduplication (fix #181)", () => {
+      it("reports each file only once even with overlapping patterns", async () => {
+        fs.writeFileSync(path.join(tempDir, ".env"), "SECRET=value");
+        runner.setConfig({
+          enabled: true,
+          files: [".env", "**/.env"], // Both patterns match the same file
+        });
+
+        const result = await runner.run(tempDir);
+        expect(result.passed).toBe(false);
+        expect(result.violations).toHaveLength(1); // Only one violation, not two
+        expect(result.violations[0].file).toBe(".env");
+      });
+
+      it("reports each file once even with multiple overlapping patterns", async () => {
+        fs.mkdirSync(path.join(tempDir, "src"), { recursive: true });
+        fs.writeFileSync(path.join(tempDir, "src", ".env"), "content");
+        runner.setConfig({
+          enabled: true,
+          files: ["**/.env", "src/.env", "**/src/.env"], // All match the same file
+        });
+
+        const result = await runner.run(tempDir);
+        expect(result.passed).toBe(false);
+        expect(result.violations).toHaveLength(1);
+        expect(result.violations[0].file).toBe("src/.env");
+      });
+
+      it("still reports different files correctly", async () => {
+        fs.writeFileSync(path.join(tempDir, ".env"), "root");
+        fs.mkdirSync(path.join(tempDir, "api"), { recursive: true });
+        fs.writeFileSync(path.join(tempDir, "api", ".env"), "api");
+        runner.setConfig({
+          enabled: true,
+          files: [".env", "**/.env"], // Overlapping patterns
+        });
+
+        const result = await runner.run(tempDir);
+        expect(result.passed).toBe(false);
+        expect(result.violations).toHaveLength(2); // Two different files
+        const files = result.violations.map((v) => v.file).sort();
+        expect(files).toEqual([".env", "api/.env"]);
+      });
+    });
+
+    describe("empty ignore array (fix #185)", () => {
+      it("scans node_modules when ignore is explicitly empty", async () => {
+        fs.mkdirSync(path.join(tempDir, "node_modules", "pkg"), { recursive: true });
+        fs.writeFileSync(path.join(tempDir, "node_modules", "pkg", ".env"), "content");
+        runner.setConfig({
+          enabled: true,
+          files: ["**/.env"],
+          ignore: [], // Explicitly empty - should disable default ignores
+        });
+
+        const result = await runner.run(tempDir);
+        expect(result.passed).toBe(false);
+        expect(result.violations).toHaveLength(1);
+        expect(result.violations[0].file).toBe("node_modules/pkg/.env");
+      });
+
+      it("scans .git when ignore is explicitly empty", async () => {
+        fs.mkdirSync(path.join(tempDir, ".git", "hooks"), { recursive: true });
+        fs.writeFileSync(path.join(tempDir, ".git", "hooks", ".env"), "content");
+        runner.setConfig({
+          enabled: true,
+          files: ["**/.env"],
+          ignore: [], // Explicitly empty
+        });
+
+        const result = await runner.run(tempDir);
+        expect(result.passed).toBe(false);
+        expect(result.violations).toHaveLength(1);
+        expect(result.violations[0].file).toBe(".git/hooks/.env");
+      });
+
+      it("uses defaults when ignore is not set", async () => {
+        fs.mkdirSync(path.join(tempDir, "node_modules", "pkg"), { recursive: true });
+        fs.writeFileSync(path.join(tempDir, "node_modules", "pkg", ".env"), "content");
+        runner.setConfig({
+          enabled: true,
+          files: ["**/.env"],
+          // ignore not set - should use defaults
+        });
+
+        const result = await runner.run(tempDir);
+        expect(result.passed).toBe(true); // node_modules should be ignored
+        expect(result.violations).toHaveLength(0);
+      });
+    });
+
+    describe("special glob characters (fix #184)", () => {
+      it("matches files with escaped brackets", async () => {
+        // Create a file with literal brackets in the name
+        fs.writeFileSync(path.join(tempDir, "file[1].txt"), "content");
+        runner.setConfig({
+          enabled: true,
+          // Use escape syntax to match literal brackets
+          files: ["file\\[1\\].txt"],
+        });
+
+        const result = await runner.run(tempDir);
+        expect(result.passed).toBe(false);
+        expect(result.violations).toHaveLength(1);
+        expect(result.violations[0].file).toBe("file[1].txt");
+      });
+
+      it("matches files using bracket character class syntax", async () => {
+        // Create a file with literal brackets in the name
+        fs.writeFileSync(path.join(tempDir, "file[1].txt"), "content");
+        runner.setConfig({
+          enabled: true,
+          // Use [[] to match literal [ character
+          files: ["file[[]1].txt"],
+        });
+
+        const result = await runner.run(tempDir);
+        expect(result.passed).toBe(false);
+        expect(result.violations).toHaveLength(1);
+        expect(result.violations[0].file).toBe("file[1].txt");
+      });
+
+      it("matches files with curly braces", async () => {
+        fs.writeFileSync(path.join(tempDir, "config{dev}.json"), "content");
+        runner.setConfig({
+          enabled: true,
+          // Use recursive globstar with extension matching
+          files: ["**/config\\{dev\\}.json"],
+        });
+
+        const result = await runner.run(tempDir);
+        expect(result.passed).toBe(false);
+        expect(result.violations).toHaveLength(1);
+      });
+    });
   });
 
   describe("audit", () => {

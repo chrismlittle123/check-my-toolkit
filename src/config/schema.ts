@@ -634,7 +634,7 @@ const forbiddenFilesConfigSchema = z
   .object({
     enabled: z.boolean().optional().default(false),
     files: z.array(globPatternSchema).optional(), // Glob patterns for files that must not exist (validated)
-    ignore: z.array(z.string()).optional(), // Glob patterns to ignore (overrides defaults if provided)
+    ignore: z.array(globPatternSchema).optional(), // Glob patterns to ignore (validated, overrides defaults if provided)
     message: z.string().optional(), // Custom message explaining why these files are forbidden
   })
   .strict()

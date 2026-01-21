@@ -374,6 +374,67 @@ describe("#162 - forbidden_files glob pattern validation", () => {
   });
 });
 
+describe("#186 - forbidden_files ignore array validation", () => {
+  it("accepts valid ignore patterns", () => {
+    const config = {
+      process: {
+        forbidden_files: {
+          enabled: true,
+          files: ["**/.env"],
+          ignore: ["**/node_modules/**", "**/.git/**", "test-fixtures/**"],
+        },
+      },
+    };
+    const result = configSchema.safeParse(config);
+    expect(result.success).toBe(true);
+  });
+
+  it("accepts empty ignore array (override defaults)", () => {
+    const config = {
+      process: {
+        forbidden_files: {
+          enabled: true,
+          files: ["**/.env"],
+          ignore: [], // Explicitly empty to override defaults
+        },
+      },
+    };
+    const result = configSchema.safeParse(config);
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects empty string in ignore patterns", () => {
+    const config = {
+      process: {
+        forbidden_files: {
+          enabled: true,
+          files: ["**/.env"],
+          ignore: ["**/valid/**", ""], // Empty string is invalid
+        },
+      },
+    };
+    const result = configSchema.safeParse(config);
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.errors[0].message).toContain("Invalid glob pattern");
+    }
+  });
+
+  it("validates ignore patterns with special glob syntax", () => {
+    const config = {
+      process: {
+        forbidden_files: {
+          enabled: true,
+          files: ["**/.env"],
+          ignore: ["**/test[0-9]/**", "**/*.{js,ts}"],
+        },
+      },
+    };
+    const result = configSchema.safeParse(config);
+    expect(result.success).toBe(true);
+  });
+});
+
 describe("#140 - cross-rule duplicate extension validation", () => {
   it("accepts rules with different extensions", () => {
     const config = {
