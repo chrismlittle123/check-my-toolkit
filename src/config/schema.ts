@@ -647,7 +647,6 @@ const docsConfigSchema = z
     max_total_kb: z.number().int().positive().optional(), // Max total size of docs/
     staleness_days: z.number().int().positive().optional().default(30), // Days before doc is considered stale
     stale_mappings: z.record(z.string(), z.string()).optional(), // Override doc-to-source mappings
-    require_docs_in_pr: z.boolean().optional().default(false), // Require docs when changing tracked files
     min_coverage: z.number().int().min(0).max(100).optional(), // Minimum API coverage percentage
     coverage_paths: z.array(z.string()).optional(), // Glob patterns for source files, e.g., ["src/**/*.ts"]
     exclude_patterns: z.array(z.string()).optional(), // Exclude from coverage, e.g., ["**/*.test.ts"]
@@ -693,29 +692,6 @@ const processSchema = z
   .optional();
 
 // =============================================================================
-// Infra Domain Configuration
-// =============================================================================
-
-/** Tagging configuration */
-const taggingConfigSchema = z
-  .object({
-    enabled: z.boolean().optional().default(false),
-    region: z.string().optional(),
-    required: z.array(z.string()).optional(),
-    values: z.record(z.string(), z.array(z.string())).optional(),
-  })
-  .strict()
-  .optional();
-
-/** Infra domain configuration */
-const infraSchema = z
-  .object({
-    tagging: taggingConfigSchema,
-  })
-  .strict()
-  .optional();
-
-// =============================================================================
 // Extends Configuration
 // =============================================================================
 
@@ -738,7 +714,6 @@ export const configSchema = z
     extends: extendsSchema,
     code: codeSchema,
     process: processSchema,
-    infra: infraSchema,
   })
   .strict();
 
@@ -828,14 +803,8 @@ export const defaultConfig: Config = {
       path: "docs/",
       enforcement: "warn",
       staleness_days: 30,
-      require_docs_in_pr: false,
     },
     forbidden_files: {
-      enabled: false,
-    },
-  },
-  infra: {
-    tagging: {
       enabled: false,
     },
   },

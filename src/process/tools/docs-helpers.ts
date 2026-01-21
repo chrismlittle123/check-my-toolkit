@@ -20,7 +20,6 @@ export interface DocsConfig {
   max_total_kb?: number;
   staleness_days?: number;
   stale_mappings?: Record<string, string>;
-  require_docs_in_pr?: boolean;
   min_coverage?: number;
   coverage_paths?: string[];
   exclude_patterns?: string[];

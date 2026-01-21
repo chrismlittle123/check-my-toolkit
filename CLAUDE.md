@@ -4,11 +4,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with th
 
 ## Project Overview
 
-check-my-toolkit is a unified CLI tool (`cm`) for project health checks. It implements three domains:
+check-my-toolkit is a unified CLI tool (`cm`) for project health checks. It implements two domains:
 
-- **CODE** - 14 tools for linting, formatting, type checking, security, and code quality
-- **PROCESS** - 12 workflow checks for git hooks, CI, PRs, branches, commits, documentation, and repository settings
-- **INFRA** - AWS resource tagging validation
+- **CODE** - 12 tools for linting, type checking, security, and code quality
+- **PROCESS** - 13 workflow checks for git hooks, CI, PRs, branches, commits, documentation, and repository settings
 
 ## Prerequisites
 
@@ -43,16 +42,13 @@ node dist/cli.js validate        # Validate check.toml
 src/
 ├── cli.ts              # Entry point, Commander.js setup
 ├── index.ts            # Library exports
-├── code/               # CODE domain (14 tools)
+├── code/               # CODE domain (12 tools)
 │   ├── index.ts        # Domain runner
 │   └── tools/          # Tool implementations (ESLint, Ruff, tsc, etc.)
-├── process/            # PROCESS domain (12 checks)
+├── process/            # PROCESS domain (13 checks)
 │   ├── index.ts        # Domain runner
 │   ├── tools/          # Check implementations (hooks, ci, branches, etc.)
 │   └── commands/       # Hook commands (check-branch, check-commit)
-├── infra/              # INFRA domain
-│   ├── index.ts        # Domain runner
-│   └── tools/          # AWS tagging runner
 ├── config/             # Configuration loading and validation
 │   ├── loader.ts       # Find and load check.toml
 │   ├── schema.ts       # Zod schemas
@@ -214,7 +210,6 @@ gh issue list --label epic
 # List epics for a specific domain
 gh issue list --label epic --label "domain:code"
 gh issue list --label epic --label "domain:process"
-gh issue list --label epic --label "domain:infra"
 
 # View epic details including linked issues
 gh issue view <epic-number>
@@ -232,7 +227,7 @@ Epics are parent issues that group related work. Format:
 gh issue create \
   --title "Epic: <Domain> - <Feature Name>" \
   --label epic \
-  --label "domain:<code|process|infra>" \
+  --label "domain:<code|process>" \
   --body "$(cat <<'EOF'
 ## Overview
 Brief description of what this epic covers.
@@ -287,7 +282,7 @@ EOF
 # Create a sub-issue and link to epic
 gh issue create \
   --title "<descriptive title>" \
-  --label "domain:<code|process|infra>" \
+  --label "domain:<code|process>" \
   --body "$(cat <<'EOF'
 ## Description
 What this issue accomplishes.
@@ -330,7 +325,6 @@ gh issue edit <issue-number> --add-project "check-my-toolkit"
 | `epic`           | Parent issue grouping work |
 | `domain:code`    | CODE domain work           |
 | `domain:process` | PROCESS domain work        |
-| `domain:infra`   | INFRA domain work          |
 | `bug`            | Bug fix                    |
 | `enhancement`    | New feature or improvement |
 | `documentation`  | Documentation only         |

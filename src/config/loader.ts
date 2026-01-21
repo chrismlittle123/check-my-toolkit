@@ -251,7 +251,6 @@ const defaultDocs: DocsConfig = {
   path: "docs/",
   enforcement: "warn",
   staleness_days: 30,
-  require_docs_in_pr: false,
 };
 const defaultForbiddenFiles: ForbiddenFilesConfig = { enabled: false };
 
@@ -382,26 +381,6 @@ function mergeProcess(c: Config, dc: Config): ProcessConfig {
   };
 }
 
-type InfraConfig = NonNullable<Config["infra"]>;
-type TaggingConfig = NonNullable<InfraConfig["tagging"]>;
-
-const defaultTagging: TaggingConfig = { enabled: false };
-
-function mergeInfraTagging(
-  ci: InfraConfig | undefined,
-  dci: InfraConfig | undefined
-): TaggingConfig {
-  const dc = dci?.tagging;
-  const c = ci?.tagging;
-  return { ...defaultTagging, ...dc, ...c };
-}
-
-function mergeInfra(c: Config, dc: Config): InfraConfig {
-  return {
-    tagging: mergeInfraTagging(c.infra, dc.infra),
-  };
-}
-
 /**
  * Deep merge config with defaults
  */
@@ -409,7 +388,6 @@ function mergeWithDefaults(config: Config): Config {
   return {
     code: mergeCode(config, defaultConfig),
     process: mergeProcess(config, defaultConfig),
-    infra: mergeInfra(config, defaultConfig),
   };
 }
 

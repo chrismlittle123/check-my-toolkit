@@ -1,14 +1,13 @@
-# Features - check-my-toolkit v1.7.0
+# Features - check-my-toolkit v1.12.0
 
-Unified project health checks for code quality, process compliance, and infrastructure validation.
+Unified project health checks for code quality and process compliance.
 
 ## Overview
 
-check-my-toolkit (`cm`) provides a single CLI to run multiple code quality, process, and infrastructure tools with unified configuration via `check.toml`. Three domains are fully implemented:
+check-my-toolkit (`cm`) provides a single CLI to run multiple code quality and process tools with unified configuration via `check.toml`. Two domains are implemented:
 
 - **CODE** - 12 integrated tools for linting, type checking, security, and more
 - **PROCESS** - 13 workflow checks for git hooks, CI, PRs, branches, commits, documentation, and repository settings
-- **INFRA** - AWS resource tagging validation
 
 ---
 
@@ -18,7 +17,6 @@ check-my-toolkit (`cm`) provides a single CLI to run multiple code quality, proc
 | ------- | -------------------------------------------------------------------------------------------------- | ------------- |
 | CODE    | ESLint, Ruff, tsc, ty, Knip, Vulture, Gitleaks, pnpm-audit, pip-audit                              | `[code.*]`    |
 | PROCESS | Hooks, CI, Branches, Commits, Changesets, PR, Tickets, Coverage, Repo, Backups, CODEOWNERS, Docs, Forbidden Files | `[process.*]` |
-| INFRA   | AWS Tagging                                                                                                       | `[infra.*]`   |
 
 ---
 
@@ -30,13 +28,13 @@ Run all domains at once:
 
 | Command    | Description                                       |
 | ---------- | ------------------------------------------------- |
-| `cm check` | Run all checks (code + process + infra)           |
-| `cm audit` | Verify all configs exist (code + process + infra) |
+| `cm check` | Run all checks (code + process)                   |
+| `cm audit` | Verify all configs exist (code + process)         |
 
 These are equivalent to running each domain command separately:
 
-- `cm check` = `cm code check` + `cm process check` + `cm infra check`
-- `cm audit` = `cm code audit` + `cm process audit` + `cm infra audit`
+- `cm check` = `cm code check` + `cm process check`
+- `cm audit` = `cm code audit` + `cm process audit`
 
 ### Domain Commands
 
@@ -52,8 +50,8 @@ Run checks for a specific domain:
 | `cm process sync --apply`        | Sync branch protection to GitHub              |
 | `cm process check-branch`        | Validate branch name (for pre-push hook)      |
 | `cm process check-commit <file>` | Validate commit message (for commit-msg hook) |
-| `cm infra check`                 | Run infrastructure checks                     |
-| `cm infra audit`                 | Verify infrastructure configs                 |
+| `cm process scan --repo`         | Validate remote repo settings via GitHub API  |
+| `cm mcp`                         | Start MCP server for AI tool integration      |
 
 ### Utility Commands
 
@@ -473,12 +471,16 @@ Enforce branch naming conventions.
 enabled = true
 pattern = "^(feature|fix|hotfix|docs)/v[0-9]+\\.[0-9]+\\.[0-9]+/.+"
 exclude = ["main", "master", "develop"]
+require_issue = true                    # Require issue number in branch name
+issue_pattern = "/(\\d+)/"              # Regex to extract issue number
 ```
 
-| Property  | Value                                                     |
-| --------- | --------------------------------------------------------- |
-| `pattern` | Regex pattern for valid branch names                      |
-| `exclude` | Branch names to skip validation (e.g., `main`, `develop`) |
+| Property        | Value                                                     |
+| --------------- | --------------------------------------------------------- |
+| `pattern`       | Regex pattern for valid branch names                      |
+| `exclude`       | Branch names to skip validation (e.g., `main`, `develop`) |
+| `require_issue` | Require issue number in branch name (default: false)      |
+| `issue_pattern` | Regex to extract issue number from branch name            |
 
 **Tip:** Use `cm process check-branch` in pre-push hooks for local enforcement.
 
@@ -493,12 +495,18 @@ Enforce PR size limits in CI.
 enabled = true
 max_files = 20
 max_lines = 500
+require_issue = true                               # Require issue reference in PR
+issue_keywords = ["Closes", "Fixes", "Resolves"]   # Keywords that link issues
+exclude = ["*-lock.json", "**/*.snap"]             # Exclude from size calculation
 ```
 
-| Property    | Value                                               |
-| ----------- | --------------------------------------------------- |
-| `max_files` | Maximum number of files changed in a PR             |
-| `max_lines` | Maximum total lines changed (additions + deletions) |
+| Property         | Value                                                          |
+| ---------------- | -------------------------------------------------------------- |
+| `max_files`      | Maximum number of files changed in a PR                        |
+| `max_lines`      | Maximum total lines changed (additions + deletions)            |
+| `require_issue`  | Require issue reference in PR description (default: false)     |
+| `issue_keywords` | Keywords that link to issues (e.g., `Closes`, `Fixes`)         |
+| `exclude`        | Glob patterns to exclude from size calculation (e.g., locks)   |
 
 **Note:** Reads PR data from `GITHUB_EVENT_PATH` environment variable. Skips gracefully when not in a PR context.
 
@@ -902,28 +910,6 @@ cm process check-branch --quiet
 
 ---
 
-# INFRA Domain
-
-Infrastructure validation.
-
-## AWS Tagging (`[infra.tagging]`)
-
-Verify AWS resources have required tags.
-
-```toml
-[infra.tagging]
-enabled = true
-region = "us-east-1"
-required = ["Environment", "Owner", "CostCenter"]
-
-[infra.tagging.values]
-Environment = ["dev", "stag", "prod"]
-```
-
-**AWS Permissions:** `tag:GetResources`
-
----
-
 # Utilities
 
 ## Project Detection (`cm projects detect`)
@@ -1146,18 +1132,6 @@ allowlist = ["README.md", "CLAUDE.md"]
 enabled = true
 files = ["**/.env", "**/.env.*", "**/credentials.json"]
 message = "Use AWS Secrets Manager for secrets"
-
-# =============================================================================
-# INFRA DOMAIN
-# =============================================================================
-
-[infra.tagging]
-enabled = true
-region = "us-east-1"
-required = ["Environment", "Owner", "CostCenter"]
-
-[infra.tagging.values]
-Environment = ["dev", "stag", "prod"]
 ```
 
 ---
@@ -1199,12 +1173,6 @@ Environment = ["dev", "stag", "prod"]
 | Docs            | Documentation governance | `[process.docs]`            |
 | Forbidden Files | Anti-pattern detection   | `[process.forbidden_files]` |
 
-## INFRA Domain (1 check)
-
-| Check   | Purpose           | Config            |
-| ------- | ----------------- | ----------------- |
-| Tagging | AWS resource tags | `[infra.tagging]` |
-
 ---
 
 # Environment Variables
@@ -1217,9 +1185,9 @@ Some features require environment variables to be set:
 | `CM_REGISTRY_TOKEN`     | Registry extends                              | Alternative token for private registries (takes precedence over GITHUB_TOKEN) |
 | `SSH_AUTH_SOCK`         | Registry extends                              | SSH agent socket for SSH-based registry auth                                  |
 | `GITHUB_EVENT_PATH`     | `process.pr`                                  | PR context in GitHub Actions                                                  |
-| `AWS_REGION`            | `infra.tagging`, `process.backups`            | AWS region (can also use config)                                              |
-| `AWS_ACCESS_KEY_ID`     | `infra.tagging`, `process.backups`            | AWS credentials                                                               |
-| `AWS_SECRET_ACCESS_KEY` | `infra.tagging`, `process.backups`            | AWS credentials                                                               |
+| `AWS_REGION`            | `process.backups`                             | AWS region (can also use config)                                              |
+| `AWS_ACCESS_KEY_ID`     | `process.backups`                             | AWS credentials                                                               |
+| `AWS_SECRET_ACCESS_KEY` | `process.backups`                             | AWS credentials                                                               |
 
 **GitHub Actions example:**
 
@@ -1293,6 +1261,30 @@ rulesets = ["typescript-production"]  # Must match tier
 
 ---
 
+# MCP Server (`cm mcp`)
+
+Model Context Protocol server for AI tool integration.
+
+```bash
+cm mcp  # Start MCP server (stdio transport)
+```
+
+**Available Tools:**
+
+| Tool             | Description                                        |
+| ---------------- | -------------------------------------------------- |
+| `get_standards`  | Get composed coding standards matching a context   |
+| `list_guidelines`| List available guidelines with optional filter     |
+| `get_guideline`  | Get a single guideline by ID                       |
+| `get_ruleset`    | Get a tool configuration ruleset by ID             |
+
+**Features:**
+- Fetches standards from `palindrom-ai/standards` repository
+- Smart keyword matching against guideline tags
+- Returns composed coding standards for AI assistants
+
+---
+
 # Architecture
 
 ```
@@ -1300,15 +1292,14 @@ src/
 ├── cli.ts              # Commander.js CLI entry point
 ├── code/
 │   ├── index.ts        # CODE domain runner
-│   └── tools/          # 14 tool integrations
+│   └── tools/          # 12 tool integrations
 ├── process/
 │   ├── index.ts        # PROCESS domain runner
-│   ├── tools/          # 11 check implementations
+│   ├── tools/          # 13 check implementations
 │   ├── commands/       # Hook-specific commands (check-branch, check-commit)
 │   └── sync/           # Branch protection sync
-├── infra/
-│   ├── index.ts        # INFRA domain runner
-│   └── tools/          # Tagging runner
+├── mcp/
+│   └── index.ts        # MCP server implementation
 ├── config/
 │   ├── loader.ts       # Config loading and merging
 │   ├── schema.ts       # Zod schemas

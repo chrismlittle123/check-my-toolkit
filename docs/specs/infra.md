@@ -2,15 +2,26 @@
 
 Verify declared AWS infrastructure exists.
 
+> **IMPORTANT: drift-toolkit Only**
+>
+> The INFRA domain is designed **exclusively for use with drift-toolkit**, NOT for CI/CD pipelines or development workflows.
+>
+> **Why?**
+> - Infrastructure scans are slow (minutes, not seconds)
+> - AWS API rate limits make frequent scanning impractical
+> - Resource existence doesn't change on every commit
+>
+> **Intended usage:** Once-daily periodic checks via drift-toolkit scheduled jobs, not on every PR or push.
+
 ## Overview
 
 The INFRA domain validates that resources declared by your infrastructure code actually exist in AWS. It is **IaC-agnostic** - works with CDK, SST, Terraform, Pulumi, CloudFormation, or any tool that can output a manifest of resource ARNs.
 
 ```
-┌─────────────────┐         ┌─────────────────┐         ┌─────────────┐
-│   infra/        │ ──────▶ │  manifest.json  │ ──────▶ │  cm infra   │
-│   (any IaC)     │ outputs │  (ARN list)     │ checks  │  scan       │
-└─────────────────┘         └─────────────────┘         └─────────────┘
+┌─────────────────┐         ┌─────────────────┐         ┌─────────────────┐
+│   infra/        │ ──────▶ │  manifest.json  │ ──────▶ │  cm infra scan  │
+│   (any IaC)     │ outputs │  (ARN list)     │ checks  │                 │
+└─────────────────┘         └─────────────────┘         └─────────────────┘
                                                               │
                                                               ▼
                                                         ┌─────────────┐
@@ -213,6 +224,8 @@ src/infra/
 
 ## Integration with drift-toolkit
 
+> **This is the primary use case.** The INFRA domain exists to be called by drift-toolkit on a scheduled basis (e.g., daily), not in CI/CD pipelines.
+
 drift-toolkit can call check-my-toolkit programmatically:
 
 ```typescript
@@ -227,16 +240,27 @@ if (!result.passed) {
 }
 ```
 
+**Example drift-toolkit schedule:**
+
+```yaml
+# drift-toolkit config
+schedules:
+  - name: infra-existence
+    cron: "0 6 * * *" # Daily at 6 AM
+    check: cm infra scan
+    on_failure: create_issue
+```
+
 ---
 
 ## What This Does NOT Do
 
 | Feature                   | Why Not                                        |
 | ------------------------- | ---------------------------------------------- |
+| CI/CD integration         | Too slow for PR workflows; use drift-toolkit   |
 | Attribute drift detection | Use CloudFormation drift detection for this    |
 | Orphaned resource finding | Different problem, requires account-wide scan  |
 | IaC parsing               | Manifest contract is simpler and IaC-agnostic  |
-| Tagging validation        | Separate concern, could be a CODE domain check |
 | Multi-account management  | ARNs contain account IDs; use AWS_PROFILE      |
 
 ---
@@ -258,19 +282,21 @@ if (!result.passed) {
    # Output: infra-manifest.json with list of ARNs
    ```
 
-3. **Verify resources exist:**
+3. **Verify resources exist** (via drift-toolkit scheduled job):
 
    ```bash
    cm infra scan
    ```
 
-4. **CI/CD integration:**
+4. **drift-toolkit integration** (NOT CI/CD):
 
    ```yaml
-   # .github/workflows/deploy.yml
-   - name: Deploy
-     run: cd infra && sst deploy
-
-   - name: Verify
-     run: cm infra scan
+   # drift-toolkit scheduled job, NOT GitHub Actions CI
+   schedules:
+     - name: verify-infrastructure
+       cron: "0 8 * * *" # Once daily
+       command: cm infra scan
+       on_failure:
+         - create_github_issue
+         - notify_slack
    ```
