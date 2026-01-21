@@ -521,10 +521,12 @@ const bypassActorSchema = z
   })
   .strict();
 
-/** Branch protection settings configuration (uses GitHub Rulesets API) */
-const branchProtectionConfigSchema = z
+/** Ruleset configuration (uses GitHub Rulesets API) */
+const rulesetConfigSchema = z
   .object({
+    name: z.string().optional().default("Branch Protection"), // Ruleset name in GitHub
     branch: z.string().optional().default("main"), // Branch to check (default: main)
+    enforcement: z.enum(["active", "evaluate", "disabled"]).optional().default("active"), // Ruleset enforcement
     required_reviews: z.number().int().min(0).optional(), // Minimum required reviews
     dismiss_stale_reviews: z.boolean().optional(), // Dismiss stale reviews on new commits
     require_code_owner_reviews: z.boolean().optional(), // Require CODEOWNER review
@@ -536,6 +538,9 @@ const branchProtectionConfigSchema = z
   })
   .strict()
   .optional();
+
+/** @deprecated Use rulesetConfigSchema instead */
+const branchProtectionConfigSchema = rulesetConfigSchema;
 
 /** Tag protection ruleset configuration */
 const tagProtectionConfigSchema = z
@@ -553,7 +558,8 @@ const repoConfigSchema = z
     enabled: z.boolean().optional().default(false),
     require_branch_protection: z.boolean().optional().default(false), // Check branch protection exists
     require_codeowners: z.boolean().optional().default(false), // Check CODEOWNERS file exists
-    branch_protection: branchProtectionConfigSchema, // Detailed branch protection requirements
+    ruleset: rulesetConfigSchema, // GitHub Ruleset configuration (preferred)
+    branch_protection: branchProtectionConfigSchema, // @deprecated - use 'ruleset' instead
     tag_protection: tagProtectionConfigSchema, // Tag protection via GitHub rulesets
   })
   .strict()

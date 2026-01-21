@@ -176,7 +176,7 @@ enabled = true
 require_branch_protection = true
 require_codeowners = true
 
-[process.repo.branch_protection]
+[process.repo.ruleset]
 branch = "main"
 required_reviews = 1
 

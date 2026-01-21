@@ -428,6 +428,78 @@ describe("RepoRunner", () => {
       });
     });
 
+    describe("ruleset config (new name)", () => {
+      beforeEach(() => {
+        // gh --version succeeds
+        mockedExeca.mockResolvedValueOnce({ stdout: "gh version 2.0.0" } as never);
+        // gh repo view succeeds
+        mockedExeca.mockResolvedValueOnce({
+          stdout: JSON.stringify({ owner: { login: "testorg" }, name: "testrepo" }),
+        } as never);
+      });
+
+      it("accepts ruleset config instead of branch_protection", async () => {
+        mockedExeca.mockResolvedValueOnce({
+          stdout: JSON.stringify([
+            {
+              id: 1,
+              name: "Branch Protection",
+              target: "branch",
+              enforcement: "active",
+              conditions: { ref_name: { include: ["refs/heads/main"] } },
+              bypass_actors: [],
+              rules: [
+                {
+                  type: "pull_request",
+                  parameters: { required_approving_review_count: 2 },
+                },
+              ],
+            },
+          ]),
+        } as never);
+        runner.setConfig({
+          enabled: true,
+          ruleset: { required_reviews: 2 },
+        });
+
+        const result = await runner.run(tempDir);
+        expect(result.passed).toBe(true);
+        expect(result.violations).toHaveLength(0);
+      });
+
+      it("prefers ruleset over branch_protection when both are set", async () => {
+        mockedExeca.mockResolvedValueOnce({
+          stdout: JSON.stringify([
+            {
+              id: 1,
+              name: "Branch Protection",
+              target: "branch",
+              enforcement: "active",
+              conditions: { ref_name: { include: ["refs/heads/main"] } },
+              bypass_actors: [],
+              rules: [
+                {
+                  type: "pull_request",
+                  parameters: { required_approving_review_count: 2 },
+                },
+              ],
+            },
+          ]),
+        } as never);
+        // ruleset requires 2, branch_protection requires 3
+        // Should use ruleset (2) and pass
+        runner.setConfig({
+          enabled: true,
+          ruleset: { required_reviews: 2 },
+          branch_protection: { required_reviews: 3 },
+        });
+
+        const result = await runner.run(tempDir);
+        expect(result.passed).toBe(true);
+        expect(result.violations).toHaveLength(0);
+      });
+    });
+
     describe("tag protection check", () => {
       beforeEach(() => {
         // gh --version succeeds

@@ -11,9 +11,11 @@ interface BypassActorConfig {
   bypass_mode?: "always" | "pull_request";
 }
 
-/** Branch protection configuration */
-interface BranchProtectionConfig {
+/** Ruleset configuration (uses GitHub Rulesets API) */
+interface RulesetConfig {
+  name?: string;
   branch?: string;
+  enforcement?: "active" | "evaluate" | "disabled";
   required_reviews?: number;
   dismiss_stale_reviews?: boolean;
   require_code_owner_reviews?: boolean;
@@ -23,6 +25,9 @@ interface BranchProtectionConfig {
   enforce_admins?: boolean;
   bypass_actors?: BypassActorConfig[];
 }
+
+/** @deprecated Use RulesetConfig instead */
+type BranchProtectionConfig = RulesetConfig;
 
 /** Tag protection configuration */
 interface TagProtectionConfig {
@@ -36,6 +41,8 @@ interface RepoConfig {
   enabled?: boolean;
   require_branch_protection?: boolean;
   require_codeowners?: boolean;
+  ruleset?: RulesetConfig;
+  /** @deprecated Use ruleset instead */
   branch_protection?: BranchProtectionConfig;
   tag_protection?: TagProtectionConfig;
 }
@@ -109,7 +116,7 @@ export class RepoRunner extends BaseProcessToolRunner {
     if (this.config.require_codeowners) {
       violations.push(...this.checkCodeowners(projectRoot));
     }
-    if (this.config.require_branch_protection || this.config.branch_protection) {
+    if (this.config.require_branch_protection || this.config.ruleset || this.config.branch_protection) {
       violations.push(...(await this.checkBranchProtection(repoInfo)));
     }
     if (this.config.tag_protection?.patterns?.length) {
@@ -160,7 +167,9 @@ export class RepoRunner extends BaseProcessToolRunner {
     owner: string;
     repo: string;
   }): Promise<Violation[]> {
-    const branch = this.config.branch_protection?.branch ?? "main";
+    // Use ruleset config, fall back to deprecated branch_protection
+    const rulesetConfig = this.config.ruleset ?? this.config.branch_protection;
+    const branch = rulesetConfig?.branch ?? "main";
 
     try {
       const result = await execa("gh", [
@@ -246,7 +255,8 @@ export class RepoRunner extends BaseProcessToolRunner {
   }
 
   private validateBranchRulesetSettings(ruleset: RulesetResponse, branch: string): Violation[] {
-    const bpConfig = this.config.branch_protection;
+    // Use ruleset config, fall back to deprecated branch_protection
+    const bpConfig = this.config.ruleset ?? this.config.branch_protection;
     if (!bpConfig) {
       return [];
     }

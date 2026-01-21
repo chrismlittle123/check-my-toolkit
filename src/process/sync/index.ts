@@ -32,6 +32,7 @@ export async function runDiff(options: SyncOptions): Promise<void> {
 }
 
 /** Run sync command - apply changes (or preview if --apply not set) */
+// eslint-disable-next-line max-statements
 export async function runSync(options: SyncOptions): Promise<void> {
   try {
     const diffResult = await getDiffResult(options);
@@ -39,6 +40,14 @@ export async function runSync(options: SyncOptions): Promise<void> {
     if (!diffResult.hasChanges) {
       outputNoChanges(diffResult, options.format);
       process.exit(0);
+    }
+
+    // Validate actors if requested
+    if (options.validateActors) {
+      const validationPassed = await validateActorsBeforeApply(options);
+      if (!validationPassed) {
+        process.exit(1);
+      }
     }
 
     if (!options.apply) {
@@ -59,9 +68,36 @@ async function applyChanges(options: SyncOptions, diffResult: SyncDiffResult): P
   const { config } = loadConfig(options.config);
   const projectRoot = getProjectRoot(loadConfig(options.config).configPath);
   const repoInfo = await getRepoInfo(projectRoot);
-  const desired = config.process?.repo?.branch_protection ?? {};
+  // Use ruleset config, fall back to deprecated branch_protection
+  const desired = config.process?.repo?.ruleset ?? config.process?.repo?.branch_protection ?? {};
 
   return applyBranchProtection(repoInfo, diffResult.branch, desired, diffResult);
+}
+
+/** Validate bypass actors before applying changes */
+async function validateActorsBeforeApply(options: SyncOptions): Promise<boolean> {
+  const { validateBypassActors, formatValidationResult } = await import("./validator.js");
+  const { config } = loadConfig(options.config);
+  const projectRoot = getProjectRoot(loadConfig(options.config).configPath);
+  const repoInfo = await getRepoInfo(projectRoot);
+
+  // Use ruleset config, fall back to deprecated branch_protection
+  const rulesetConfig = config.process?.repo?.ruleset ?? config.process?.repo?.branch_protection;
+  const actors = rulesetConfig?.bypass_actors ?? [];
+
+  if (actors.length === 0) {
+    return true;
+  }
+
+  const result = await validateBypassActors(repoInfo, actors);
+
+  if (options.format === "json") {
+    process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+  } else {
+    process.stdout.write(`${formatValidationResult(result)}\n`);
+  }
+
+  return result.valid;
 }
 
 /** Get the diff result (shared by diff and sync) */
@@ -75,11 +111,11 @@ async function getDiffResult(options: SyncOptions): Promise<SyncDiffResult> {
   const repoInfo = await getRepoInfo(projectRoot);
 
   const repoConfig = config.process?.repo;
-  if (!repoConfig?.branch_protection) {
-    throw new Error("No [process.repo.branch_protection] configured in check.toml");
+  // Use ruleset config, fall back to deprecated branch_protection
+  const desired = repoConfig?.ruleset ?? repoConfig?.branch_protection;
+  if (!desired) {
+    throw new Error("No [process.repo.ruleset] configured in check.toml");
   }
-
-  const desired = repoConfig.branch_protection;
   const branch = getBranch(desired.branch);
   const current = await fetchBranchProtection(repoInfo, branch);
 

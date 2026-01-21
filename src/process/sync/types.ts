@@ -60,6 +60,7 @@ export interface SyncOptions {
   config?: string;
   format: "text" | "json";
   apply?: boolean;
+  validateActors?: boolean;
 }
 
 /** Repository info */

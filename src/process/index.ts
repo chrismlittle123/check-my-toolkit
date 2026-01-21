@@ -183,7 +183,8 @@ function createRepoRunner(config: Config): RepoRunner {
       enabled: repoConfig.enabled,
       require_branch_protection: repoConfig.require_branch_protection,
       require_codeowners: repoConfig.require_codeowners,
-      branch_protection: repoConfig.branch_protection,
+      ruleset: repoConfig.ruleset,
+      branch_protection: repoConfig.branch_protection, // deprecated, kept for compatibility
       tag_protection: repoConfig.tag_protection,
     });
   }

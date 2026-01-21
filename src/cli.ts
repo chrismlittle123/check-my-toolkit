@@ -377,15 +377,17 @@ processCommand
   .description("Synchronize repository settings to match config")
   .option("-c, --config <path>", "Path to check.toml config file")
   .option("--apply", "Actually apply changes (required for safety)")
+  .option("--validate-actors", "Validate bypass actor IDs against GitHub API before applying")
   .addOption(
     new Option("-f, --format <format>", "Output format").choices(["text", "json"]).default("text")
   )
-  .action(async (options: { config?: string; format: string; apply?: boolean }) => {
+  .action(async (options: { config?: string; format: string; apply?: boolean; validateActors?: boolean }) => {
     const { runSync } = await import("./process/sync/index.js");
     await runSync({
       config: options.config,
       format: options.format as "text" | "json",
       apply: options.apply,
+      validateActors: options.validateActors,
     });
   });
 
@@ -418,6 +420,70 @@ processCommand
       format: options.format as "text" | "json",
       apply: options.apply,
     });
+  });
+
+// cm process list-rules
+processCommand
+  .command("list-rules")
+  .description("List all branch protection rules (classic and rulesets)")
+  .addOption(
+    new Option("-f, --format <format>", "Output format").choices(["text", "json"]).default("text")
+  )
+  .option("-b, --branches <branches>", "Comma-separated list of branches to check", "main,master,develop")
+  .action(async (options: { format: string; branches: string }) => {
+    const {
+      listAllProtection,
+      formatProtectionPlan,
+    } = await import("./process/sync/cleanup.js");
+    const { getRepoInfo, isGhAvailable } = await import("./process/sync/fetcher.js");
+
+    if (!(await isGhAvailable())) {
+      console.error("GitHub CLI (gh) is not available");
+      process.exit(1);
+    }
+
+    try {
+      const repoInfo = await getRepoInfo(process.cwd());
+      const branches = options.branches.split(",").map((b) => b.trim());
+      const plan = await listAllProtection(repoInfo, branches);
+
+      if (options.format === "json") {
+        process.stdout.write(`${JSON.stringify(plan, null, 2)}\n`);
+      } else {
+        process.stdout.write(`${formatProtectionPlan(plan)}\n`);
+      }
+    } catch (error) {
+      console.error(error instanceof Error ? error.message : String(error));
+      process.exit(1);
+    }
+  });
+
+// cm process cleanup-rules
+processCommand
+  .command("cleanup-rules")
+  .description("Remove orphaned classic branch protection rules")
+  .option("--apply", "Actually remove rules (required for safety)")
+  .option("-b, --branches <branches>", "Comma-separated list of branches to check", "main,master,develop")
+  .addOption(
+    new Option("-f, --format <format>", "Output format").choices(["text", "json"]).default("text")
+  )
+  .action(async (options: { apply?: boolean; branches: string; format: string }) => {
+    const { runCleanupRules } = await import("./process/sync/cleanup.js");
+    const { getRepoInfo, isGhAvailable } = await import("./process/sync/fetcher.js");
+
+    if (!(await isGhAvailable())) {
+      console.error("GitHub CLI (gh) is not available");
+      process.exit(1);
+    }
+
+    try {
+      const repoInfo = await getRepoInfo(process.cwd());
+      const branches = options.branches.split(",").map((b) => b.trim());
+      await runCleanupRules(repoInfo, branches, options.apply ?? false);
+    } catch (error) {
+      console.error(error instanceof Error ? error.message : String(error));
+      process.exit(1);
+    }
   });
 
 // cm process check-branch
