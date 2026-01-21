@@ -27,6 +27,16 @@ interface GitleaksFinding {
   Fingerprint: string;
 }
 
+/** Scan mode options */
+type ScanMode = "branch" | "files" | "staged" | "full";
+
+/** Gitleaks configuration */
+interface GitleaksConfig {
+  enabled?: boolean;
+  scan_mode?: ScanMode;
+  base_branch?: string;
+}
+
 /**
  * Gitleaks tool runner for detecting hardcoded secrets
  */
@@ -35,6 +45,15 @@ export class GitleaksRunner extends BaseToolRunner {
   readonly rule = "code.security";
   readonly toolId = "secrets";
   readonly configFiles = [".gitleaks.toml", "gitleaks.toml"];
+
+  private config: GitleaksConfig = {
+    scan_mode: "branch",
+    base_branch: "main",
+  };
+
+  setConfig(config: GitleaksConfig): void {
+    this.config = { ...this.config, ...config };
+  }
 
   /**
    * Find gitleaks config file if it exists
@@ -50,30 +69,49 @@ export class GitleaksRunner extends BaseToolRunner {
     return null;
   }
 
+  /**
+   * Build gitleaks arguments based on scan mode
+   */
+  private buildArgs(projectRoot: string): string[] {
+    const scanMode = this.config.scan_mode ?? "branch";
+    const baseBranch = this.config.base_branch ?? "main";
+
+    const args = ["detect", "--report-format", "json", "--report-path", "/dev/stdout"];
+
+    switch (scanMode) {
+      case "branch":
+        // Scan only commits on current branch since diverging from base branch
+        args.push("--log-opts", `${baseBranch}..HEAD`);
+        break;
+      case "files":
+        // Scan filesystem only (no git history)
+        args.push("--source", ".", "--no-git");
+        break;
+      case "staged":
+        // Scan only staged files
+        args.push("--staged");
+        break;
+      case "full":
+        // Scan entire git history (no special flags needed)
+        break;
+    }
+
+    // Use custom config if it exists - use absolute path for reliability
+    const configPath = this.findGitleaksConfig(projectRoot);
+    if (configPath) {
+      const absoluteConfigPath = path.join(projectRoot, configPath);
+      args.push("--config", absoluteConfigPath);
+    }
+
+    return args;
+  }
+
   async run(projectRoot: string): Promise<CheckResult> {
     const startTime = Date.now();
     const elapsed = (): number => Date.now() - startTime;
 
     try {
-      // Use "." as source since cwd is already set to projectRoot
-      const args = [
-        "detect",
-        "--source",
-        ".",
-        "--report-format",
-        "json",
-        "--report-path",
-        "/dev/stdout",
-        "--no-git",
-      ];
-
-      // Use custom config if it exists - use absolute path for reliability
-      const configPath = this.findGitleaksConfig(projectRoot);
-      if (configPath) {
-        // Use absolute path to avoid working directory issues
-        const absoluteConfigPath = path.join(projectRoot, configPath);
-        args.push("--config", absoluteConfigPath);
-      }
+      const args = this.buildArgs(projectRoot);
 
       const result = await execa("gitleaks", args, {
         cwd: projectRoot,

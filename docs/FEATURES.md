@@ -265,7 +265,23 @@ Hardcoded secrets detection.
 ```toml
 [code.security.secrets]
 enabled = true
+scan_mode = "branch"  # Options: branch, files, staged, full (default: branch)
+base_branch = "main"  # Base branch for branch mode comparison (default: main)
 ```
+
+| Property      | Value                                                               |
+| ------------- | ------------------------------------------------------------------- |
+| `scan_mode`   | Scan scope: `branch`, `files`, `staged`, `full` (default: `branch`) |
+| `base_branch` | Base branch for comparison in branch mode (default: `main`)         |
+
+**Scan Modes:**
+
+| Mode     | Description                                           |
+| -------- | ----------------------------------------------------- |
+| `branch` | Scan commits on current branch since base branch      |
+| `files`  | Scan filesystem only (no git history)                 |
+| `staged` | Scan only staged files (useful for pre-commit hooks)  |
+| `full`   | Scan entire git history                               |
 
 **Detects by default:** Private keys (PEM format), API keys, tokens (GitHub, AWS, etc.), high-entropy secrets.
 
