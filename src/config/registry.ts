@@ -459,7 +459,8 @@ function mergeRepoConfig(
     enabled: override.enabled,
     require_branch_protection: override.require_branch_protection,
     require_codeowners: override.require_codeowners,
-    branch_protection: override.branch_protection ?? base?.branch_protection,
+    ruleset: override.ruleset ?? base?.ruleset,
+    tag_protection: override.tag_protection ?? base?.tag_protection,
   };
 }
 

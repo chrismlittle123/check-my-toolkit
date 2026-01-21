@@ -68,8 +68,7 @@ async function applyChanges(options: SyncOptions, diffResult: SyncDiffResult): P
   const { config } = loadConfig(options.config);
   const projectRoot = getProjectRoot(loadConfig(options.config).configPath);
   const repoInfo = await getRepoInfo(projectRoot);
-  // Use ruleset config, fall back to deprecated branch_protection
-  const desired = config.process?.repo?.ruleset ?? config.process?.repo?.branch_protection ?? {};
+  const desired = config.process?.repo?.ruleset ?? {};
 
   return applyBranchProtection(repoInfo, diffResult.branch, desired, diffResult);
 }
@@ -81,8 +80,7 @@ async function validateActorsBeforeApply(options: SyncOptions): Promise<boolean>
   const projectRoot = getProjectRoot(loadConfig(options.config).configPath);
   const repoInfo = await getRepoInfo(projectRoot);
 
-  // Use ruleset config, fall back to deprecated branch_protection
-  const rulesetConfig = config.process?.repo?.ruleset ?? config.process?.repo?.branch_protection;
+  const rulesetConfig = config.process?.repo?.ruleset;
   const actors = rulesetConfig?.bypass_actors ?? [];
 
   if (actors.length === 0) {
@@ -111,8 +109,7 @@ async function getDiffResult(options: SyncOptions): Promise<SyncDiffResult> {
   const repoInfo = await getRepoInfo(projectRoot);
 
   const repoConfig = config.process?.repo;
-  // Use ruleset config, fall back to deprecated branch_protection
-  const desired = repoConfig?.ruleset ?? repoConfig?.branch_protection;
+  const desired = repoConfig?.ruleset;
   if (!desired) {
     throw new Error("No [process.repo.ruleset] configured in check.toml");
   }

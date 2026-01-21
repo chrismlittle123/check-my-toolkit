@@ -78,24 +78,6 @@ Git hook command to validate commit messages. Used in commit-msg hooks.
 cm process check-commit .git/COMMIT_EDITMSG [--quiet]
 ```
 
-### `cm process list-rules`
-
-List all branch/tag protection rules in the repository.
-
-```bash
-cm process list-rules         # Text output
-cm process list-rules --json  # JSON output
-```
-
-### `cm process cleanup-rules`
-
-Remove old branch protection rules (replaced by rulesets).
-
-```bash
-cm process cleanup-rules --dry-run   # Preview what would be removed
-cm process cleanup-rules             # Actually remove old rules
-```
-
 ---
 
 ## Configuration
@@ -328,12 +310,12 @@ region = "us-east-1"                           # AWS region
 
 ## Exit Codes
 
-| Code | Meaning           |
-| ---- | ----------------- |
-| 0    | All checks passed |
-| 1    | Violations found  |
+| Code | Meaning             |
+| ---- | ------------------- |
+| 0    | All checks passed   |
+| 1    | Violations found    |
 | 2    | Configuration error |
-| 3    | Runtime error     |
+| 3    | Runtime error       |
 
 ---
 

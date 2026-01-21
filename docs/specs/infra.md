@@ -58,10 +58,7 @@ The manifest generation is the responsibility of your `infra/` package. Examples
 ```typescript
 // Hook after deploy to output manifest
 const arns = resources.map((r) => r.arn);
-await fs.writeFile(
-  "infra-manifest.json",
-  JSON.stringify({ project: "my-app", resources: arns })
-);
+await fs.writeFile("infra-manifest.json", JSON.stringify({ project: "my-app", resources: arns }));
 ```
 
 **CDK:**
@@ -145,12 +142,12 @@ Missing: 1
 
 ### Exit Codes
 
-| Code | Meaning                    |
-| ---- | -------------------------- |
-| 0    | All resources exist        |
+| Code | Meaning                       |
+| ---- | ----------------------------- |
+| 0    | All resources exist           |
 | 1    | One or more resources missing |
-| 2    | Configuration error        |
-| 3    | Runtime error (AWS access) |
+| 2    | Configuration error           |
+| 3    | Runtime error (AWS access)    |
 
 ---
 
@@ -173,17 +170,17 @@ AWS_PROFILE=prod cm infra scan
 
 The scan checks existence by parsing the ARN and calling the appropriate AWS API:
 
-| Service    | ARN Pattern                                      | Check Method         |
-| ---------- | ------------------------------------------------ | -------------------- |
-| S3         | `arn:aws:s3:::bucket-name`                       | HeadBucket           |
-| Lambda     | `arn:aws:lambda:region:account:function:name`    | GetFunction          |
-| DynamoDB   | `arn:aws:dynamodb:region:account:table/name`     | DescribeTable        |
-| SQS        | `arn:aws:sqs:region:account:queue-name`          | GetQueueAttributes   |
-| SNS        | `arn:aws:sns:region:account:topic-name`          | GetTopicAttributes   |
-| IAM Role   | `arn:aws:iam::account:role/name`                 | GetRole              |
-| IAM Policy | `arn:aws:iam::account:policy/name`               | GetPolicy            |
-| Secrets    | `arn:aws:secretsmanager:region:account:secret:*` | DescribeSecret       |
-| CloudWatch | `arn:aws:logs:region:account:log-group:name`     | DescribeLogGroups    |
+| Service    | ARN Pattern                                      | Check Method       |
+| ---------- | ------------------------------------------------ | ------------------ |
+| S3         | `arn:aws:s3:::bucket-name`                       | HeadBucket         |
+| Lambda     | `arn:aws:lambda:region:account:function:name`    | GetFunction        |
+| DynamoDB   | `arn:aws:dynamodb:region:account:table/name`     | DescribeTable      |
+| SQS        | `arn:aws:sqs:region:account:queue-name`          | GetQueueAttributes |
+| SNS        | `arn:aws:sns:region:account:topic-name`          | GetTopicAttributes |
+| IAM Role   | `arn:aws:iam::account:role/name`                 | GetRole            |
+| IAM Policy | `arn:aws:iam::account:policy/name`               | GetPolicy          |
+| Secrets    | `arn:aws:secretsmanager:region:account:secret:*` | DescribeSecret     |
+| CloudWatch | `arn:aws:logs:region:account:log-group:name`     | DescribeLogGroups  |
 
 Additional resource types can be added as needed.
 
@@ -234,13 +231,13 @@ if (!result.passed) {
 
 ## What This Does NOT Do
 
-| Feature                   | Why Not                                         |
-| ------------------------- | ----------------------------------------------- |
-| Attribute drift detection | Use CloudFormation drift detection for this     |
-| Orphaned resource finding | Different problem, requires account-wide scan   |
-| IaC parsing               | Manifest contract is simpler and IaC-agnostic   |
-| Tagging validation        | Separate concern, could be a CODE domain check  |
-| Multi-account management  | ARNs contain account IDs; use AWS_PROFILE       |
+| Feature                   | Why Not                                        |
+| ------------------------- | ---------------------------------------------- |
+| Attribute drift detection | Use CloudFormation drift detection for this    |
+| Orphaned resource finding | Different problem, requires account-wide scan  |
+| IaC parsing               | Manifest contract is simpler and IaC-agnostic  |
+| Tagging validation        | Separate concern, could be a CODE domain check |
+| Multi-account management  | ARNs contain account IDs; use AWS_PROFILE      |
 
 ---
 
@@ -268,6 +265,7 @@ if (!result.passed) {
    ```
 
 4. **CI/CD integration:**
+
    ```yaml
    # .github/workflows/deploy.yml
    - name: Deploy
