@@ -1,3 +1,4 @@
+/* eslint-disable max-lines -- config loading requires extensive merging logic across all domains */
 import * as fs from "node:fs";
 import * as path from "node:path";
 
@@ -425,4 +426,86 @@ function mergeWithDefaults(config: Config): Config {
  */
 export function getProjectRoot(configPath: string): string {
   return path.dirname(configPath);
+}
+
+/** Information about a config override */
+export interface ConfigOverride {
+  section: string;
+  key: string;
+  registryValue: string;
+  projectValue: string;
+}
+
+/** Check if a project rule overrides a registry rule */
+function checkRuleOverride(
+  projectRule: { pattern: string; owners: string[] },
+  registryOwners: string[] | undefined
+): ConfigOverride | null {
+  if (!registryOwners) {
+    return null;
+  }
+  const registryStr = registryOwners.join(" ");
+  const projectStr = projectRule.owners.join(" ");
+  if (registryStr === projectStr) {
+    return null;
+  }
+  return {
+    section: "process.codeowners.rules",
+    key: projectRule.pattern,
+    registryValue: registryStr,
+    projectValue: projectStr,
+  };
+}
+
+/** Detect CODEOWNERS rule overrides between registry and project config */
+function detectCodeownersOverrides(
+  registryConfig: Config | undefined,
+  projectConfig: Config | undefined
+): ConfigOverride[] {
+  const registryRules = registryConfig?.process?.codeowners?.rules ?? [];
+  const projectRules = projectConfig?.process?.codeowners?.rules ?? [];
+  const registryMap = new Map(registryRules.map((r) => [r.pattern, r.owners]));
+
+  return projectRules
+    .map((rule) => checkRuleOverride(rule, registryMap.get(rule.pattern)))
+    .filter((o): o is ConfigOverride => o !== null);
+}
+
+/** Load registry config from extends */
+async function loadRegistryConfig(
+  extendsConfig: NonNullable<Config["extends"]>,
+  configDir: string
+): Promise<Config> {
+  const registryModule = await import("./registry.js");
+  const loc = registryModule.parseRegistryUrl(extendsConfig.registry, configDir);
+  const registryDir = await registryModule.fetchRegistry(loc);
+
+  let config: Config = {};
+  for (const name of extendsConfig.rulesets) {
+    config = registryModule.mergeConfigs(config, registryModule.loadRuleset(registryDir, name));
+  }
+  return config;
+}
+
+/**
+ * Load config and detect any overrides from registry
+ * Returns both the merged config and information about overrides
+ */
+export async function loadConfigWithOverrides(
+  configPath?: string
+): Promise<LoadConfigResult & { overrides: ConfigOverride[] }> {
+  const resolvedPath = resolveConfigPath(configPath);
+  const validatedConfig = validateConfig(parseTomlFile(resolvedPath));
+
+  let overrides: ConfigOverride[] = [];
+  if (validatedConfig.extends) {
+    const registryConfig = await loadRegistryConfig(
+      validatedConfig.extends,
+      path.dirname(resolvedPath)
+    );
+    overrides = detectCodeownersOverrides(registryConfig, validatedConfig);
+  }
+
+  const { config, configPath: finalPath } = await loadConfigAsync(configPath);
+  return { config, configPath: finalPath, overrides };
 }

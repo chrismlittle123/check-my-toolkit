@@ -425,9 +425,9 @@ enabled = true`
 enabled = true`
       );
 
-      // Mock loadConfigAsync to throw a non-Error, non-ConfigError object
+      // Mock loadConfigWithOverrides to throw a non-Error, non-ConfigError object
       const configModule = await import("../../src/config/index.js");
-      vi.spyOn(configModule, "loadConfigAsync").mockRejectedValueOnce("string error");
+      vi.spyOn(configModule, "loadConfigWithOverrides").mockRejectedValueOnce("string error");
 
       await validateConfigActionHandler!({ config: configPath, format: "text" });
 
@@ -443,9 +443,9 @@ enabled = true`
 enabled = true`
       );
 
-      // Mock loadConfigAsync to throw a regular Error (not ConfigError)
+      // Mock loadConfigWithOverrides to throw a regular Error (not ConfigError)
       const configModule = await import("../../src/config/index.js");
-      vi.spyOn(configModule, "loadConfigAsync").mockRejectedValueOnce(
+      vi.spyOn(configModule, "loadConfigWithOverrides").mockRejectedValueOnce(
         new Error("Validate runtime error")
       );
 

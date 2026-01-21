@@ -155,8 +155,20 @@ describe("CodeownersRunner", () => {
         expect(result.violations[0].message).toContain("@wrong-team");
       });
 
-      it("passes when owners match regardless of order", async () => {
+      it("fails when owners are in wrong order", async () => {
         fs.writeFileSync(path.join(tempDir, ".github/CODEOWNERS"), `/check.toml @team-b @team-a`);
+        runner.setConfig({
+          enabled: true,
+          rules: [{ pattern: "/check.toml", owners: ["@team-a", "@team-b"] }],
+        });
+
+        const result = await runner.run(tempDir);
+        expect(result.passed).toBe(false);
+        expect(result.violations[0].message).toContain("Owner mismatch");
+      });
+
+      it("passes when owners match in exact order", async () => {
+        fs.writeFileSync(path.join(tempDir, ".github/CODEOWNERS"), `/check.toml @team-a @team-b`);
         runner.setConfig({
           enabled: true,
           rules: [{ pattern: "/check.toml", owners: ["@team-a", "@team-b"] }],

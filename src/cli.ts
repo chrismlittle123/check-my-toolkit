@@ -9,7 +9,13 @@ import { Command, type CommanderError, Option } from "commander";
 import { zodToJsonSchema } from "zod-to-json-schema";
 
 import { auditCodeConfig, runCodeChecks } from "./code/index.js";
-import { ConfigError, getProjectRoot, loadConfig, loadConfigAsync } from "./config/index.js";
+import {
+  ConfigError,
+  type ConfigOverride,
+  getProjectRoot,
+  loadConfig,
+  loadConfigAsync,
+} from "./config/index.js";
 import { configSchema } from "./config/schema.js";
 import { type DependenciesOptions, runDependencies } from "./dependencies/index.js";
 import { auditInfraConfig, runInfraChecks } from "./infra/index.js";
@@ -157,37 +163,58 @@ validateCommand
   .command("config")
   .description("Validate check.toml configuration file")
   .option("-c, --config <path>", "Path to check.toml config file")
+  .option("-v, --verbose", "Show detailed information including config overrides")
   .addOption(
     new Option("-f, --format <format>", "Output format").choices(["text", "json"]).default("text")
   )
-  .action(async (options: { config?: string; format: string }) => {
+  .action(async (options: { config?: string; format: string; verbose?: boolean }) => {
     try {
-      // Use async loader to validate extends registry and rulesets
-      const { configPath } = await loadConfigAsync(options.config);
-
-      if (options.format === "json") {
-        process.stdout.write(`${JSON.stringify({ valid: true, configPath }, null, 2)}\n`);
-      } else {
-        process.stdout.write(chalk.green(`✓ Valid: ${configPath}\n`));
-      }
+      const { loadConfigWithOverrides } = await import("./config/index.js");
+      const { configPath, overrides } = await loadConfigWithOverrides(options.config);
+      outputValidateResult(configPath, overrides, options);
       process.exit(ExitCode.SUCCESS);
     } catch (error) {
-      if (error instanceof ConfigError) {
-        if (options.format === "json") {
-          process.stdout.write(
-            `${JSON.stringify({ valid: false, error: error.message }, null, 2)}\n`
-          );
-        } else {
-          console.error(chalk.red(`✗ Invalid: ${error.message}`));
-        }
-        process.exit(ExitCode.CONFIG_ERROR);
-      }
-      console.error(
-        chalk.red(`Error: ${error instanceof Error ? error.message : "Unknown error"}`)
-      );
-      process.exit(ExitCode.RUNTIME_ERROR);
+      handleValidateError(error, options.format);
     }
   });
+
+function outputValidateResult(
+  configPath: string,
+  overrides: ConfigOverride[],
+  options: { format: string; verbose?: boolean }
+): void {
+  const showOverrides = options.verbose && overrides.length > 0;
+  if (options.format === "json") {
+    const result: Record<string, unknown> = { valid: true, configPath };
+    if (showOverrides) {
+      result.overrides = overrides;
+    }
+    process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+    return;
+  }
+  process.stdout.write(chalk.green(`✓ Valid: ${configPath}\n`));
+  if (showOverrides) {
+    process.stdout.write(chalk.yellow("\nConfig overrides detected:\n"));
+    for (const o of overrides) {
+      process.stdout.write(
+        chalk.yellow(`  ℹ Pattern "${o.key}": ${o.projectValue} replaces ${o.registryValue}\n`)
+      );
+    }
+  }
+}
+
+function handleValidateError(error: unknown, format: string): never {
+  if (error instanceof ConfigError) {
+    if (format === "json") {
+      process.stdout.write(`${JSON.stringify({ valid: false, error: error.message }, null, 2)}\n`);
+    } else {
+      console.error(chalk.red(`✗ Invalid: ${error.message}`));
+    }
+    process.exit(ExitCode.CONFIG_ERROR);
+  }
+  console.error(chalk.red(`Error: ${error instanceof Error ? error.message : "Unknown error"}`));
+  process.exit(ExitCode.RUNTIME_ERROR);
+}
 
 // cm validate registry - validate registry structure
 interface RegistryError {
