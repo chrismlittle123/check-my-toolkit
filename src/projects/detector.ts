@@ -149,7 +149,6 @@ export async function detectProjects(searchRoot: string): Promise<DetectionResul
   // Find all marker files for each project type
   // Note: Sequential iteration is intentional to maintain priority order
   for (const marker of PROJECT_MARKERS) {
-    // eslint-disable-next-line no-await-in-loop
     const markerFiles = await findMarkerFiles(searchRoot, marker, ignorePatterns);
     for (const markerFile of markerFiles) {
       processMarkerFile(ctx, markerFile, marker);

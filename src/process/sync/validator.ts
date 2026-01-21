@@ -40,7 +40,6 @@ export async function validateBypassActors(
   const warnings: string[] = [];
 
   for (const actor of actors) {
-    // eslint-disable-next-line no-await-in-loop
     const error = await validateSingleActor(repoInfo, actor);
     if (error) {
       errors.push({ actor, error });

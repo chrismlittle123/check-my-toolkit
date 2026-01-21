@@ -1,7 +1,6 @@
 import eslint from "@eslint/js";
 import tseslint from "typescript-eslint";
 import globals from "globals";
-import simpleImportSort from "eslint-plugin-simple-import-sort";
 import importPlugin from "eslint-plugin-import";
 
 export default tseslint.config(
@@ -30,7 +29,6 @@ export default tseslint.config(
   {
     files: ["src/**/*.ts"],
     plugins: {
-      "simple-import-sort": simpleImportSort,
       import: importPlugin,
     },
     languageOptions: {
@@ -44,10 +42,8 @@ export default tseslint.config(
     },
     rules: {
       // ============================================
-      // Import sorting and cycles
+      // Import cycles
       // ============================================
-      "simple-import-sort/imports": "error",
-      "simple-import-sort/exports": "error",
 
       // Detect circular dependencies (architecture rot, weird runtime bugs)
       "import/no-cycle": ["error", { maxDepth: 2 }],
@@ -87,15 +83,6 @@ export default tseslint.config(
       "@typescript-eslint/no-unsafe-member-access": "error",
       "@typescript-eslint/no-unsafe-return": "error",
 
-      // Require using `type` imports for types
-      "@typescript-eslint/consistent-type-imports": [
-        "error",
-        {
-          prefer: "type-imports",
-          fixStyle: "inline-type-imports",
-        },
-      ],
-
       // Unused variables (allow underscore prefix for intentionally unused)
       "@typescript-eslint/no-unused-vars": [
         "error",
@@ -115,9 +102,6 @@ export default tseslint.config(
       // Use T[] instead of Array<T>
       "@typescript-eslint/array-type": ["error", { default: "array" }],
 
-      // No non-null assertions (!)
-      "@typescript-eslint/no-non-null-assertion": "error",
-
       // Prefer RegExp.exec() over String.match()
       "@typescript-eslint/prefer-regexp-exec": "warn",
 
@@ -128,64 +112,6 @@ export default tseslint.config(
       "@typescript-eslint/no-floating-promises": "error",
       "@typescript-eslint/no-misused-promises": "error",
       "@typescript-eslint/await-thenable": "error",
-
-      // ============================================
-      // Naming conventions
-      // ============================================
-      "@typescript-eslint/naming-convention": [
-        "error",
-        // Enum members must be UPPER_CASE
-        {
-          selector: "enumMember",
-          format: ["UPPER_CASE"],
-        },
-        // Types (class, interface, typeAlias, enum, typeParameter) must be PascalCase
-        {
-          selector: "typeLike",
-          format: ["PascalCase"],
-        },
-        // Variables must be camelCase, UPPER_CASE (constants), or PascalCase (builder objects)
-        // Allow leading/trailing underscores for unused vars and Node.js conventions
-        {
-          selector: "variable",
-          format: ["camelCase", "UPPER_CASE", "PascalCase"],
-          leadingUnderscore: "allow",
-          trailingUnderscore: "allow",
-          // Allow Node.js conventions like __dirname, __filename
-          filter: {
-            regex: "^__",
-            match: false,
-          },
-        },
-        // Allow __dirname, __filename (Node.js conventions)
-        {
-          selector: "variable",
-          format: null,
-          filter: {
-            regex: "^__(dirname|filename)$",
-            match: true,
-          },
-        },
-        {
-          selector: "function",
-          format: ["camelCase"],
-        },
-        // Parameters must be camelCase, allow leading underscore for unused
-        {
-          selector: "parameter",
-          format: ["camelCase"],
-          leadingUnderscore: "allow",
-        },
-        // Class members (methods, properties) must be camelCase
-        {
-          selector: "classMethod",
-          format: ["camelCase"],
-        },
-        {
-          selector: "classProperty",
-          format: ["camelCase", "UPPER_CASE"],
-        },
-      ],
 
       // ============================================
       // File and function size limits
@@ -207,12 +133,6 @@ export default tseslint.config(
 
       // No console in production code (except error and warn)
       "no-console": ["error", { allow: ["error", "warn"] }],
-
-      // Catch template literal typos like 'Hello ${name}' (wrong quotes)
-      "no-template-curly-in-string": "error",
-
-      // Consistent return - all paths must return or none
-      "consistent-return": "error",
 
       // Require curly braces for all control statements
       curly: "error",
@@ -271,12 +191,6 @@ export default tseslint.config(
       // ============================================
       // Code quality rules
       // ============================================
-
-      // Require return statements in array methods
-      "array-callback-return": "error",
-
-      // No await in loops (usually indicates potential optimization)
-      "no-await-in-loop": "warn",
 
       // No assignments in return statements
       "no-return-assign": "error",

@@ -84,7 +84,6 @@ export class TaggingRunner extends BaseInfraToolRunner {
     let paginationToken: string | undefined;
 
     do {
-      // eslint-disable-next-line no-await-in-loop -- Sequential pagination required
       const response = await client.send(
         new GetResourcesCommand({
           PaginationToken: paginationToken,

@@ -91,7 +91,6 @@ async function checkRemoteFileWithAlternatives(
 
   for (const path of allPaths) {
     // Sequential check needed - stop on first match
-    // eslint-disable-next-line no-await-in-loop
     const exists = await checkRemoteFileExists(repoInfo, path);
     if (exists) {
       return { path: config.path, exists: true, checkedPaths: allPaths };
