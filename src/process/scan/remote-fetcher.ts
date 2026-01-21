@@ -57,7 +57,10 @@ export async function verifyRepoAccess(repoInfo: RemoteRepoInfo): Promise<boolea
       );
     }
 
-    throw new RemoteFetcherError(`Failed to verify repository access: ${errorMessage}`, "API_ERROR");
+    throw new RemoteFetcherError(
+      `Failed to verify repository access: ${errorMessage}`,
+      "API_ERROR"
+    );
   }
 }
 
@@ -80,13 +83,15 @@ export async function checkRemoteFileExists(
 }
 
 /** Check multiple alternative paths for a file */
-export async function checkRemoteFileWithAlternatives(
+async function checkRemoteFileWithAlternatives(
   repoInfo: RemoteRepoInfo,
   config: FileCheckConfig
 ): Promise<FileCheckResult> {
   const allPaths = [config.path, ...(config.alternativePaths ?? [])];
 
   for (const path of allPaths) {
+    // Sequential check needed - stop on first match
+    // eslint-disable-next-line no-await-in-loop
     const exists = await checkRemoteFileExists(repoInfo, path);
     if (exists) {
       return { path: config.path, exists: true, checkedPaths: allPaths };

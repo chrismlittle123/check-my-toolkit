@@ -48,6 +48,7 @@ cm process scan --repo owner/repo --json  # JSON output
 **Requires:** `GITHUB_TOKEN` environment variable or `gh` CLI authentication.
 
 **What it checks:**
+
 - Repository rulesets (branch protection, tag protection)
 - Required file existence (CODEOWNERS, README, PR templates)
 - Ruleset settings validation against `check.toml` configuration

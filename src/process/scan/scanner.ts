@@ -21,20 +21,27 @@ import { type RulesetResponse, validateRulesets } from "./validators.js";
 
 /** Fetch rulesets from GitHub API */
 async function fetchRulesets(repoInfo: RemoteRepoInfo): Promise<RulesetResponse[]> {
-  const result = await execa("gh", [
-    "api",
-    `repos/${repoInfo.owner}/${repoInfo.repo}/rulesets`,
-  ]);
+  const result = await execa("gh", ["api", `repos/${repoInfo.owner}/${repoInfo.repo}/rulesets`]);
   return JSON.parse(result.stdout) as RulesetResponse[];
 }
 
 /** Create a skipped check result */
-function createSkippedResult(name: string, rule: string, reason: string, duration: number): CheckResult {
+function createSkippedResult(
+  name: string,
+  rule: string,
+  reason: string,
+  duration: number
+): CheckResult {
   return { name, rule, passed: true, violations: [], skipped: true, skipReason: reason, duration };
 }
 
 /** Create an error check result */
-function createErrorResult(name: string, rule: string, message: string, duration: number): CheckResult {
+function createErrorResult(
+  name: string,
+  rule: string,
+  message: string,
+  duration: number
+): CheckResult {
   return {
     name,
     rule,
@@ -82,7 +89,12 @@ function handleRulesetError(
     };
   }
 
-  return createErrorResult("Repository Settings", "process.repo", `Failed to check rulesets: ${msg}`, elapsed());
+  return createErrorResult(
+    "Repository Settings",
+    "process.repo",
+    `Failed to check rulesets: ${msg}`,
+    elapsed()
+  );
 }
 
 /** Check repository rulesets and branch protection */
@@ -166,7 +178,12 @@ async function checkFiles(repoInfo: RemoteRepoInfo, config: Config): Promise<Che
   const fileChecks = buildFileChecks(config);
 
   if (fileChecks.length === 0) {
-    return createSkippedResult("Repository Files", "process.scan.files", "No file checks configured", elapsed());
+    return createSkippedResult(
+      "Repository Files",
+      "process.scan.files",
+      "No file checks configured",
+      elapsed()
+    );
   }
 
   try {
@@ -183,7 +200,12 @@ async function checkFiles(repoInfo: RemoteRepoInfo, config: Config): Promise<Che
     };
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
-    return createErrorResult("Repository Files", "process.scan.files", `Failed to check files: ${msg}`, elapsed());
+    return createErrorResult(
+      "Repository Files",
+      "process.scan.files",
+      `Failed to check files: ${msg}`,
+      elapsed()
+    );
   }
 }
 
@@ -225,7 +247,9 @@ export async function scanRepository(repo: string, config: Config): Promise<Scan
 }
 
 /** Programmatic API for validating remote process checks */
-export async function validateProcess(options: ValidateProcessOptions): Promise<ValidateProcessResult> {
+export async function validateProcess(
+  options: ValidateProcessOptions
+): Promise<ValidateProcessResult> {
   const { loadConfigAsync } = await import("../../config/index.js");
   const { config } = await loadConfigAsync(options.config);
   const result = await scanRepository(options.repo, config);

@@ -33,7 +33,7 @@ type RulesetConfig = NonNullable<NonNullable<Config["process"]>["repo"]>["rulese
 type TagProtectionConfig = NonNullable<NonNullable<Config["process"]>["repo"]>["tag_protection"];
 
 /** Check if branch matches any of the include patterns */
-export function matchesBranch(patterns: string[], branch: string): boolean {
+function matchesBranch(patterns: string[], branch: string): boolean {
   for (const pattern of patterns) {
     const cleanPattern = pattern.replace(/^refs\/heads\//, "");
     if (cleanPattern === branch) {
@@ -56,7 +56,7 @@ export function matchesBranch(patterns: string[], branch: string): boolean {
 }
 
 /** Find branch ruleset matching the target branch */
-export function findBranchRuleset(
+function findBranchRuleset(
   rulesets: RulesetResponse[],
   branch: string
 ): RulesetResponse | undefined {
@@ -104,7 +104,7 @@ export function validateRulesets(
 }
 
 /** Validate branch ruleset settings against config */
-export function validateBranchRuleset(
+function validateBranchRuleset(
   ruleset: RulesetResponse,
   config: RulesetConfig,
   branch: string
@@ -262,7 +262,7 @@ function validateBypassActors(
 }
 
 /** Validate tag protection rulesets */
-export function validateTagProtection(
+function validateTagProtection(
   rulesets: RulesetResponse[],
   tagConfig: TagProtectionConfig
 ): Violation[] {
@@ -291,10 +291,7 @@ export function validateTagProtection(
 }
 
 /** Validate tag patterns match */
-function validateTagPatterns(
-  expectedPatterns: string[],
-  tagRuleset: RulesetResponse
-): Violation[] {
+function validateTagPatterns(expectedPatterns: string[], tagRuleset: RulesetResponse): Violation[] {
   const expected = expectedPatterns.map((p) => `refs/tags/${p}`).sort();
   const actual = [...(tagRuleset.conditions?.ref_name?.include ?? [])].sort();
 
@@ -314,10 +311,7 @@ function validateTagPatterns(
 }
 
 /** Validate tag protection rules */
-function validateTagRules(
-  tagConfig: TagProtectionConfig,
-  rules: RulesetRule[]
-): Violation[] {
+function validateTagRules(tagConfig: TagProtectionConfig, rules: RulesetRule[]): Violation[] {
   if (!tagConfig) {
     return [];
   }

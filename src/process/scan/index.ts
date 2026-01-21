@@ -5,10 +5,8 @@ import { ExitCode } from "../../types/index.js";
 import { scanRepository } from "./scanner.js";
 import { type ScanOptions, type ScanResult } from "./types.js";
 
-// Re-export types
+// Re-export public API types
 export {
-  type FileCheckConfig,
-  type FileCheckResult,
   type RemoteRepoInfo,
   type ScanOptions,
   type ScanResult,
@@ -18,18 +16,6 @@ export {
 
 // Re-export scanner
 export { scanRepository, validateProcess } from "./scanner.js";
-
-// Re-export fetcher utilities
-export {
-  checkRemoteFileExists,
-  checkRemoteFiles,
-  checkRemoteFileWithAlternatives,
-  isGhAvailable,
-  parseRepoString,
-  RemoteFetcherError,
-  standardFileChecks,
-  verifyRepoAccess,
-} from "./remote-fetcher.js";
 
 /** Format scan result as text */
 function formatScanText(result: ScanResult): string {
@@ -72,8 +58,7 @@ export async function runScan(options: ScanOptions): Promise<void> {
     const { config } = await loadConfigAsync(options.config);
     const result = await scanRepository(options.repo, config);
 
-    const output =
-      options.format === "json" ? formatScanJson(result) : formatScanText(result);
+    const output = options.format === "json" ? formatScanJson(result) : formatScanText(result);
 
     process.stdout.write(`${output}\n`);
     process.exit(result.passed ? ExitCode.SUCCESS : ExitCode.VIOLATIONS_FOUND);

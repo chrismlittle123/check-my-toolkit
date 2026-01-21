@@ -127,7 +127,10 @@ describe("checkRemoteFileExists", () => {
   it("returns false when file does not exist", async () => {
     mockedExeca.mockRejectedValueOnce(new Error("HTTP 404"));
 
-    const result = await checkRemoteFileExists({ owner: "myorg", repo: "myrepo" }, "NONEXISTENT.md");
+    const result = await checkRemoteFileExists(
+      { owner: "myorg", repo: "myrepo" },
+      "NONEXISTENT.md"
+    );
 
     expect(result).toBe(false);
   });

@@ -464,7 +464,10 @@ processCommand
   .command("scan")
   .description("Scan remote repository settings via GitHub API")
   .addOption(
-    new Option("-r, --repo <owner/repo>", "Remote repository in owner/repo format").makeOptionMandatory()
+    new Option(
+      "-r, --repo <owner/repo>",
+      "Remote repository in owner/repo format"
+    ).makeOptionMandatory()
   )
   .option("-c, --config <path>", "Path to check.toml config file")
   .addOption(
