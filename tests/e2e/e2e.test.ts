@@ -1135,6 +1135,60 @@ const testCases: TestCase[] = [
     expectedPatterns: ["✓ ESLint: passed"],
     notExpectedPatterns: ["Ruff"], // Ruff is disabled in local override
   },
+
+  // ============================================================
+  // Process: Forbidden files validation (#180, #181, #185, #186)
+  // ============================================================
+  {
+    name: "process/forbidden-files-clean passes when no forbidden files exist",
+    config: "tests/e2e/projects/process/forbidden-files-clean/check.toml",
+    command: "check",
+    domain: "process",
+    expectedExitCode: 0,
+    expectedPatterns: ["✓ Forbidden Files: passed", "All checks passed"],
+  },
+  {
+    name: "process/forbidden-files-violation fails when forbidden file exists",
+    config: "tests/e2e/projects/process/forbidden-files-violation/check.toml",
+    command: "check",
+    domain: "process",
+    expectedExitCode: 1,
+    expectedPatterns: ["✗ Forbidden Files:", "Forbidden file exists", ".env", "Use environment variables instead"],
+  },
+  {
+    name: "process/forbidden-files-ignore respects custom ignore patterns (#180)",
+    config: "tests/e2e/projects/process/forbidden-files-ignore/check.toml",
+    command: "check",
+    domain: "process",
+    expectedExitCode: 0,
+    expectedPatterns: ["✓ Forbidden Files: passed"],
+    notExpectedPatterns: ["test-exceptions"],
+  },
+  {
+    name: "process/forbidden-files-dedupe reports each file only once (#181)",
+    config: "tests/e2e/projects/process/forbidden-files-dedupe/check.toml",
+    command: "check",
+    domain: "process",
+    expectedExitCode: 1,
+    expectedPatterns: ["✗ Forbidden Files: 1 violation", ".env"],
+  },
+  {
+    name: "process/forbidden-files-empty-ignore scans node_modules when ignore=[] (#185)",
+    config: "tests/e2e/projects/process/forbidden-files-empty-ignore/check.toml",
+    command: "check",
+    domain: "process",
+    expectedExitCode: 1,
+    expectedPatterns: ["✗ Forbidden Files:", "node_modules/pkg/.env"],
+  },
+  {
+    name: "process/forbidden-files-disabled skips when disabled",
+    config: "tests/e2e/projects/process/forbidden-files-disabled/check.toml",
+    command: "check",
+    domain: "process",
+    expectedExitCode: 0,
+    expectedPatterns: ["PROCESS"],
+    notExpectedPatterns: ["Forbidden Files"],
+  },
 ];
 
 function runCli(

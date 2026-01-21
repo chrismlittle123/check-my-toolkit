@@ -1,0 +1,5 @@
+# Test case for #181 - deduplication
+# Both patterns match the same file, but should only report once
+[process.forbidden_files]
+enabled = true
+files = [".env", "**/.env"]

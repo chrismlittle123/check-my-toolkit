@@ -1,0 +1,4 @@
+# forbidden_files is disabled - should skip even with forbidden file present
+[process.forbidden_files]
+enabled = false
+files = ["**/.env"]

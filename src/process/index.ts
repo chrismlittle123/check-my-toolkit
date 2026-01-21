@@ -253,6 +253,7 @@ function createForbiddenFilesRunner(config: Config): ForbiddenFilesRunner {
     runner.setConfig({
       enabled: forbiddenFilesConfig.enabled,
       files: forbiddenFilesConfig.files,
+      ignore: forbiddenFilesConfig.ignore,
       message: forbiddenFilesConfig.message,
     });
   }

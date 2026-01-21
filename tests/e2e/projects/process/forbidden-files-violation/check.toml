@@ -1,0 +1,4 @@
+[process.forbidden_files]
+enabled = true
+files = ["**/.env", "**/secrets.json"]
+message = "Use environment variables instead"

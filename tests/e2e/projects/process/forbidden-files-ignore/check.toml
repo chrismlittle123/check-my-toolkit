@@ -1,0 +1,5 @@
+# Test case for #180 - ignore option
+[process.forbidden_files]
+enabled = true
+files = ["**/.env", "**/secrets.json"]
+ignore = ["**/test-exceptions/**"]
