@@ -381,15 +381,22 @@ processCommand
   .addOption(
     new Option("-f, --format <format>", "Output format").choices(["text", "json"]).default("text")
   )
-  .action(async (options: { config?: string; format: string; apply?: boolean; validateActors?: boolean }) => {
-    const { runSync } = await import("./process/sync/index.js");
-    await runSync({
-      config: options.config,
-      format: options.format as "text" | "json",
-      apply: options.apply,
-      validateActors: options.validateActors,
-    });
-  });
+  .action(
+    async (options: {
+      config?: string;
+      format: string;
+      apply?: boolean;
+      validateActors?: boolean;
+    }) => {
+      const { runSync } = await import("./process/sync/index.js");
+      await runSync({
+        config: options.config,
+        format: options.format as "text" | "json",
+        apply: options.apply,
+        validateActors: options.validateActors,
+      });
+    }
+  );
 
 // cm process diff-tags
 processCommand
@@ -429,12 +436,13 @@ processCommand
   .addOption(
     new Option("-f, --format <format>", "Output format").choices(["text", "json"]).default("text")
   )
-  .option("-b, --branches <branches>", "Comma-separated list of branches to check", "main,master,develop")
+  .option(
+    "-b, --branches <branches>",
+    "Comma-separated list of branches to check",
+    "main,master,develop"
+  )
   .action(async (options: { format: string; branches: string }) => {
-    const {
-      listAllProtection,
-      formatProtectionPlan,
-    } = await import("./process/sync/cleanup.js");
+    const { listAllProtection, formatProtectionPlan } = await import("./process/sync/cleanup.js");
     const { getRepoInfo, isGhAvailable } = await import("./process/sync/fetcher.js");
 
     if (!(await isGhAvailable())) {
@@ -463,7 +471,11 @@ processCommand
   .command("cleanup-rules")
   .description("Remove orphaned classic branch protection rules")
   .option("--apply", "Actually remove rules (required for safety)")
-  .option("-b, --branches <branches>", "Comma-separated list of branches to check", "main,master,develop")
+  .option(
+    "-b, --branches <branches>",
+    "Comma-separated list of branches to check",
+    "main,master,develop"
+  )
   .addOption(
     new Option("-f, --format <format>", "Output format").choices(["text", "json"]).default("text")
   )

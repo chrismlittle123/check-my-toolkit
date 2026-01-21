@@ -85,7 +85,14 @@ describe("validator", () => {
       ];
 
       for (const type of validTypes) {
-        const actor = { actor_type: type as "Integration" | "OrganizationAdmin" | "RepositoryRole" | "Team" | "DeployKey" };
+        const actor = {
+          actor_type: type as
+            | "Integration"
+            | "OrganizationAdmin"
+            | "RepositoryRole"
+            | "Team"
+            | "DeployKey",
+        };
         expect(actor.actor_type).toBe(type);
       }
     });

@@ -136,7 +136,11 @@ describe("RepoRunner", () => {
       const createBranchRuleset = (
         branch: string,
         rules: Array<{ type: string; parameters?: Record<string, unknown> }>,
-        bypassActors: Array<{ actor_id: number | null; actor_type: string; bypass_mode: string }> = []
+        bypassActors: Array<{
+          actor_id: number | null;
+          actor_type: string;
+          bypass_mode: string;
+        }> = []
       ) => [
         {
           id: 1,
@@ -299,7 +303,11 @@ describe("RepoRunner", () => {
               {
                 type: "required_status_checks",
                 parameters: {
-                  required_status_checks: [{ context: "ci" }, { context: "lint" }, { context: "test" }],
+                  required_status_checks: [
+                    { context: "ci" },
+                    { context: "lint" },
+                    { context: "test" },
+                  ],
                 },
               },
             ])
@@ -355,9 +363,11 @@ describe("RepoRunner", () => {
       it("fails when enforce_admins not enabled (has bypass actors)", async () => {
         mockedExeca.mockResolvedValueOnce({
           stdout: JSON.stringify(
-            createBranchRuleset("main", [], [
-              { actor_id: 5, actor_type: "RepositoryRole", bypass_mode: "always" },
-            ])
+            createBranchRuleset(
+              "main",
+              [],
+              [{ actor_id: 5, actor_type: "RepositoryRole", bypass_mode: "always" }]
+            )
           ),
         } as never);
         runner.setConfig({
@@ -395,9 +405,11 @@ describe("RepoRunner", () => {
       it("validates bypass_actors configuration", async () => {
         mockedExeca.mockResolvedValueOnce({
           stdout: JSON.stringify(
-            createBranchRuleset("main", [], [
-              { actor_id: 123, actor_type: "Integration", bypass_mode: "always" },
-            ])
+            createBranchRuleset(
+              "main",
+              [],
+              [{ actor_id: 123, actor_type: "Integration", bypass_mode: "always" }]
+            )
           ),
         } as never);
         runner.setConfig({

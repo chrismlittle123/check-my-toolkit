@@ -568,28 +568,28 @@ prevent_update = true       # Prevent tag updates (default: true)
 
 ### Ruleset Properties
 
-| Property                      | Value                                              |
-| ----------------------------- | -------------------------------------------------- |
+| Property                      | Value                                                 |
+| ----------------------------- | ----------------------------------------------------- |
 | `name`                        | Ruleset name in GitHub (default: "Branch Protection") |
-| `branch`                      | Target branch to protect (default: "main")         |
-| `enforcement`                 | Ruleset enforcement (active/evaluate/disabled)     |
-| `required_reviews`            | Minimum required approving reviews                 |
-| `dismiss_stale_reviews`       | Dismiss stale reviews on new commits               |
-| `require_code_owner_reviews`  | Require CODEOWNER approval                         |
-| `require_status_checks`       | Array of required CI status checks                 |
-| `require_branches_up_to_date` | Require branch to be up to date before merge       |
-| `enforce_admins`              | Apply rules to administrators too                  |
-| `bypass_actors`               | Array of actors that can bypass rules              |
+| `branch`                      | Target branch to protect (default: "main")            |
+| `enforcement`                 | Ruleset enforcement (active/evaluate/disabled)        |
+| `required_reviews`            | Minimum required approving reviews                    |
+| `dismiss_stale_reviews`       | Dismiss stale reviews on new commits                  |
+| `require_code_owner_reviews`  | Require CODEOWNER approval                            |
+| `require_status_checks`       | Array of required CI status checks                    |
+| `require_branches_up_to_date` | Require branch to be up to date before merge          |
+| `enforce_admins`              | Apply rules to administrators too                     |
+| `bypass_actors`               | Array of actors that can bypass rules                 |
 
 ### Bypass Actor Types
 
-| Type                | Description                                      | actor_id Required |
-| ------------------- | ------------------------------------------------ | ----------------- |
-| `RepositoryRole`    | Repository role (1-5, see above)                 | Yes               |
-| `OrganizationAdmin` | Organization administrator                       | No                |
-| `Team`              | GitHub team (use team's numeric ID)              | Yes               |
-| `Integration`       | GitHub App installation ID                       | Yes               |
-| `DeployKey`         | Deploy key ID                                    | Yes               |
+| Type                | Description                         | actor_id Required |
+| ------------------- | ----------------------------------- | ----------------- |
+| `RepositoryRole`    | Repository role (1-5, see above)    | Yes               |
+| `OrganizationAdmin` | Organization administrator          | No                |
+| `Team`              | GitHub team (use team's numeric ID) | Yes               |
+| `Integration`       | GitHub App installation ID          | Yes               |
+| `DeployKey`         | Deploy key ID                       | Yes               |
 
 ### Tag Protection Properties
 

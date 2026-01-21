@@ -48,9 +48,7 @@ export async function validateBypassActors(
   }
 
   // Add warnings for common issues
-  const hasAdmin = actors.some(
-    (a) => a.actor_type === "RepositoryRole" && a.actor_id === 5
-  );
+  const hasAdmin = actors.some((a) => a.actor_type === "RepositoryRole" && a.actor_id === 5);
   if (hasAdmin) {
     warnings.push(
       "Warning: Repository Admin role (ID 5) can bypass rules. Consider if this is intended."
@@ -106,10 +104,7 @@ function validateRepositoryRole(actor: BypassActorConfig): string | null {
 }
 
 /** Validate Team actor by checking if team exists */
-async function validateTeam(
-  repoInfo: RepoInfo,
-  actor: BypassActorConfig
-): Promise<string | null> {
+async function validateTeam(repoInfo: RepoInfo, actor: BypassActorConfig): Promise<string | null> {
   if (actor.actor_id === undefined) {
     return "Team requires an actor_id (the team's numeric ID)";
   }
@@ -198,10 +193,7 @@ async function validateDeployKey(
   }
 
   try {
-    await execa("gh", [
-      "api",
-      `repos/${repoInfo.owner}/${repoInfo.repo}/keys/${actor.actor_id}`,
-    ]);
+    await execa("gh", ["api", `repos/${repoInfo.owner}/${repoInfo.repo}/keys/${actor.actor_id}`]);
     return null;
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
@@ -228,7 +220,9 @@ export function formatValidationResult(result: ValidationResult): string {
   } else {
     lines.push("Bypass actor validation failed:");
     for (const { actor, error } of result.errors) {
-      lines.push(`  - ${actor.actor_type}${actor.actor_id ? ` (ID: ${actor.actor_id})` : ""}: ${error}`);
+      lines.push(
+        `  - ${actor.actor_type}${actor.actor_id ? ` (ID: ${actor.actor_id})` : ""}: ${error}`
+      );
     }
   }
 

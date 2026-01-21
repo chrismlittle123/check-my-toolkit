@@ -20,6 +20,7 @@ GitHub Rulesets provide several advantages over classic branch protection:
 #### 1. Update your check.toml
 
 **Before (deprecated, still works in v1.x):**
+
 ```toml
 [process.repo.branch_protection]
 branch = "main"
@@ -32,6 +33,7 @@ enforce_admins = true
 ```
 
 **After (recommended):**
+
 ```toml
 [process.repo.ruleset]
 name = "main-protection"          # NEW: optional ruleset name
@@ -71,21 +73,21 @@ cm process sync --apply
 
 ### New Properties
 
-| Property      | Description                        | Default               |
-| ------------- | ---------------------------------- | --------------------- |
-| `name`        | Ruleset name in GitHub             | "Branch Protection"   |
-| `enforcement` | Ruleset enforcement level          | "active"              |
-| `bypass_actors` | Actors that can bypass rules     | (none)                |
+| Property        | Description                  | Default             |
+| --------------- | ---------------------------- | ------------------- |
+| `name`          | Ruleset name in GitHub       | "Branch Protection" |
+| `enforcement`   | Ruleset enforcement level    | "active"            |
+| `bypass_actors` | Actors that can bypass rules | (none)              |
 
 ### Bypass Actor Types
 
-| Type                | Description                                | actor_id  |
-| ------------------- | ------------------------------------------ | --------- |
-| `RepositoryRole`    | 1=Read, 2=Triage, 3=Write, 4=Maintain, 5=Admin | Required |
-| `OrganizationAdmin` | Organization administrator                 | Not needed |
-| `Team`              | GitHub team (use numeric team ID)          | Required  |
-| `Integration`       | GitHub App installation ID                 | Required  |
-| `DeployKey`         | Deploy key ID                              | Required  |
+| Type                | Description                                    | actor_id   |
+| ------------------- | ---------------------------------------------- | ---------- |
+| `RepositoryRole`    | 1=Read, 2=Triage, 3=Write, 4=Maintain, 5=Admin | Required   |
+| `OrganizationAdmin` | Organization administrator                     | Not needed |
+| `Team`              | GitHub team (use numeric team ID)              | Required   |
+| `Integration`       | GitHub App installation ID                     | Required   |
+| `DeployKey`         | Deploy key ID                                  | Required   |
 
 ### Cleaning Up Classic Branch Protection
 
@@ -107,6 +109,7 @@ cm process cleanup-rules --apply
 #### "No [process.repo.ruleset] configured" error
 
 You're using an old config with `[process.repo.branch_protection]`. Either:
+
 1. Rename the section to `[process.repo.ruleset]`, or
 2. Wait for the deprecation period (v1.x still supports the old name)
 
@@ -119,6 +122,7 @@ cm process sync --validate-actors
 ```
 
 Common issues:
+
 - **RepositoryRole**: ID must be 1-5 (1=Read, 2=Triage, 3=Write, 4=Maintain, 5=Admin)
 - **Team**: Use the numeric team ID, not the team slug
 - **Integration**: Use the GitHub App installation ID for your organization

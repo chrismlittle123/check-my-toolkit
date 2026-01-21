@@ -3,7 +3,7 @@ import { execa } from "execa";
 import { type RepoInfo } from "./types.js";
 
 /** Error thrown during cleanup operations */
-export class CleanupError extends Error {
+class CleanupError extends Error {
   constructor(
     message: string,
     public readonly code: "NO_PERMISSION" | "API_ERROR" | "NOT_FOUND"
@@ -54,7 +54,7 @@ export interface ProtectionPlan {
 }
 
 /** Fetch classic branch protection for a specific branch */
-export async function fetchClassicBranchProtection(
+async function fetchClassicBranchProtection(
   repoInfo: RepoInfo,
   branch: string
 ): Promise<ClassicBranchProtection | null> {
@@ -104,12 +104,9 @@ export async function fetchClassicBranchProtection(
 }
 
 /** Fetch all GitHub Rulesets for a repository */
-export async function fetchRulesets(repoInfo: RepoInfo): Promise<RulesetSummary[]> {
+async function fetchRulesets(repoInfo: RepoInfo): Promise<RulesetSummary[]> {
   try {
-    const result = await execa("gh", [
-      "api",
-      `repos/${repoInfo.owner}/${repoInfo.repo}/rulesets`,
-    ]);
+    const result = await execa("gh", ["api", `repos/${repoInfo.owner}/${repoInfo.repo}/rulesets`]);
 
     const rulesets = JSON.parse(result.stdout) as {
       id: number;
@@ -125,9 +122,7 @@ export async function fetchRulesets(repoInfo: RepoInfo): Promise<RulesetSummary[
       name: r.name,
       target: r.target as "branch" | "tag",
       enforcement: r.enforcement,
-      branches: r.conditions?.ref_name?.include?.map((p) =>
-        p.replace(/^refs\/heads\//, "")
-      ),
+      branches: r.conditions?.ref_name?.include?.map((p) => p.replace(/^refs\/heads\//, "")),
     }));
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
@@ -187,10 +182,7 @@ export async function listAllProtection(
 }
 
 /** Remove classic branch protection for a specific branch */
-export async function removeClassicProtection(
-  repoInfo: RepoInfo,
-  branch: string
-): Promise<void> {
+async function removeClassicProtection(repoInfo: RepoInfo, branch: string): Promise<void> {
   try {
     await execa("gh", [
       "api",
@@ -291,7 +283,9 @@ export async function runCleanupRules(
 
   // Remove conflicting classic rules (ruleset takes precedence)
   for (const { classic } of plan.conflicts) {
-    process.stdout.write(`Removing conflicting classic protection from branch: ${classic.branch}\n`);
+    process.stdout.write(
+      `Removing conflicting classic protection from branch: ${classic.branch}\n`
+    );
     // eslint-disable-next-line no-await-in-loop
     await removeClassicProtection(repoInfo, classic.branch);
   }

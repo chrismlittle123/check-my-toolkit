@@ -116,7 +116,11 @@ export class RepoRunner extends BaseProcessToolRunner {
     if (this.config.require_codeowners) {
       violations.push(...this.checkCodeowners(projectRoot));
     }
-    if (this.config.require_branch_protection || this.config.ruleset || this.config.branch_protection) {
+    if (
+      this.config.require_branch_protection ||
+      this.config.ruleset ||
+      this.config.branch_protection
+    ) {
       violations.push(...(await this.checkBranchProtection(repoInfo)));
     }
     if (this.config.tag_protection?.patterns?.length) {
@@ -190,7 +194,10 @@ export class RepoRunner extends BaseProcessToolRunner {
     }
   }
 
-  private findBranchRuleset(rulesets: RulesetResponse[], branch: string): RulesetResponse | undefined {
+  private findBranchRuleset(
+    rulesets: RulesetResponse[],
+    branch: string
+  ): RulesetResponse | undefined {
     return rulesets.find(
       (r) =>
         r.target === "branch" &&
