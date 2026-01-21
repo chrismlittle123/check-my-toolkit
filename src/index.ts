@@ -58,6 +58,17 @@ export {
   runProcessChecks,
 } from "./process/index.js";
 
+// Process scan (remote validation)
+export {
+  type RemoteRepoInfo,
+  type ScanOptions,
+  scanRepository,
+  type ScanResult,
+  validateProcess,
+  type ValidateProcessOptions,
+  type ValidateProcessResult,
+} from "./process/scan/index.js";
+
 // Output
 export { formatJson, formatOutput, formatText, type OutputFormat } from "./output/index.js";
 

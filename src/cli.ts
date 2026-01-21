@@ -459,6 +459,26 @@ processCommand
     }
   });
 
+// cm process scan --repo owner/repo
+processCommand
+  .command("scan")
+  .description("Scan remote repository settings via GitHub API")
+  .addOption(
+    new Option("-r, --repo <owner/repo>", "Remote repository in owner/repo format").makeOptionMandatory()
+  )
+  .option("-c, --config <path>", "Path to check.toml config file")
+  .addOption(
+    new Option("-f, --format <format>", "Output format").choices(["text", "json"]).default("text")
+  )
+  .action(async (options: { repo: string; config?: string; format: string }) => {
+    const { runScan } = await import("./process/scan/index.js");
+    await runScan({
+      repo: options.repo,
+      config: options.config,
+      format: options.format as "text" | "json",
+    });
+  });
+
 program.addCommand(processCommand);
 
 // =============================================================================
