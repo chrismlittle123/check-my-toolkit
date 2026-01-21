@@ -15,6 +15,23 @@ import {
 
 const mockedExeca = vi.mocked(execa);
 
+// Helper to create a branch ruleset response
+const createBranchRuleset = (
+  branch: string,
+  rules: Array<{ type: string; parameters?: Record<string, unknown> }>,
+  bypassActors: Array<{ actor_id: number | null; actor_type: string; bypass_mode: string }> = []
+) => [
+  {
+    id: 1,
+    name: "Branch Protection",
+    target: "branch",
+    enforcement: "active",
+    conditions: { ref_name: { include: [`refs/heads/${branch}`] } },
+    bypass_actors: bypassActors,
+    rules,
+  },
+];
+
 describe("isGhAvailable", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -77,21 +94,28 @@ describe("fetchBranchProtection", () => {
     vi.clearAllMocks();
   });
 
-  it("parses branch protection response correctly", async () => {
+  it("parses branch protection ruleset response correctly", async () => {
     mockedExeca.mockResolvedValueOnce({
-      stdout: JSON.stringify({
-        required_pull_request_reviews: {
-          required_approving_review_count: 2,
-          dismiss_stale_reviews: true,
-          require_code_owner_reviews: true,
-        },
-        required_status_checks: {
-          strict: true,
-          contexts: ["ci", "test"],
-        },
-        required_signatures: { enabled: true },
-        enforce_admins: { enabled: true },
-      }),
+      stdout: JSON.stringify(
+        createBranchRuleset("main", [
+          {
+            type: "pull_request",
+            parameters: {
+              required_approving_review_count: 2,
+              dismiss_stale_reviews_on_push: true,
+              require_code_owner_review: true,
+            },
+          },
+          {
+            type: "required_status_checks",
+            parameters: {
+              strict_required_status_checks_policy: true,
+              required_status_checks: [{ context: "ci" }, { context: "test" }],
+            },
+          },
+          { type: "required_signatures" },
+        ])
+      ),
     } as never);
 
     const result = await fetchBranchProtection(repoInfo, "main");
@@ -104,17 +128,25 @@ describe("fetchBranchProtection", () => {
       requiredStatusChecks: ["ci", "test"],
       requireBranchesUpToDate: true,
       requireSignedCommits: true,
-      enforceAdmins: true,
+      enforceAdmins: true, // true because no bypass actors
+      bypassActors: null,
+      rulesetId: 1,
+      rulesetName: "Branch Protection",
     });
   });
 
   it("handles missing optional fields", async () => {
     mockedExeca.mockResolvedValueOnce({
-      stdout: JSON.stringify({
-        required_pull_request_reviews: {
-          required_approving_review_count: 1,
-        },
-      }),
+      stdout: JSON.stringify(
+        createBranchRuleset("main", [
+          {
+            type: "pull_request",
+            parameters: {
+              required_approving_review_count: 1,
+            },
+          },
+        ])
+      ),
     } as never);
 
     const result = await fetchBranchProtection(repoInfo, "main");
@@ -124,8 +156,8 @@ describe("fetchBranchProtection", () => {
     expect(result.requiredStatusChecks).toBeNull();
   });
 
-  it("returns empty settings for 404 (not protected)", async () => {
-    mockedExeca.mockRejectedValueOnce(new Error("HTTP 404: Branch not protected"));
+  it("returns empty settings for 404 (no rulesets)", async () => {
+    mockedExeca.mockRejectedValueOnce(new Error("HTTP 404"));
 
     const result = await fetchBranchProtection(repoInfo, "main");
 
@@ -138,7 +170,29 @@ describe("fetchBranchProtection", () => {
       requireBranchesUpToDate: null,
       requireSignedCommits: null,
       enforceAdmins: null,
+      bypassActors: null,
+      rulesetId: null,
+      rulesetName: null,
     });
+  });
+
+  it("returns empty settings when no matching branch ruleset exists", async () => {
+    mockedExeca.mockResolvedValueOnce({
+      stdout: JSON.stringify([
+        {
+          id: 1,
+          name: "Tag Protection",
+          target: "tag", // Not a branch ruleset
+          enforcement: "active",
+          rules: [],
+        },
+      ]),
+    } as never);
+
+    const result = await fetchBranchProtection(repoInfo, "main");
+
+    expect(result.rulesetId).toBeNull();
+    expect(result.requiredReviews).toBeNull();
   });
 
   it("throws FetcherError for 403 (no permission)", async () => {
@@ -155,5 +209,28 @@ describe("fetchBranchProtection", () => {
     const error = await fetchBranchProtection(repoInfo, "main").catch((e) => e);
     expect(error).toBeInstanceOf(FetcherError);
     expect(error.code).toBe("API_ERROR");
+  });
+
+  it("parses bypass actors correctly", async () => {
+    mockedExeca.mockResolvedValueOnce({
+      stdout: JSON.stringify(
+        createBranchRuleset(
+          "main",
+          [],
+          [
+            { actor_id: 123, actor_type: "Integration", bypass_mode: "always" },
+            { actor_id: 5, actor_type: "RepositoryRole", bypass_mode: "pull_request" },
+          ]
+        )
+      ),
+    } as never);
+
+    const result = await fetchBranchProtection(repoInfo, "main");
+
+    expect(result.bypassActors).toEqual([
+      { actor_type: "Integration", actor_id: 123, bypass_mode: "always" },
+      { actor_type: "RepositoryRole", actor_id: 5, bypass_mode: "pull_request" },
+    ]);
+    expect(result.enforceAdmins).toBe(false); // false because there are bypass actors
   });
 });
