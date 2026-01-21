@@ -91,6 +91,20 @@ cm check -f json      # JSON output for CI
 
 Static analysis, security, and code quality enforcement.
 
+## Configuration Philosophy
+
+**`check.toml` is the source of truth** for all lint rules and tool configurations used by `cm`.
+
+- `cm code check` uses rules **only** from `check.toml` sections (e.g., `[code.linting.ruff.lint]`, `[code.linting.eslint.rules]`)
+- `cm code audit` verifies that tool-specific config files exist (e.g., `ruff.toml`, `eslint.config.js`) for editor/IDE integration
+- Rules in tool-specific config files (like `ignore` in `ruff.toml`) are **not** used by `cm code check`
+
+This separation is intentional:
+
+1. **Centralized enforcement** - One config file (`check.toml`) defines what the CI enforces
+2. **Auditability** - Easy to review and compare configurations across projects
+3. **Editor compatibility** - Tool-specific files still work for IDE linting/formatting
+
 ## Linting
 
 ### ESLint (`[code.linting.eslint]`)
@@ -138,6 +152,8 @@ ignore = ["E501"]
 | Tool         | Ruff                          |
 | Languages    | Python                        |
 | Config Files | `ruff.toml`, `pyproject.toml` |
+
+> **Important:** `check.toml` is the source of truth for lint rules. Rules defined in `ruff.toml` (like `ignore = ["F401"]`) are **not** used by `cm code check`. This is intentional - `check.toml` provides centralized, auditable configuration. The `cm code audit` command verifies that `ruff.toml` exists for editor integration, but `cm code check` uses only `[code.linting.ruff.lint]` from `check.toml`.
 
 ---
 
@@ -283,7 +299,27 @@ Hardcoded secrets detection.
 enabled = true
 ```
 
-**Detects:** API keys, AWS credentials, database strings, private keys, tokens, passwords.
+**Detects by default:** Private keys (PEM format), API keys, tokens (GitHub, AWS, etc.), high-entropy secrets.
+
+**Note:** Gitleaks uses its built-in rules by default. Some patterns like database connection strings or project-specific secrets may require custom rules.
+
+**Custom Rules:** Create a `.gitleaks.toml` in your project root to extend detection:
+
+```toml
+[extend]
+useDefault = true  # Keep default rules
+
+[[rules]]
+id = "database-connection-string"
+description = "Database connection string with password"
+regex = '''(?i)(postgres|mysql|mongodb)://[^:]+:[^@]+@'''
+tags = ["database", "password"]
+
+[[allowlist.paths]]
+regex = '''tests/fixtures/'''  # Exclude test fixtures
+```
+
+See [Gitleaks documentation](https://github.com/gitleaks/gitleaks#configuration) for rule syntax.
 
 ---
 
