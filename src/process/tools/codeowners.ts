@@ -287,13 +287,12 @@ export class CodeownersRunner extends BaseProcessToolRunner {
   }
 
   /**
-   * Check if two owner arrays match exactly (order-independent)
+   * Check if two owner arrays match exactly (order-sensitive)
    */
   private ownersMatch(expected: string[], actual: string[]): boolean {
     if (expected.length !== actual.length) {
       return false;
     }
-    const expectedSet = new Set(expected);
-    return actual.every((owner) => expectedSet.has(owner));
+    return expected.every((owner, index) => owner === actual[index]);
   }
 }

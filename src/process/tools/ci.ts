@@ -1,3 +1,4 @@
+/* eslint-disable max-lines -- CI workflow validation requires comprehensive coverage of jobs, actions, and commands */
 import * as yaml from "js-yaml";
 
 import { type CheckResult, type Violation } from "../../types/index.js";
@@ -406,11 +407,35 @@ export class CiRunner extends BaseProcessToolRunner {
     return violations;
   }
 
+  /**
+   * Parse a GitHub Actions reference to extract the action name.
+   * Handles:
+   * - Standard refs: "actions/checkout@v4" -> "actions/checkout"
+   * - SHA refs: "actions/checkout@abc123" -> "actions/checkout"
+   * - Local actions: "./path/to/action" -> "./path/to/action"
+   * - Docker actions: "docker://image:tag" -> null (excluded)
+   */
+  private parseActionReference(uses: string): string | null {
+    // Skip Docker actions - they're container images, not GitHub Actions
+    if (uses.startsWith("docker://")) {
+      return null;
+    }
+
+    // Local actions don't have version tags
+    if (uses.startsWith("./") || uses.startsWith("../")) {
+      return uses;
+    }
+
+    // Standard GitHub Actions: extract name before @ version tag
+    const atIndex = uses.indexOf("@");
+    return atIndex > 0 ? uses.slice(0, atIndex) : uses;
+  }
+
   private extractUsedActions(workflow: WorkflowFile): string[] {
     return Object.values(workflow.jobs ?? {}).flatMap((job) =>
       (job.steps ?? [])
-        .map((s) => s.uses?.split("@")[0])
-        .filter((u): u is string => u !== undefined)
+        .map((s) => (s.uses ? this.parseActionReference(s.uses) : null))
+        .filter((u): u is string => u !== null)
     );
   }
 

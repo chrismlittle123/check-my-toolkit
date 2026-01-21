@@ -301,6 +301,64 @@ jobs:
         const result = await runner.run(tempDir);
         expect(result.passed).toBe(true);
       });
+
+      it("handles local actions (./path)", async () => {
+        const workflow = `
+name: CI
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: ./my-local-action
+`;
+        fs.writeFileSync(path.join(tempDir, ".github/workflows/ci.yml"), workflow);
+        runner.setConfig({
+          enabled: true,
+          actions: { "ci.yml": ["./my-local-action"] },
+        });
+
+        const result = await runner.run(tempDir);
+        expect(result.passed).toBe(true);
+      });
+
+      it("ignores docker actions", async () => {
+        const workflow = `
+name: CI
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: docker://alpine:latest
+      - uses: actions/checkout@v4
+`;
+        fs.writeFileSync(path.join(tempDir, ".github/workflows/ci.yml"), workflow);
+        runner.setConfig({
+          enabled: true,
+          actions: { "ci.yml": ["actions/checkout"] },
+        });
+
+        const result = await runner.run(tempDir);
+        expect(result.passed).toBe(true);
+      });
+
+      it("handles SHA version references", async () => {
+        const workflow = `
+name: CI
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29
+`;
+        fs.writeFileSync(path.join(tempDir, ".github/workflows/ci.yml"), workflow);
+        runner.setConfig({
+          enabled: true,
+          actions: { "ci.yml": ["actions/checkout"] },
+        });
+
+        const result = await runner.run(tempDir);
+        expect(result.passed).toBe(true);
+      });
     });
 
     describe("combined checks", () => {
