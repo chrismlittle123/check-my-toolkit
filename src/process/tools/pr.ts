@@ -1,5 +1,7 @@
 import * as fs from "node:fs";
 
+import { minimatch } from "minimatch";
+
 import { type CheckResult, type Violation } from "../../types/index.js";
 import { BaseProcessToolRunner } from "./base.js";
 
@@ -10,6 +12,7 @@ interface PrConfig {
   max_lines?: number;
   require_issue?: boolean;
   issue_keywords?: string[];
+  exclude?: string[];
 }
 
 /** Default keywords that link PRs to issues */
@@ -18,12 +21,23 @@ const DEFAULT_ISSUE_KEYWORDS = ["Closes", "Fixes", "Resolves"];
 /** GitHub PR event payload structure (partial) */
 interface GitHubPrEventPayload {
   pull_request?: {
+    number?: number;
     changed_files?: number;
     additions?: number;
     deletions?: number;
     title?: string;
     body?: string;
   };
+  repository?: {
+    full_name?: string;
+  };
+}
+
+/** GitHub PR file from API response */
+interface GitHubPrFile {
+  filename: string;
+  additions: number;
+  deletions: number;
 }
 
 /**
@@ -68,6 +82,68 @@ export class PrRunner extends BaseProcessToolRunner {
     payload: GitHubPrEventPayload | null
   ): GitHubPrEventPayload["pull_request"] | null {
     return payload?.pull_request ?? null;
+  }
+
+  /** Fetch a single page of PR files from GitHub API */
+  private async fetchPrFilesPage(
+    repo: string,
+    prNumber: number,
+    page: number,
+    token: string
+  ): Promise<GitHubPrFile[] | null> {
+    const response = await fetch(
+      `https://api.github.com/repos/${repo}/pulls/${prNumber}/files?per_page=100&page=${page}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/vnd.github.v3+json",
+        },
+      }
+    );
+    return response.ok ? ((await response.json()) as GitHubPrFile[]) : null;
+  }
+
+  /**
+   * Fetch PR files from GitHub API with pagination support.
+   * Returns empty array if GITHUB_TOKEN is not available or API fails.
+   */
+  private async fetchPrFiles(repo: string, prNumber: number): Promise<GitHubPrFile[]> {
+    const token = process.env.GITHUB_TOKEN;
+    if (!token) {
+      return [];
+    }
+
+    const fetchPage = async (
+      page: number,
+      accumulated: GitHubPrFile[]
+    ): Promise<GitHubPrFile[]> => {
+      const pageFiles = await this.fetchPrFilesPage(repo, prNumber, page, token);
+      if (!pageFiles) {
+        return [];
+      }
+      const allFiles = [...accumulated, ...pageFiles];
+      return pageFiles.length < 100 ? allFiles : fetchPage(page + 1, allFiles);
+    };
+
+    try {
+      return await fetchPage(1, []);
+    } catch {
+      return [];
+    }
+  }
+
+  /**
+   * Filter files that match exclude patterns.
+   * Returns only files that do NOT match any exclude pattern.
+   */
+  private filterExcludedFiles(files: GitHubPrFile[], excludePatterns: string[]): GitHubPrFile[] {
+    if (excludePatterns.length === 0) {
+      return files;
+    }
+
+    return files.filter(
+      (file) => !excludePatterns.some((pattern) => minimatch(file.filename, pattern))
+    );
   }
 
   /** Check if any validation is configured */
@@ -122,56 +198,79 @@ export class PrRunner extends BaseProcessToolRunner {
     };
   }
 
-  /** Validate PR size against configured limits */
-  private validatePrSize(
+  /** Get PR counts, applying exclusions if configured */
+  private async getPrCounts(
     pr: NonNullable<GitHubPrEventPayload["pull_request"]>,
-    elapsed: () => number
-  ): CheckResult {
+    repo: string | undefined
+  ): Promise<{ fileCount: number; lineCount: number }> {
+    const defaultCounts = {
+      fileCount: pr.changed_files ?? 0,
+      lineCount: (pr.additions ?? 0) + (pr.deletions ?? 0),
+    };
+
+    if (!this.config.exclude?.length || !repo || !pr.number) {
+      return defaultCounts;
+    }
+
+    const files = await this.fetchPrFiles(repo, pr.number);
+    if (files.length === 0) {
+      return defaultCounts; // API failed, fall back
+    }
+
+    const filtered = this.filterExcludedFiles(files, this.config.exclude);
+    return {
+      fileCount: filtered.length,
+      lineCount: filtered.reduce((sum, f) => sum + f.additions + f.deletions, 0),
+    };
+  }
+
+  /** Check size limits and return violations */
+  private checkSizeLimits(fileCount: number, lineCount: number): Violation[] {
     const violations: Violation[] = [];
 
-    // Check files limit
-    if (this.config.max_files !== undefined && pr.changed_files !== undefined) {
-      if (pr.changed_files > this.config.max_files) {
-        violations.push({
-          rule: `${this.rule}.max_files`,
-          tool: this.toolId,
-          message: `PR has ${pr.changed_files} files changed (max: ${this.config.max_files})`,
-          severity: "error",
-        });
-      }
+    if (this.config.max_files !== undefined && fileCount > this.config.max_files) {
+      violations.push({
+        rule: `${this.rule}.max_files`,
+        tool: this.toolId,
+        message: `PR has ${fileCount} files changed (max: ${this.config.max_files})`,
+        severity: "error",
+      });
     }
 
-    // Check lines limit (additions + deletions)
-    if (this.config.max_lines !== undefined) {
-      const additions = pr.additions ?? 0;
-      const deletions = pr.deletions ?? 0;
-      const totalLines = additions + deletions;
-
-      if (totalLines > this.config.max_lines) {
-        violations.push({
-          rule: `${this.rule}.max_lines`,
-          tool: this.toolId,
-          message: `PR has ${totalLines} lines changed (max: ${this.config.max_lines})`,
-          severity: "error",
-        });
-      }
+    if (this.config.max_lines !== undefined && lineCount > this.config.max_lines) {
+      violations.push({
+        rule: `${this.rule}.max_lines`,
+        tool: this.toolId,
+        message: `PR has ${lineCount} lines changed (max: ${this.config.max_lines})`,
+        severity: "error",
+      });
     }
 
-    if (violations.length > 0) {
-      return this.fromViolations(violations, elapsed());
-    }
+    return violations;
+  }
 
-    return this.pass(elapsed());
+  /** Validate PR size against configured limits */
+  private async validatePrSize(
+    pr: NonNullable<GitHubPrEventPayload["pull_request"]>,
+    repo: string | undefined,
+    elapsed: () => number
+  ): Promise<CheckResult> {
+    const { fileCount, lineCount } = await this.getPrCounts(pr, repo);
+    const violations = this.checkSizeLimits(fileCount, lineCount);
+    return violations.length > 0
+      ? this.fromViolations(violations, elapsed())
+      : this.pass(elapsed());
   }
 
   /** Collect all violations from PR validations */
-  private collectViolations(
+  private async collectViolations(
     prData: NonNullable<GitHubPrEventPayload["pull_request"]>,
+    repo: string | undefined,
     elapsed: () => number
-  ): Violation[] {
+  ): Promise<Violation[]> {
     const violations: Violation[] = [];
 
-    const sizeResult = this.validatePrSize(prData, elapsed);
+    const sizeResult = await this.validatePrSize(prData, repo, elapsed);
     if (!sizeResult.passed) {
       violations.push(...sizeResult.violations);
     }
@@ -204,7 +303,8 @@ export class PrRunner extends BaseProcessToolRunner {
       return this.skip("Not in a PR context (GITHUB_EVENT_PATH not set or no PR data)", elapsed());
     }
 
-    const violations = this.collectViolations(prData, elapsed);
+    const repo = payload?.repository?.full_name;
+    const violations = await this.collectViolations(prData, repo, elapsed);
     return violations.length > 0
       ? this.fromViolations(violations, elapsed())
       : this.pass(elapsed());
