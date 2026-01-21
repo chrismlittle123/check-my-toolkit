@@ -326,21 +326,21 @@ describe("#162 - forbidden_files glob pattern validation", () => {
     expect(result.success).toBe(true);
   });
 
-  it("accepts patterns with unclosed brackets (minimatch treats them as literals)", () => {
-    // Note: minimatch is lenient - unclosed brackets like "file[1.txt" are
-    // interpreted as literal strings (matches "file[1.txt" exactly).
-    // This is valid but may not be what the user expects.
+  it("rejects patterns with unclosed brackets (fix #186)", () => {
+    // #186: unclosed brackets should be rejected as invalid glob patterns
     const config = {
       process: {
         forbidden_files: {
           enabled: true,
-          files: ["file[1.txt"],
+          files: ["file[1.txt"], // Unclosed bracket - invalid
         },
       },
     };
     const result = configSchema.safeParse(config);
-    // minimatch accepts this as valid, treating [ as a literal character
-    expect(result.success).toBe(true);
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.errors[0].message).toContain("unclosed bracket");
+    }
   });
 
   it("requires files to be strings", () => {
@@ -374,7 +374,7 @@ describe("#162 - forbidden_files glob pattern validation", () => {
   });
 });
 
-describe("#186 - forbidden_files ignore array validation", () => {
+describe("#186 - forbidden_files glob pattern validation", () => {
   it("accepts valid ignore patterns", () => {
     const config = {
       process: {
@@ -427,6 +427,81 @@ describe("#186 - forbidden_files ignore array validation", () => {
           enabled: true,
           files: ["**/.env"],
           ignore: ["**/test[0-9]/**", "**/*.{js,ts}"],
+        },
+      },
+    };
+    const result = configSchema.safeParse(config);
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects unclosed bracket in files pattern", () => {
+    const config = {
+      process: {
+        forbidden_files: {
+          enabled: true,
+          files: ["[invalid"], // Unclosed bracket
+        },
+      },
+    };
+    const result = configSchema.safeParse(config);
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.errors[0].message).toContain("unclosed bracket");
+    }
+  });
+
+  it("rejects unclosed brace in files pattern", () => {
+    const config = {
+      process: {
+        forbidden_files: {
+          enabled: true,
+          files: ["*.{js,ts"], // Unclosed brace
+        },
+      },
+    };
+    const result = configSchema.safeParse(config);
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.errors[0].message).toContain("unclosed brace");
+    }
+  });
+
+  it("rejects unclosed bracket in ignore pattern", () => {
+    const config = {
+      process: {
+        forbidden_files: {
+          enabled: true,
+          files: ["**/.env"],
+          ignore: ["test[invalid"], // Unclosed bracket
+        },
+      },
+    };
+    const result = configSchema.safeParse(config);
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.errors[0].message).toContain("unclosed bracket");
+    }
+  });
+
+  it("accepts escaped brackets", () => {
+    const config = {
+      process: {
+        forbidden_files: {
+          enabled: true,
+          files: ["file\\[1\\].txt"], // Escaped brackets are valid
+        },
+      },
+    };
+    const result = configSchema.safeParse(config);
+    expect(result.success).toBe(true);
+  });
+
+  it("accepts properly closed brackets and braces", () => {
+    const config = {
+      process: {
+        forbidden_files: {
+          enabled: true,
+          files: ["**/file[0-9].txt", "**/*.{js,ts,tsx}"],
         },
       },
     };
