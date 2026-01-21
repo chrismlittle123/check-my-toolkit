@@ -3,16 +3,58 @@ import { minimatch } from "minimatch";
 import { z } from "zod";
 
 /**
- * Validate that a string is a valid glob pattern
+ * Count unclosed brackets and braces in a pattern, respecting escapes.
+ */
+function countUnclosedDelimiters(pattern: string): { brackets: number; braces: number } {
+  let brackets = 0;
+  let braces = 0;
+  for (let i = 0; i < pattern.length; i++) {
+    if (pattern[i] === "\\" && i + 1 < pattern.length) {
+      i++; // Skip escaped character
+      continue;
+    }
+    switch (pattern[i]) {
+      case "[":
+        brackets++;
+        break;
+      case "]":
+        if (brackets > 0) {
+          brackets--;
+        }
+        break;
+      case "{":
+        braces++;
+        break;
+      case "}":
+        if (braces > 0) {
+          braces--;
+        }
+        break;
+    }
+  }
+  return { brackets, braces };
+}
+
+/**
+ * Validate that a string is a valid glob pattern.
+ * Checks for balanced brackets/braces since minimatch is too lenient.
  */
 function isValidGlobPattern(pattern: string): { valid: boolean; error?: string } {
+  if (pattern.length === 0) {
+    return { valid: false, error: "empty pattern" };
+  }
+
+  const unclosed = countUnclosedDelimiters(pattern);
+  if (unclosed.brackets > 0) {
+    return { valid: false, error: "unclosed bracket '['" };
+  }
+  if (unclosed.braces > 0) {
+    return { valid: false, error: "unclosed brace '{'" };
+  }
+
   try {
-    // minimatch.makeRe() returns false for empty patterns, RegExp for valid patterns
     const result = minimatch.makeRe(pattern);
-    if (result === false) {
-      return { valid: false, error: "empty or invalid pattern" };
-    }
-    return { valid: true };
+    return result === false ? { valid: false, error: "invalid pattern syntax" } : { valid: true };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Invalid glob pattern";
     return { valid: false, error: message };
