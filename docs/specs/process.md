@@ -1,437 +1,391 @@
 # PROCESS Domain Spec
 
-GitHub repository process standards validation for drift-toolkit integration.
+Repository workflow and process standards validation.
 
 ## Overview
 
-The PROCESS domain validates GitHub repository settings, branch protection, required files, commit conventions, and CI/CD configuration.
+The PROCESS domain validates git hooks, CI workflows, branch naming, commit conventions, changesets, and repository configuration. It can both check local compliance and sync settings to GitHub.
 
-**Two modes:**
-
-| Command            | Timing          | Purpose                   | Data Source      |
-| ------------------ | --------------- | ------------------------- | ---------------- |
-| `cm process check` | Pre-production  | Preventative (PR/CI)      | Local filesystem |
-| `cm process scan`  | Post-deployment | Detective (drift-toolkit) | GitHub API       |
-
-```toml
+```
 [process]
-├── [process.branches]        # Branch protection settings
-├── [process.required_files]  # Required repository files
-├── [process.forbidden_files] # Files that must NOT exist
-├── [process.commits]         # Commit message format
-├── [process.pull_requests]   # PR requirements
-└── [process.ci]              # CI/CD workflow requirements
+├── hooks              # Git hooks (husky) validation
+├── ci                 # CI/CD workflow requirements
+├── branches           # Branch naming conventions
+├── commits            # Commit message format
+├── changesets         # Changeset file validation
+├── pr                 # Pull request size limits
+├── tickets            # Ticket references in branches/commits
+├── coverage           # Test coverage requirements
+├── repo               # GitHub repository settings (rulesets)
+├── codeowners         # CODEOWNERS file validation
+├── docs               # Documentation governance
+├── forbidden_files    # Files that must NOT exist
+└── backups            # S3 backup verification
 ```
 
 ---
 
-## `cm process check` Command
+## Commands
 
-**Purpose:** Local validation of process standards at PR/CI time. Checks files and configurations that can be validated without API calls.
+### `cm process check`
 
-**Timing:** Pre-production (preventative)
-
-### CLI Interface
+Run all local process validations.
 
 ```bash
-# Run all local process checks
-cm process check
-
-# Check specific category
-cm process check --category commits
-cm process check --category ci
-
-# JSON output
-cm process check --json
+cm process check              # Run all checks
+cm process check --format json   # JSON output
 ```
 
-### What It Checks (Local)
+### `cm process audit`
 
-- Commit message format (conventional commits)
-- Required files exist (CODEOWNERS, PR template, etc.)
-- Forbidden files do not exist (.env, credentials, etc.)
-- Workflow files exist and are valid
-- Branch naming conventions
-
----
-
-## `cm process scan` Command
-
-**Purpose:** Remote validation of process standards via GitHub API. Used by drift-toolkit for scheduled scans to detect configuration drift.
-
-**Timing:** Post-deployment (detective)
-
-### CLI Interface
+Verify all process tool configs exist (doesn't run checks).
 
 ```bash
-# Scan current repository (requires GITHUB_TOKEN)
-cm process scan
-
-# Scan specific repository
-cm process scan --repo owner/repo
-
-# Scan specific category
-cm process scan --category branches
-cm process scan --category required_files
-
-# JSON output (for drift-toolkit)
-cm process scan --json
+cm process audit
 ```
 
-### Output Format
+### `cm process diff`
 
-**Human-readable:**
+Compare local check.toml settings vs current GitHub repository rulesets.
 
-```
-Process Validation Results
-==========================
-
-Repository: myorg/my-app
-
-✓ Branch protection enabled
-✗ Required reviews: expected 2, actual 1
-✓ Status checks required
-✗ Missing required status check: build
-✓ CODEOWNERS file exists
-✗ PR template missing
-✓ Conventional commits enforced
-
-Issues:
--------
-
-VIOLATION: Branch protection - required_reviews
-  Expected: 2
-  Actual: 1
-  Path: Settings > Branches > main
-
-VIOLATION: Missing required status check
-  Expected: ["test", "lint", "build"]
-  Missing: ["build"]
-  Path: Settings > Branches > main > Status checks
-
-VIOLATION: Required file missing
-  File: .github/pull_request_template.md
-  Action: Create PR template
+```bash
+cm process diff               # Show differences
+cm process diff --json        # JSON output
 ```
 
-**JSON output (`--json`):**
+### `cm process sync`
 
-```json
-{
-  "valid": false,
-  "repository": "myorg/my-app",
-  "timestamp": "2024-01-15T10:30:00Z",
-  "summary": {
-    "passed": 5,
-    "failed": 3,
-    "warnings": 1
-  },
-  "checks": [
-    {
-      "category": "branches",
-      "check": "required_reviews",
-      "status": "fail",
-      "expected": 2,
-      "actual": 1
-    },
-    {
-      "category": "required_files",
-      "check": "pr_template",
-      "status": "fail",
-      "expected": true,
-      "actual": false,
-      "path": ".github/pull_request_template.md"
-    }
-  ]
-}
+Sync ruleset settings from check.toml to GitHub.
+
+```bash
+cm process sync               # Sync settings (requires gh CLI)
+cm process sync --dry-run     # Preview changes without applying
+```
+
+### `cm process check-branch`
+
+Git hook command to validate branch names. Used in pre-push hooks.
+
+```bash
+cm process check-branch [--quiet]
+```
+
+### `cm process check-commit <file>`
+
+Git hook command to validate commit messages. Used in commit-msg hooks.
+
+```bash
+cm process check-commit .git/COMMIT_EDITMSG [--quiet]
+```
+
+### `cm process list-rules`
+
+List all branch/tag protection rules in the repository.
+
+```bash
+cm process list-rules         # Text output
+cm process list-rules --json  # JSON output
+```
+
+### `cm process cleanup-rules`
+
+Remove old branch protection rules (replaced by rulesets).
+
+```bash
+cm process cleanup-rules --dry-run   # Preview what would be removed
+cm process cleanup-rules             # Actually remove old rules
 ```
 
 ---
 
-## check.toml Configuration
+## Configuration
 
-### Branch Protection: `[process.branches]`
+### Git Hooks: `[process.hooks]`
 
-```toml
-[process.branches]
-enabled = true
-default_branch = "main"
-protection = true
-required_reviews = 2
-dismiss_stale_reviews = true
-require_code_owner_review = true
-require_status_checks = true
-required_status_checks = ["test", "lint", "build"]
-enforce_admins = false
-allow_force_push = false
-allow_deletions = false
-```
-
-| Setting                     | Description                               |
-| --------------------------- | ----------------------------------------- |
-| `default_branch`            | Branch to validate protection on          |
-| `protection`                | Branch protection must be enabled         |
-| `required_reviews`          | Minimum number of approving reviews       |
-| `dismiss_stale_reviews`     | Dismiss approvals when new commits pushed |
-| `require_code_owner_review` | Require review from code owners           |
-| `require_status_checks`     | Require status checks to pass             |
-| `required_status_checks`    | Specific checks that must pass            |
-| `enforce_admins`            | Apply rules to administrators             |
-| `allow_force_push`          | Allow force pushes to protected branch    |
-| `allow_deletions`           | Allow branch deletion                     |
-
-### Required Files: `[process.required_files]`
+Validate git hooks are configured (typically via husky).
 
 ```toml
-[process.required_files]
+[process.hooks]
 enabled = true
-codeowners = true
-codeowners_path = ".github/CODEOWNERS"
-pr_template = true
-pr_template_path = ".github/pull_request_template.md"
-issue_templates = true
-contributing = false
-license = false
+require_husky = true                           # Require .husky/ directory
+require_hooks = ["pre-commit", "pre-push"]     # Required hook files
+protected_branches = ["main", "master"]        # Branches to protect from direct push
+
+[process.hooks.commands]
+pre-commit = ["lint-staged"]                   # Commands required in pre-commit
+pre-push = ["cm process check-branch"]         # Commands required in pre-push
 ```
 
-| Setting            | Description                          |
-| ------------------ | ------------------------------------ |
-| `codeowners`       | CODEOWNERS file must exist           |
-| `codeowners_path`  | Expected path for CODEOWNERS         |
-| `pr_template`      | PR template must exist               |
-| `pr_template_path` | Expected path for PR template        |
-| `issue_templates`  | Issue templates directory must exist |
-| `contributing`     | CONTRIBUTING.md must exist           |
-| `license`          | LICENSE file must exist              |
+### CI Workflows: `[process.ci]`
 
-### Forbidden Files: `[process.forbidden_files]`
-
-Enforce that certain files must NOT exist anywhere in the repository. Scans the entire repo recursively to detect anti-patterns like `.env` files (secrets should come from AWS Secrets Manager, configuration should be in typed code).
-
-```toml
-[process.forbidden_files]
-enabled = true
-files = ["**/.env", "**/.env.*", "**/.env.example"]
-message = "Use AWS Secrets Manager for secrets and TypeScript config for settings"
-```
-
-| Setting   | Description                                                     |
-| --------- | --------------------------------------------------------------- |
-| `files`   | Glob patterns for files that must not exist (scans entire repo) |
-| `message` | Custom message explaining why these files are forbidden         |
-
-#### Glob Pattern Examples
-
-| Pattern               | Matches                                        |
-| --------------------- | ---------------------------------------------- |
-| `**/.env`             | `.env`, `packages/api/.env`, `src/config/.env` |
-| `**/.env.*`           | `.env.local`, `apps/web/.env.production`       |
-| `**/.env.example`     | `.env.example`, `services/auth/.env.example`   |
-| `**/credentials.json` | Any `credentials.json` anywhere in the repo    |
-| `**/*.pem`            | Any `.pem` private key file                    |
-
-#### Rationale
-
-The `.env` pattern has security and operational problems:
-
-1. **Security risk** - Files on disk can be accidentally committed, leaked, or accessed
-2. **No audit trail** - No record of who accessed secrets or when
-3. **Rotation pain** - Must manually update every developer's local copy
-4. **No revocation** - Can't revoke access to secrets already downloaded
-
-**Better alternatives:**
-
-| What          | Where                  | Why                                     |
-| ------------- | ---------------------- | --------------------------------------- |
-| Secrets       | AWS Secrets Manager    | Audited, revocable, access-controlled   |
-| Configuration | TypeScript config file | Type-safe, version-controlled, reviewed |
-
-#### Violation Examples
-
-```
-VIOLATION: Forbidden file exists
-  File: .env
-  Message: Use AWS Secrets Manager for secrets and TypeScript config for settings
-  Action: Remove file and migrate secrets to AWS Secrets Manager
-
-VIOLATION: Forbidden file exists
-  File: packages/api/.env.local
-  Message: Use AWS Secrets Manager for secrets and TypeScript config for settings
-  Action: Remove file and migrate secrets to AWS Secrets Manager
-
-VIOLATION: Forbidden file exists
-  File: services/auth/.env.example
-  Message: Use AWS Secrets Manager for secrets and TypeScript config for settings
-  Action: Remove file and use TypeScript config with documented environment variables
-```
-
-### Commit Conventions: `[process.commits]`
-
-```toml
-[process.commits]
-enabled = true
-conventional = true
-allowed_types = ["feat", "fix", "docs", "chore", "refactor", "test", "ci"]
-require_scope = false
-max_subject_length = 72
-```
-
-| Setting              | Description                           |
-| -------------------- | ------------------------------------- |
-| `conventional`       | Enforce conventional commit format    |
-| `allowed_types`      | Valid commit type prefixes            |
-| `require_scope`      | Require scope in commit message       |
-| `max_subject_length` | Maximum length of commit subject line |
-
-### Pull Request Requirements: `[process.pull_requests]`
-
-```toml
-[process.pull_requests]
-enabled = true
-require_linked_issue = false
-require_labels = true
-required_labels = ["type:*"]  # glob pattern
-max_files_changed = 50  # warning threshold
-```
-
-| Setting                | Description                       |
-| ---------------------- | --------------------------------- |
-| `require_linked_issue` | PR must reference an issue        |
-| `require_labels`       | PR must have labels               |
-| `required_labels`      | Specific label patterns required  |
-| `max_files_changed`    | Warn if PR touches too many files |
-
-### CI/CD Requirements: `[process.ci]`
+Validate GitHub Actions workflows exist and contain required elements.
 
 ```toml
 [process.ci]
 enabled = true
-required_workflows = ["test.yml", "lint.yml"]
-workflow_path = ".github/workflows"
+require_workflows = ["ci.yml", "release.yml"]  # Workflow files that must exist
+
+[process.ci.jobs]
+"ci.yml" = ["test", "lint", "build"]           # Required jobs in workflow
+
+[process.ci.actions]
+"ci.yml" = ["actions/checkout", "actions/setup-node"]  # Required actions
+
+[process.ci.commands]
+# Commands required anywhere in workflow
+"ci.yml" = ["cm code check", "pnpm test"]
+
+# Or target specific jobs
+"ci.yml".test = ["pnpm test"]
+"ci.yml".lint = ["cm code check"]
 ```
 
-| Setting              | Description                    |
-| -------------------- | ------------------------------ |
-| `required_workflows` | Workflow files that must exist |
-| `workflow_path`      | Directory containing workflows |
+### Branch Naming: `[process.branches]`
 
-### Required Commands: `[process.ci.commands]`
-
-Enforce that specific shell commands execute in CI workflows. Uses AST-based workflow parsing via [`@actions/workflow-parser`](https://www.npmjs.com/package/@actions/workflow-parser) to intelligently determine if commands will actually run on PRs to main.
+Enforce branch naming conventions.
 
 ```toml
-[process.ci.commands]
-# Commands that must run unconditionally on PRs to main
-"ci.yml" = ["cm code check", "cm code audit"]
-
-# Target specific jobs
-"ci.yml".test = ["cm code check"]
-"ci.yml".lint = ["cm code audit"]
-
-# Multiple workflows
-"pr-checks.yml" = ["cm process check"]
+[process.branches]
+enabled = true
+pattern = "^(feature|fix|hotfix|docs)/[a-z0-9-]+$"  # Regex pattern
+exclude = ["main", "master", "develop"]              # Branches to skip
+require_issue = true                                 # Require issue number
+issue_pattern = "/(\\d+)/"                           # Regex to extract issue number
 ```
 
-| Setting              | Description                            |
-| -------------------- | -------------------------------------- |
-| `"<workflow>"`       | Commands required anywhere in workflow |
-| `"<workflow>".<job>` | Commands required in specific job      |
+### Commit Messages: `[process.commits]`
 
-#### Validation Logic
+Enforce commit message conventions.
 
-The parser performs intelligent analysis to ensure commands **will execute on every PR to main**:
-
-1. **Workflow triggers:** Must include `pull_request` targeting `main`/`master` (or `push` to main)
-2. **Job conditions:** Job must not have `if:` conditions that could skip execution (e.g., `if: github.event_name == 'schedule'`)
-3. **Step conditions:** Step containing the command must not have conditional `if:` that skips on PRs
-4. **Command presence:** Command must appear in a `run:` block (not commented out)
-5. **Matrix/reusable workflows:** Follows job references to validate command presence
-
-#### Violation Examples
-
-```
-VIOLATION: Required command not found
-  Workflow: ci.yml
-  Job: test
-  Command: cm code audit
-  Reason: Command not present in any step
-
-VIOLATION: Command may not execute on PRs
-  Workflow: ci.yml
-  Job: lint
-  Command: cm code check
-  Reason: Step has condition "if: github.event_name == 'push'"
-
-VIOLATION: Command is commented out
-  Workflow: ci.yml
-  Job: test
-  Command: cm code check
-  Reason: Found "# cm code check" but command is commented
+```toml
+[process.commits]
+enabled = true
+pattern = "^(feat|fix|docs|chore|refactor|test|ci)(\\(.+\\))?: .+"  # Regex pattern
+types = ["feat", "fix", "docs", "chore", "refactor", "test", "ci"]  # Allowed types
+require_scope = false                          # Require scope like feat(api): ...
+max_subject_length = 72                        # Max length of subject line
 ```
 
-#### Match Behavior
+### Changesets: `[process.changesets]`
 
-- **Substring match:** `cm code check` matches `cm code check --format json`
-- **Ignores comments:** Lines starting with `#` are not matched
-- **Multi-line run blocks:** Parses entire `run: |` blocks for command presence
+Validate changeset files for versioning.
 
-#### Implementation Notes
+```toml
+[process.changesets]
+enabled = true
+require_for_paths = ["src/**", "packages/**"]  # Paths that require changesets
+exclude_paths = ["**/*.test.ts", "**/*.md"]    # Paths exempt from requirement
+validate_format = true                          # Validate changeset file format
+allowed_bump_types = ["patch", "minor"]         # Restrict bump types (no major)
+require_description = true                      # Require non-empty description
+min_description_length = 10                     # Minimum description length
+```
 
-Uses [`@actions/workflow-parser`](https://www.npmjs.com/package/@actions/workflow-parser) (official GitHub package) for parsing workflow YAML into an intermediate representation, enabling:
+### Pull Requests: `[process.pr]`
 
-- Accurate trigger detection (`on:` block parsing)
-- Conditional expression evaluation (`if:` conditions)
-- Job dependency resolution (`needs:`)
-- Reusable workflow expansion (`uses: ./.github/workflows/`)
+Enforce PR size limits and requirements.
+
+```toml
+[process.pr]
+enabled = true
+max_files = 50                                 # Max files changed
+max_lines = 500                                # Max lines changed
+require_issue = true                           # Require issue reference
+issue_keywords = ["Closes", "Fixes", "Resolves"]  # Keywords that link issues
+```
+
+### Ticket References: `[process.tickets]`
+
+Require ticket/issue references in branches or commits.
+
+```toml
+[process.tickets]
+enabled = true
+pattern = "^(ABC|XYZ)-[0-9]+"                  # Regex for ticket IDs
+require_in_commits = true                       # Require in commit messages
+require_in_branch = true                        # Require in branch name
+```
+
+### Coverage: `[process.coverage]`
+
+Enforce test coverage thresholds.
+
+```toml
+[process.coverage]
+enabled = true
+min_threshold = 80                             # Minimum coverage percentage
+enforce_in = "config"                          # "ci", "config", or "both"
+ci_workflow = "ci.yml"                         # Workflow to check (if enforce_in includes "ci")
+ci_job = "test"                                # Job to check
+```
+
+### Repository Settings: `[process.repo]`
+
+Configure GitHub repository rulesets and settings.
+
+```toml
+[process.repo]
+enabled = true
+require_branch_protection = true               # Verify branch protection exists
+require_codeowners = true                      # Verify CODEOWNERS exists
+
+[process.repo.ruleset]
+name = "Branch Protection"                     # Ruleset name in GitHub
+branch = "main"                                # Target branch
+enforcement = "active"                         # "active", "evaluate", or "disabled"
+required_reviews = 1                           # Minimum approving reviews
+dismiss_stale_reviews = true                   # Dismiss approvals on new commits
+require_code_owner_reviews = true              # Require CODEOWNER review
+require_status_checks = ["test", "lint"]       # Required CI checks
+require_branches_up_to_date = true             # Require branch is current
+require_signed_commits = false                 # Require signed commits
+enforce_admins = false                         # Apply to admins (no bypass)
+
+# Actors that can bypass rules
+[[process.repo.ruleset.bypass_actors]]
+actor_type = "RepositoryRole"                  # Team, Integration, OrganizationAdmin, etc.
+actor_id = 5                                   # Role ID (5 = admin)
+bypass_mode = "pull_request"                   # "always" or "pull_request"
+
+[process.repo.tag_protection]
+patterns = ["v*"]                              # Tag patterns to protect
+prevent_deletion = true                        # Prevent tag deletion
+prevent_update = true                          # Prevent tag force-push
+```
+
+### CODEOWNERS: `[process.codeowners]`
+
+Validate CODEOWNERS file contains required rules.
+
+```toml
+[process.codeowners]
+enabled = true
+
+[[process.codeowners.rules]]
+pattern = "/check.toml"
+owners = ["@platform-team"]
+
+[[process.codeowners.rules]]
+pattern = "*.ts"
+owners = ["@frontend-team", "@backend-team"]
+```
+
+### Documentation: `[process.docs]`
+
+Enforce documentation standards and governance.
+
+```toml
+[process.docs]
+enabled = true
+path = "docs/"                                 # Documentation directory
+enforcement = "warn"                           # "block" or "warn"
+allowlist = ["README.md", "CHANGELOG.md", "CLAUDE.md"]  # Markdown allowed outside docs/
+max_files = 100                                # Max markdown files in docs/
+max_file_lines = 500                           # Max lines per file
+max_total_kb = 1024                            # Max total docs size
+staleness_days = 30                            # Days before doc is stale
+require_docs_in_pr = false                     # Require docs when changing tracked files
+min_coverage = 80                              # Minimum API doc coverage
+coverage_paths = ["src/**/*.ts"]               # Source files to check coverage
+exclude_patterns = ["**/*.test.ts"]            # Exclude from coverage
+
+[process.docs.types.api]
+required_sections = ["Overview", "Parameters", "Returns", "Examples"]
+frontmatter = ["title", "description"]
+
+[process.docs.types.guide]
+required_sections = ["Overview", "Prerequisites", "Steps"]
+```
+
+### Forbidden Files: `[process.forbidden_files]`
+
+Ensure certain files do not exist in the repository.
+
+```toml
+[process.forbidden_files]
+enabled = true
+files = ["**/.env", "**/.env.*", "**/credentials.json", "**/*.pem"]
+ignore = ["**/fixtures/**", "**/test-data/**"]  # Directories to skip
+message = "Use AWS Secrets Manager for secrets"
+```
+
+Default ignore patterns: `**/node_modules/**`, `**/.git/**`
+
+### Backups: `[process.backups]`
+
+Verify S3 backups exist and are recent.
+
+```toml
+[process.backups]
+enabled = true
+bucket = "my-backups-bucket"                   # S3 bucket name
+prefix = "db-backups/"                         # S3 key prefix
+max_age_hours = 24                             # Max age of most recent backup
+region = "us-east-1"                           # AWS region
+```
 
 ---
 
-## Implementation Details
+## Exit Codes
 
-### Check vs Scan
+| Code | Meaning           |
+| ---- | ----------------- |
+| 0    | All checks passed |
+| 1    | Violations found  |
+| 2    | Configuration error |
+| 3    | Runtime error     |
 
-| Command            | Use Case                      | Data Source      |
-| ------------------ | ----------------------------- | ---------------- |
-| `cm process check` | PR-time, CI pipelines         | Local filesystem |
-| `cm process scan`  | drift-toolkit scheduled scans | GitHub API       |
+---
 
-**Check (local):**
-
-- Validate commit messages
-- Verify required files exist
-- Parse workflow files
-- Fast, no API calls
-
-**Scan (remote):**
-
-- Query GitHub API for branch protection settings
-- Verify repository settings match check.toml
-- Check file existence via Contents API
-- Requires `GITHUB_TOKEN`
-
-### GitHub API Endpoints
-
-| Endpoint                                                 | Purpose             |
-| -------------------------------------------------------- | ------------------- |
-| `GET /repos/{owner}/{repo}`                              | Repository settings |
-| `GET /repos/{owner}/{repo}/branches/{branch}/protection` | Branch protection   |
-| `GET /repos/{owner}/{repo}/contents/{path}`              | File existence      |
-| `GET /repos/{owner}/{repo}/actions/workflows`            | Workflow list       |
-| `GET /repos/{owner}/{repo}/rulesets`                     | Repository rulesets |
-
-### Programmatic API
+## Programmatic API
 
 ```typescript
-import { validateProcess } from "check-my-toolkit";
+import { runProcessChecks, auditProcessConfig } from "check-my-toolkit";
 
-const result = await validateProcess({
-  projectPath: ".", // for local checks
-  repository: "myorg/my-app", // for remote checks
-  token: process.env.GITHUB_TOKEN,
-  categories: ["branches", "required_files"], // optional filter
-});
+// Run all process checks
+const result = await runProcessChecks(projectPath, config);
 
-// result.valid: boolean
-// result.checks: ProcessCheck[]
-// result.summary: { passed, failed, warnings }
+// Audit config only
+const auditResult = await auditProcessConfig(projectPath, config);
+```
+
+---
+
+## Git Hook Integration
+
+### Setup with Husky
+
+```bash
+# .husky/pre-commit
+lint-staged
+
+# .husky/pre-push
+cm process check-branch
+
+# .husky/commit-msg
+cm process check-commit "$1"
+```
+
+### check.toml for hooks
+
+```toml
+[process.hooks]
+enabled = true
+require_husky = true
+require_hooks = ["pre-commit", "pre-push", "commit-msg"]
+protected_branches = ["main"]
+
+[process.hooks.commands]
+pre-push = ["cm process check-branch"]
+commit-msg = ["cm process check-commit"]
+
+[process.branches]
+enabled = true
+pattern = "^(feature|fix|hotfix|docs)/v[0-9]+\\.[0-9]+\\.[0-9]+/[0-9]+/[a-z0-9-]+$"
+exclude = ["main", "master"]
+
+[process.commits]
+enabled = true
+types = ["feat", "fix", "docs", "chore", "refactor", "test", "ci", "style", "perf"]
+max_subject_length = 72
 ```
