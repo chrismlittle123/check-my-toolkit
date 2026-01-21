@@ -1,4 +1,3 @@
-/* eslint-disable max-lines -- config loading requires extensive merging logic across all domains */
 import * as fs from "node:fs";
 import * as path from "node:path";
 
@@ -175,12 +174,6 @@ function mergeUnused(c: Config, dc: Config): CodeConfig["unused"] {
   };
 }
 
-function mergeFormatting(c: Config, dc: Config): CodeConfig["formatting"] {
-  return {
-    prettier: merge(dc.code?.formatting?.prettier, c.code?.formatting?.prettier),
-  };
-}
-
 function mergeCoverageRun(c: Config, dc: Config): CodeConfig["coverage_run"] {
   return merge(dc.code?.coverage_run, c.code?.coverage_run);
 }
@@ -206,7 +199,6 @@ function mergeQuality(c: Config, dc: Config): CodeConfig["quality"] {
 function mergeCode(c: Config, dc: Config): CodeConfig {
   return {
     linting: mergeLinting(c, dc),
-    formatting: mergeFormatting(c, dc),
     types: mergeTypes(c, dc),
     unused: mergeUnused(c, dc),
     coverage_run: mergeCoverageRun(c, dc),

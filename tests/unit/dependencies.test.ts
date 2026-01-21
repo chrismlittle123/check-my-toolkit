@@ -40,12 +40,6 @@ describe("dependencies module", () => {
       expect(BUILTIN_MAPPINGS.eslint.configFiles).toContain(".eslintignore");
     });
 
-    it("contains mappings for prettier", () => {
-      expect(BUILTIN_MAPPINGS.prettier).toBeDefined();
-      expect(BUILTIN_MAPPINGS.prettier.configFiles).toContain(".prettierrc");
-      expect(BUILTIN_MAPPINGS.prettier.configFiles).toContain(".prettierignore");
-    });
-
     it("contains mappings for typescript", () => {
       expect(BUILTIN_MAPPINGS.tsc).toBeDefined();
       expect(BUILTIN_MAPPINGS.tsc.configFiles).toContain("tsconfig.json");

@@ -133,7 +133,6 @@ const ruffLintSchema = z
 const ruffConfigSchema = z
   .object({
     enabled: z.boolean().optional().default(true),
-    format: z.boolean().optional().default(false), // Also check formatting with ruff format
     "line-length": z.number().int().positive().optional(),
     lint: ruffLintSchema,
     dependencies: z.array(z.string()).optional(), // Custom dependency files for drift tracking
@@ -204,19 +203,6 @@ const knipConfigSchema = z
 
 /** Vulture configuration */
 const vultureConfigSchema = z
-  .object({
-    enabled: z.boolean().optional().default(false),
-    dependencies: z.array(z.string()).optional(), // Custom dependency files for drift tracking
-  })
-  .strict()
-  .optional();
-
-// =============================================================================
-// Prettier Configuration
-// =============================================================================
-
-/** Prettier configuration */
-const prettierConfigSchema = z
   .object({
     enabled: z.boolean().optional().default(false),
     dependencies: z.array(z.string()).optional(), // Custom dependency files for drift tracking
@@ -384,14 +370,6 @@ const codeLintingSchema = z
   .strict()
   .optional();
 
-/** Code formatting configuration */
-const codeFormattingSchema = z
-  .object({
-    prettier: prettierConfigSchema,
-  })
-  .strict()
-  .optional();
-
 /** Code type checking configuration */
 const codeTypesSchema = z
   .object({
@@ -414,7 +392,6 @@ const codeUnusedSchema = z
 const codeSchema = z
   .object({
     linting: codeLintingSchema,
-    formatting: codeFormattingSchema,
     types: codeTypesSchema,
     unused: codeUnusedSchema,
     coverage_run: coverageRunConfigSchema,
@@ -768,10 +745,7 @@ export const defaultConfig: Config = {
   code: {
     linting: {
       eslint: { enabled: false },
-      ruff: { enabled: false, format: false },
-    },
-    formatting: {
-      prettier: { enabled: false },
+      ruff: { enabled: false },
     },
     types: {
       tsc: { enabled: false },

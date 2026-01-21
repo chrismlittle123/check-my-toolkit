@@ -1,5 +1,13 @@
 # Changelog
 
+## [Unreleased]
+
+### Removed
+
+- Remove Prettier formatting check (`[code.formatting.prettier]`)
+- Remove Ruff Format check (`format = true` in `[code.linting.ruff]`)
+- CODE domain now has 12 tools (down from 14)
+
 ## 1.9.2
 
 ### Patch Changes

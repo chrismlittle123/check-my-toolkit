@@ -9,9 +9,6 @@ rulesets = ["typescript-internal"]
 enabled = true
 files = ["src/**/*.ts"]
 
-[code.formatting.prettier]
-enabled = true
-
 # pnpm audit - only check production dependencies
 [code.security.pnpmaudit]
 enabled = true

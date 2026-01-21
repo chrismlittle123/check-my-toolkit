@@ -140,16 +140,6 @@ describe("DisableCommentsRunner", () => {
       expect(result.violations[0].message).toContain("# pylint: disable");
     });
 
-    it("detects prettier-ignore comment", async () => {
-      fs.writeFileSync(path.join(tempDir, "bad.ts"), `// prettier-ignore\nconst x={a:1,b:2};\n`);
-
-      const result = await runner.run(tempDir);
-
-      expect(result.passed).toBe(false);
-      expect(result.violations).toHaveLength(1);
-      expect(result.violations[0].message).toContain("prettier-ignore");
-    });
-
     it("detects multiple violations in same file", async () => {
       fs.writeFileSync(
         path.join(tempDir, "bad.ts"),

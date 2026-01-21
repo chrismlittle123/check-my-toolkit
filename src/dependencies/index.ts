@@ -27,7 +27,6 @@ interface ToolConfig {
 const TOOL_CONFIG_ACCESSORS: Record<string, (c: Config) => ToolConfig | undefined> = {
   eslint: (c) => c.code?.linting?.eslint,
   ruff: (c) => c.code?.linting?.ruff,
-  prettier: (c) => c.code?.formatting?.prettier,
   tsc: (c) => c.code?.types?.tsc,
   ty: (c) => c.code?.types?.ty,
   knip: (c) => c.code?.unused?.knip,

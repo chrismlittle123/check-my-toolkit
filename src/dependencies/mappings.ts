@@ -31,24 +31,6 @@ export const BUILTIN_MAPPINGS: Record<string, ToolDependencyMapping> = {
     configFiles: ["ruff.toml", ".ruff.toml", "pyproject.toml"],
   },
 
-  // Formatting tools
-  prettier: {
-    toolId: "prettier",
-    configFiles: [
-      ".prettierrc",
-      ".prettierrc.json",
-      ".prettierrc.yaml",
-      ".prettierrc.yml",
-      ".prettierrc.js",
-      ".prettierrc.cjs",
-      ".prettierrc.mjs",
-      "prettier.config.js",
-      "prettier.config.cjs",
-      "prettier.config.mjs",
-      ".prettierignore",
-    ],
-  },
-
   // Type checking tools
   tsc: {
     toolId: "tsc",

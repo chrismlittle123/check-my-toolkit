@@ -6,7 +6,7 @@ Unified project health checks for code quality, process compliance, and infrastr
 
 check-my-toolkit (`cm`) provides a single CLI to run multiple code quality, process, and infrastructure tools with unified configuration via `check.toml`. Three domains are fully implemented:
 
-- **CODE** - 14 integrated tools for linting, formatting, type checking, security, and more
+- **CODE** - 12 integrated tools for linting, type checking, security, and more
 - **PROCESS** - 13 workflow checks for git hooks, CI, PRs, branches, commits, documentation, and repository settings
 - **INFRA** - AWS resource tagging validation
 
@@ -14,9 +14,9 @@ check-my-toolkit (`cm`) provides a single CLI to run multiple code quality, proc
 
 ## Quick Reference
 
-| Domain  | Tools                                                                                                             | Config        |
-| ------- | ----------------------------------------------------------------------------------------------------------------- | ------------- |
-| CODE    | ESLint, Ruff, Prettier, tsc, ty, Knip, Vulture, Gitleaks, pnpm-audit, pip-audit                                   | `[code.*]`    |
+| Domain  | Tools                                                                                              | Config        |
+| ------- | -------------------------------------------------------------------------------------------------- | ------------- |
+| CODE    | ESLint, Ruff, tsc, ty, Knip, Vulture, Gitleaks, pnpm-audit, pip-audit                              | `[code.*]`    |
 | PROCESS | Hooks, CI, Branches, Commits, Changesets, PR, Tickets, Coverage, Repo, Backups, CODEOWNERS, Docs, Forbidden Files | `[process.*]` |
 | INFRA   | AWS Tagging                                                                                                       | `[infra.*]`   |
 
@@ -139,7 +139,6 @@ Python linting (extremely fast).
 ```toml
 [code.linting.ruff]
 enabled = true
-format = true  # Also check formatting
 line-length = 88
 
 [code.linting.ruff.lint]
@@ -154,37 +153,6 @@ ignore = ["E501"]
 | Config Files | `ruff.toml`, `pyproject.toml` |
 
 > **Important:** `check.toml` is the source of truth for lint rules. Rules defined in `ruff.toml` (like `ignore = ["F401"]`) are **not** used by `cm code check`. This is intentional - `check.toml` provides centralized, auditable configuration. The `cm code audit` command verifies that `ruff.toml` exists for editor integration, but `cm code check` uses only `[code.linting.ruff.lint]` from `check.toml`.
-
----
-
-## Formatting
-
-### Prettier (`[code.formatting.prettier]`)
-
-JavaScript/TypeScript/CSS/JSON formatting.
-
-```toml
-[code.formatting.prettier]
-enabled = true
-```
-
-| Property     | Value                               |
-| ------------ | ----------------------------------- |
-| Tool         | Prettier                            |
-| Languages    | JS, TS, JSON, CSS, etc.             |
-| Config Files | `.prettierrc`, `prettier.config.js` |
-
----
-
-### Ruff Format
-
-Python formatting (via `format = true` in Ruff config).
-
-```toml
-[code.linting.ruff]
-enabled = true
-format = true
-```
 
 ---
 
@@ -392,7 +360,7 @@ extensions = ["ts", "tsx", "js", "jsx", "py"]
 exclude = ["tests/**"]
 ```
 
-**Default Patterns:** `eslint-disable`, `@ts-ignore`, `@ts-expect-error`, `# noqa`, `# type: ignore`, `prettier-ignore`
+**Default Patterns:** `eslint-disable`, `@ts-ignore`, `@ts-expect-error`, `# noqa`, `# type: ignore`
 
 ---
 
@@ -1025,15 +993,10 @@ max-warnings = 0
 
 [code.linting.ruff]
 enabled = true
-format = true
 line-length = 88
 
 [code.linting.ruff.lint]
 select = ["E", "F", "W", "I"]
-
-# Formatting
-[code.formatting.prettier]
-enabled = true
 
 # Type Checking
 [code.types.tsc]
@@ -1185,24 +1148,22 @@ Environment = ["dev", "stag", "prod"]
 
 # Tool Summary
 
-## CODE Domain (14 tools)
+## CODE Domain (12 tools)
 
-| Category   | Tool             | Languages      | Config                              |
-| ---------- | ---------------- | -------------- | ----------------------------------- |
-| Linting    | ESLint           | JS/TS          | `[code.linting.eslint]`             |
-| Linting    | Ruff             | Python         | `[code.linting.ruff]`               |
-| Formatting | Prettier         | JS/TS/CSS/JSON | `[code.formatting.prettier]`        |
-| Formatting | Ruff Format      | Python         | `[code.linting.ruff] format = true` |
-| Types      | tsc              | TypeScript     | `[code.types.tsc]`                  |
-| Types      | ty               | Python         | `[code.types.ty]`                   |
-| Unused     | Knip             | JS/TS          | `[code.unused.knip]`                |
-| Unused     | Vulture          | Python         | `[code.unused.vulture]`             |
-| Coverage   | Coverage Run     | Any            | `[code.coverage_run]`               |
-| Security   | Gitleaks         | Any            | `[code.security.secrets]`           |
-| Security   | pnpm audit       | JS/TS          | `[code.security.pnpmaudit]`         |
-| Security   | pip-audit        | Python         | `[code.security.pipaudit]`          |
-| Naming     | Built-in         | Any            | `[code.naming]`                     |
-| Quality    | Disable Comments | JS/TS/Python   | `[code.quality.disable-comments]`   |
+| Category | Tool             | Languages    | Config                            |
+| -------- | ---------------- | ------------ | --------------------------------- |
+| Linting  | ESLint           | JS/TS        | `[code.linting.eslint]`           |
+| Linting  | Ruff             | Python       | `[code.linting.ruff]`             |
+| Types    | tsc              | TypeScript   | `[code.types.tsc]`                |
+| Types    | ty               | Python       | `[code.types.ty]`                 |
+| Unused   | Knip             | JS/TS        | `[code.unused.knip]`              |
+| Unused   | Vulture          | Python       | `[code.unused.vulture]`           |
+| Coverage | Coverage Run     | Any          | `[code.coverage_run]`             |
+| Security | Gitleaks         | Any          | `[code.security.secrets]`         |
+| Security | pnpm audit       | JS/TS        | `[code.security.pnpmaudit]`       |
+| Security | pip-audit        | Python       | `[code.security.pipaudit]`        |
+| Naming   | Built-in         | Any          | `[code.naming]`                   |
+| Quality  | Disable Comments | JS/TS/Python | `[code.quality.disable-comments]` |
 
 ## PROCESS Domain (13 checks)
 
@@ -1268,11 +1229,10 @@ cm dependencies --project packages/api  # Specify project path
 
 **Built-in mappings:**
 
-| Tool     | Tracked Files                                       |
-| -------- | --------------------------------------------------- |
-| eslint   | `eslint.config.js`, `.eslintrc.*`, `package.json`   |
-| prettier | `.prettierrc`, `prettier.config.js`, `package.json` |
-| tsc      | `tsconfig.json`, `tsconfig.*.json`                  |
+| Tool   | Tracked Files                                     |
+| ------ | ------------------------------------------------- |
+| eslint | `eslint.config.js`, `.eslintrc.*`, `package.json` |
+| tsc    | `tsconfig.json`, `tsconfig.*.json`                |
 | knip     | `knip.json`, `knip.config.ts`, `package.json`       |
 | vitest   | `vitest.config.ts`, `package.json`                  |
 | pytest   | `pyproject.toml`, `pytest.ini`, `conftest.py`       |

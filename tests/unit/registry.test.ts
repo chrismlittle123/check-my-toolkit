@@ -279,7 +279,6 @@ foo = "bar"`
       const base: Config = {
         code: {
           linting: { eslint: { enabled: true } },
-          formatting: { prettier: { enabled: true } },
           types: { tsc: { enabled: true } },
           unused: { knip: { enabled: true } },
           security: { secrets: { enabled: true } },
@@ -299,7 +298,6 @@ foo = "bar"`
 
       // Base values preserved
       expect(result.code?.linting?.eslint?.enabled).toBe(true);
-      expect(result.code?.formatting?.prettier?.enabled).toBe(true);
       expect(result.code?.types?.tsc?.enabled).toBe(true);
       expect(result.code?.unused?.knip?.enabled).toBe(true);
       expect(result.code?.security?.secrets?.enabled).toBe(true);
