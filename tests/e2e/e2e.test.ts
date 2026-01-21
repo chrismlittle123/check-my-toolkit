@@ -1153,7 +1153,12 @@ const testCases: TestCase[] = [
     command: "check",
     domain: "process",
     expectedExitCode: 1,
-    expectedPatterns: ["✗ Forbidden Files:", "Forbidden file exists", ".env", "Use environment variables instead"],
+    expectedPatterns: [
+      "✗ Forbidden Files:",
+      "Forbidden file exists",
+      ".env",
+      "Use environment variables instead",
+    ],
   },
   {
     name: "process/forbidden-files-ignore respects custom ignore patterns (#180)",
