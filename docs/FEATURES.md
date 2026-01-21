@@ -532,7 +532,10 @@ ci_job = "test"
 
 ## Repository Settings (`[process.repo]`)
 
-Verify branch protection, tag protection, and CODEOWNERS.
+Verify GitHub Rulesets, tag protection, and CODEOWNERS.
+
+> **Migration Note:** `[process.repo.branch_protection]` is deprecated.
+> Use `[process.repo.ruleset]` instead. The old name will be removed in v2.0.0.
 
 ```toml
 [process.repo]
@@ -540,8 +543,10 @@ enabled = true
 require_branch_protection = true
 require_codeowners = true
 
-[process.repo.branch_protection]
+[process.repo.ruleset]
+name = "main-protection"      # Ruleset name in GitHub (optional)
 branch = "main"
+enforcement = "active"        # active, evaluate, or disabled
 required_reviews = 1
 dismiss_stale_reviews = true
 require_code_owner_reviews = true
@@ -549,23 +554,42 @@ require_status_checks = ["ci"]
 require_branches_up_to_date = true
 enforce_admins = true
 
+# Bypass actors (optional) - allow specific roles/apps to bypass rules
+[[process.repo.ruleset.bypass_actors]]
+actor_type = "RepositoryRole"
+actor_id = 5                  # Admin role (1=Read, 2=Triage, 3=Write, 4=Maintain, 5=Admin)
+bypass_mode = "always"
+
 [process.repo.tag_protection]
 patterns = ["v*"]           # Tag patterns to protect
 prevent_deletion = true     # Prevent tag deletion (default: true)
 prevent_update = true       # Prevent tag updates (default: true)
 ```
 
-### Branch Protection Properties
+### Ruleset Properties
 
-| Property                      | Value                                        |
-| ----------------------------- | -------------------------------------------- |
-| `branch`                      | Target branch to protect (default: "main")   |
-| `required_reviews`            | Minimum required approving reviews           |
-| `dismiss_stale_reviews`       | Dismiss stale reviews on new commits         |
-| `require_code_owner_reviews`  | Require CODEOWNER approval                   |
-| `require_status_checks`       | Array of required CI status checks           |
-| `require_branches_up_to_date` | Require branch to be up to date before merge |
-| `enforce_admins`              | Apply rules to administrators too            |
+| Property                      | Value                                                 |
+| ----------------------------- | ----------------------------------------------------- |
+| `name`                        | Ruleset name in GitHub (default: "Branch Protection") |
+| `branch`                      | Target branch to protect (default: "main")            |
+| `enforcement`                 | Ruleset enforcement (active/evaluate/disabled)        |
+| `required_reviews`            | Minimum required approving reviews                    |
+| `dismiss_stale_reviews`       | Dismiss stale reviews on new commits                  |
+| `require_code_owner_reviews`  | Require CODEOWNER approval                            |
+| `require_status_checks`       | Array of required CI status checks                    |
+| `require_branches_up_to_date` | Require branch to be up to date before merge          |
+| `enforce_admins`              | Apply rules to administrators too                     |
+| `bypass_actors`               | Array of actors that can bypass rules                 |
+
+### Bypass Actor Types
+
+| Type                | Description                         | actor_id Required |
+| ------------------- | ----------------------------------- | ----------------- |
+| `RepositoryRole`    | Repository role (1-5, see above)    | Yes               |
+| `OrganizationAdmin` | Organization administrator          | No                |
+| `Team`              | GitHub team (use team's numeric ID) | Yes               |
+| `Integration`       | GitHub App installation ID          | Yes               |
+| `DeployKey`         | Deploy key ID                       | Yes               |
 
 ### Tag Protection Properties
 
@@ -580,13 +604,19 @@ prevent_update = true       # Prevent tag updates (default: true)
 ### Sync Commands
 
 ```bash
-# Branch protection
-cm process diff              # Show branch protection differences
-cm process sync --apply      # Apply branch protection changes
+# Branch protection (rulesets)
+cm process diff                    # Show ruleset differences
+cm process sync --apply            # Apply ruleset changes
+cm process sync --validate-actors  # Validate bypass actors before applying
 
 # Tag protection
-cm process diff-tags         # Show tag protection differences
-cm process sync-tags --apply # Apply tag protection changes
+cm process diff-tags               # Show tag protection differences
+cm process sync-tags --apply       # Apply tag protection changes
+
+# Cleanup commands (migrate from classic branch protection)
+cm process list-rules              # List all protection rules (classic + rulesets)
+cm process cleanup-rules           # Preview orphaned classic rules
+cm process cleanup-rules --apply   # Remove orphaned classic rules
 ```
 
 ---
@@ -1068,7 +1098,8 @@ enabled = true
 require_branch_protection = true
 require_codeowners = true
 
-[process.repo.branch_protection]
+[process.repo.ruleset]
+name = "main-protection"
 branch = "main"
 required_reviews = 1
 dismiss_stale_reviews = true

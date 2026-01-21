@@ -49,10 +49,7 @@ export async function fetchBranchProtection(
   branch: string
 ): Promise<BranchProtectionSettings> {
   try {
-    const result = await execa("gh", [
-      "api",
-      `repos/${repoInfo.owner}/${repoInfo.repo}/rulesets`,
-    ]);
+    const result = await execa("gh", ["api", `repos/${repoInfo.owner}/${repoInfo.repo}/rulesets`]);
 
     const rulesets = JSON.parse(result.stdout) as GitHubRuleset[];
     return parseBranchRuleset(rulesets, branch);
@@ -113,8 +110,7 @@ function parseBranchRuleset(rulesets: GitHubRuleset[], branch: string): BranchPr
     requireCodeOwnerReviews: prRule?.parameters?.require_code_owner_review ?? null,
     requiredStatusChecks:
       statusRule?.parameters?.required_status_checks?.map((c) => c.context) ?? null,
-    requireBranchesUpToDate:
-      statusRule?.parameters?.strict_required_status_checks_policy ?? null,
+    requireBranchesUpToDate: statusRule?.parameters?.strict_required_status_checks_policy ?? null,
     requireSignedCommits: signaturesRule !== undefined,
     enforceAdmins,
     bypassActors,
@@ -148,9 +144,7 @@ function matchesBranch(patterns: string[], branch: string): boolean {
 }
 
 /** Parse bypass actors from GitHub API response */
-function parseBypassActors(
-  actors: GitHubRulesetBypassActor[] | undefined
-): BypassActor[] | null {
+function parseBypassActors(actors: GitHubRulesetBypassActor[] | undefined): BypassActor[] | null {
   if (!actors || actors.length === 0) {
     return null;
   }

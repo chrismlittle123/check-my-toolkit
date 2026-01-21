@@ -60,31 +60,13 @@ export interface SyncOptions {
   config?: string;
   format: "text" | "json";
   apply?: boolean;
+  validateActors?: boolean;
 }
 
 /** Repository info */
 export interface RepoInfo {
   owner: string;
   repo: string;
-}
-
-/** GitHub API response for branch protection */
-export interface GitHubBranchProtection {
-  required_pull_request_reviews?: {
-    required_approving_review_count?: number;
-    dismiss_stale_reviews?: boolean;
-    require_code_owner_reviews?: boolean;
-  };
-  required_status_checks?: {
-    strict?: boolean;
-    contexts?: string[];
-  };
-  required_signatures?: {
-    enabled?: boolean;
-  };
-  enforce_admins?: {
-    enabled?: boolean;
-  };
 }
 
 /** Desired branch protection settings from config */
