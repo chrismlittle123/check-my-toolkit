@@ -488,7 +488,7 @@ function mergeDocsConfig(
   if (!override) {
     return base;
   }
-  // Fields with schema defaults: enabled, path, enforcement, staleness_days, require_docs_in_pr
+  // Fields with schema defaults: enabled, path, enforcement, staleness_days
   return {
     enabled: override.enabled,
     path: override.path,
@@ -499,7 +499,6 @@ function mergeDocsConfig(
     max_total_kb: override.max_total_kb ?? base?.max_total_kb,
     staleness_days: override.staleness_days,
     stale_mappings: override.stale_mappings ?? base?.stale_mappings,
-    require_docs_in_pr: override.require_docs_in_pr,
     min_coverage: override.min_coverage ?? base?.min_coverage,
     coverage_paths: override.coverage_paths ?? base?.coverage_paths,
     exclude_patterns: override.exclude_patterns ?? base?.exclude_patterns,

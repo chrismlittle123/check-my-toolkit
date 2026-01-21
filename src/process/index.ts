@@ -234,7 +234,6 @@ function createDocsRunner(config: Config): DocsRunner {
       max_total_kb: docsConfig.max_total_kb,
       staleness_days: docsConfig.staleness_days,
       stale_mappings: docsConfig.stale_mappings,
-      require_docs_in_pr: docsConfig.require_docs_in_pr,
       min_coverage: docsConfig.min_coverage,
       coverage_paths: docsConfig.coverage_paths,
       exclude_patterns: docsConfig.exclude_patterns,

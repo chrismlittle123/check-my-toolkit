@@ -283,7 +283,6 @@ max_files = 100                                # Max markdown files in docs/
 max_file_lines = 500                           # Max lines per file
 max_total_kb = 1024                            # Max total docs size
 staleness_days = 30                            # Days before doc is stale
-require_docs_in_pr = false                     # Require docs when changing tracked files
 min_coverage = 80                              # Minimum API doc coverage
 coverage_paths = ["src/**/*.ts"]               # Source files to check coverage
 exclude_patterns = ["**/*.test.ts"]            # Exclude from coverage

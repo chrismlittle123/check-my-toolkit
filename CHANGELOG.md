@@ -56,15 +56,7 @@
 
 ## [Unreleased]
 
-### Added
-
-- Add MCP server for dynamic standards composition (`cm mcp`)
-  - `get_standards`: Get composed coding standards matching a context string
-  - `list_guidelines`: List available guidelines with optional category filter
-  - `get_guideline`: Get a single guideline by ID
-  - `get_ruleset`: Get a tool configuration ruleset by ID
-  - Fetches standards from `palindrom-ai/standards` repository
-  - Smart keyword matching against guideline tags
+_No unreleased changes._
 
 ## 1.9.2
 
@@ -1080,18 +1072,6 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-
-## [Unreleased]
-
-### Fixed
-
-- **README.md**: Fixed incorrect config names in documentation
-  - `[code.security.gitleaks]` → `[code.security.secrets]`
-  - `[code.security.npm-audit]` → `[code.security.npmaudit]`
-  - `[code.security.pip-audit]` → `[code.security.pipaudit]`
-  - `cm validate` → `cm validate config`
-  - Fixed naming conventions example to use correct `[[code.naming.rules]]` array syntax
-- **Schema**: Changed `min_test_files` from `.positive()` to `.nonnegative()` to allow 0
 
 ## [0.1.0] - 2025-12-23
 
