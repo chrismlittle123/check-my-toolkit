@@ -632,4 +632,21 @@ program
   )
   .action((options) => runAudit(options));
 
+// =============================================================================
+// MCP Server
+// =============================================================================
+
+// cm mcp - start MCP server for coding standards
+program
+  .command("mcp")
+  .description("Start MCP server for coding standards (for Claude Desktop integration)")
+  .action(async () => {
+    try {
+      const { startServer } = await import("./mcp/index.js");
+      await startServer();
+    } catch (error) {
+      handleError(error);
+    }
+  });
+
 program.parse();
