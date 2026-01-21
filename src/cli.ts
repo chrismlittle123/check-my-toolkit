@@ -25,13 +25,12 @@ const packageJsonPath = path.resolve(__dirname, "..", "package.json");
 const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf-8")) as { version: string };
 const VERSION = packageJson.version;
 
-const program = new Command();
-
-program
-  .name("cm")
-  .description("Unified project health checks for code quality")
-  .version(VERSION)
-  .exitOverride((err: CommanderError) => {
+/**
+ * Configure exitOverride for a Command to return proper exit codes.
+ * Must be called on parent commands that have subcommands with options.
+ */
+function configureExitOverride(cmd: Command): Command {
+  return cmd.exitOverride((err: CommanderError) => {
     // Commander uses exit code 1 for all errors by default
     // We want to use exit code 2 (CONFIG_ERROR) for argument/option errors
     if (
@@ -42,7 +41,15 @@ program
     }
     // For other Commander errors (help, version), use the default exit code
     process.exit(err.exitCode);
-  })
+  });
+}
+
+const program = new Command();
+
+configureExitOverride(program)
+  .name("cm")
+  .description("Unified project health checks for code quality")
+  .version(VERSION)
   .configureOutput({
     writeErr: (str: string) => {
       // Write errors to stderr without the default "error:" prefix duplication
@@ -141,7 +148,9 @@ async function runAudit(
 // Validate subcommand
 // =============================================================================
 
-const validateCommand = new Command("validate").description("Validate configuration files");
+const validateCommand = configureExitOverride(
+  new Command("validate").description("Validate configuration files")
+);
 
 // cm validate config - validate check.toml
 validateCommand
@@ -308,7 +317,7 @@ program.addCommand(schemaCommand);
 // Code subcommand
 // =============================================================================
 
-const codeCommand = new Command("code").description("Code quality checks");
+const codeCommand = configureExitOverride(new Command("code").description("Code quality checks"));
 
 // cm code check
 codeCommand
@@ -336,7 +345,9 @@ program.addCommand(codeCommand);
 // Process subcommand
 // =============================================================================
 
-const processCommand = new Command("process").description("Workflow and process checks");
+const processCommand = configureExitOverride(
+  new Command("process").description("Workflow and process checks")
+);
 
 // cm process check
 processCommand
@@ -488,7 +499,9 @@ program.addCommand(processCommand);
 // Infra subcommand
 // =============================================================================
 
-const infraCommand = new Command("infra").description("Infrastructure validation checks");
+const infraCommand = configureExitOverride(
+  new Command("infra").description("Infrastructure validation checks")
+);
 
 // cm infra check
 infraCommand
@@ -541,7 +554,9 @@ program
 // Projects subcommand
 // =============================================================================
 
-const projectsCommand = new Command("projects").description("Project management utilities");
+const projectsCommand = configureExitOverride(
+  new Command("projects").description("Project management utilities")
+);
 
 // cm projects detect
 projectsCommand
