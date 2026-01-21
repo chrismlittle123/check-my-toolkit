@@ -1,5 +1,5 @@
 # Test case for #185 - empty ignore array overrides defaults
-# With ignore = [], node_modules should be scanned
+# With ignore = [], all directories are scanned (nothing ignored)
 [process.forbidden_files]
 enabled = true
 files = ["**/.env"]

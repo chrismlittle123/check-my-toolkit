@@ -1173,12 +1173,12 @@ const testCases: TestCase[] = [
     expectedPatterns: ["✗ Forbidden Files: 1 violation", ".env"],
   },
   {
-    name: "process/forbidden-files-empty-ignore scans node_modules when ignore=[] (#185)",
+    name: "process/forbidden-files-empty-ignore scans all dirs when ignore=[] (#185)",
     config: "tests/e2e/projects/process/forbidden-files-empty-ignore/check.toml",
     command: "check",
     domain: "process",
     expectedExitCode: 1,
-    expectedPatterns: ["✗ Forbidden Files:", "node_modules/pkg/.env"],
+    expectedPatterns: ["✗ Forbidden Files:", "vendor/pkg/.env"],
   },
   {
     name: "process/forbidden-files-disabled skips when disabled",
