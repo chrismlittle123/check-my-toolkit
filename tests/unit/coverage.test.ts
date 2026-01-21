@@ -89,12 +89,20 @@ export default {
         expect(result.violations[0].rule).toBe("process.coverage.config");
       });
 
-      it("fails when no coverage config file exists", async () => {
+      it("fails when no coverage config file exists and no min_threshold set", async () => {
         runner.setConfig({ enabled: true, enforce_in: "config" });
 
         const result = await runner.run(tempDir);
         expect(result.passed).toBe(false);
         expect(result.violations[0].message).toContain("No coverage threshold config found");
+      });
+
+      it("passes when min_threshold is set in check.toml even without tool config", async () => {
+        // No vitest.config.ts, jest.config.js, or .nycrc - just check.toml min_threshold
+        runner.setConfig({ enabled: true, enforce_in: "config", min_threshold: 80 });
+
+        const result = await runner.run(tempDir);
+        expect(result.passed).toBe(true);
       });
 
       it("fails when threshold is below minimum", async () => {

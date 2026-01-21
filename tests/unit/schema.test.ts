@@ -555,6 +555,22 @@ describe("#140 - cross-rule duplicate extension validation", () => {
     expect(result.success).toBe(true);
   });
 
+  it("rejects naming rule with empty extensions array", () => {
+    const config = {
+      code: {
+        naming: {
+          enabled: true,
+          rules: [{ extensions: [], file_case: "kebab-case", folder_case: "kebab-case" }],
+        },
+      },
+    };
+    const result = configSchema.safeParse(config);
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.errors[0].message).toContain("At least one value is required");
+    }
+  });
+
   it("rejects duplicate extensions across rules", () => {
     const config = {
       code: {

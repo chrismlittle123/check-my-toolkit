@@ -563,6 +563,50 @@ jobs:
           expect(result.passed).toBe(true);
         });
 
+        it("passes when step has boolean if: true condition", async () => {
+          // YAML parses `if: true` as boolean, not string "true"
+          const workflow = `
+name: CI
+on: pull_request
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - run: cm code check
+        if: true
+`;
+          fs.writeFileSync(path.join(tempDir, ".github/workflows/ci.yml"), workflow);
+          runner.setConfig({
+            enabled: true,
+            commands: { "ci.yml": ["cm code check"] },
+          });
+
+          const result = await runner.run(tempDir);
+          expect(result.passed).toBe(true);
+        });
+
+        it("fails when step has boolean if: false condition", async () => {
+          const workflow = `
+name: CI
+on: pull_request
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - run: cm code check
+        if: false
+`;
+          fs.writeFileSync(path.join(tempDir, ".github/workflows/ci.yml"), workflow);
+          runner.setConfig({
+            enabled: true,
+            commands: { "ci.yml": ["cm code check"] },
+          });
+
+          const result = await runner.run(tempDir);
+          expect(result.passed).toBe(false);
+          expect(result.violations[0].message).toContain("may not execute on PRs");
+        });
+
         it("detects commented out command", async () => {
           const workflow = `
 name: CI
@@ -802,14 +846,16 @@ jobs:
       });
 
       describe("edge cases", () => {
-        it("skips command check for missing workflows", async () => {
+        it("reports error for missing workflow files", async () => {
           runner.setConfig({
             enabled: true,
             commands: { "nonexistent.yml": ["cm code check"] },
           });
 
           const result = await runner.run(tempDir);
-          expect(result.passed).toBe(true);
+          expect(result.passed).toBe(false);
+          expect(result.violations).toHaveLength(1);
+          expect(result.violations[0].message).toBe("Workflow file 'nonexistent.yml' not found");
         });
 
         it("reports YAML parse errors", async () => {

@@ -298,10 +298,19 @@ const uniqueArraySchema = <T extends z.ZodTypeAny>(schema: T): z.ZodEffects<z.Zo
     message: "Duplicate values not allowed",
   });
 
+/** Helper to validate no duplicate values in array with minimum length */
+const uniqueArraySchemaMin1 = <T extends z.ZodTypeAny>(schema: T): z.ZodEffects<z.ZodArray<T>> =>
+  z
+    .array(schema)
+    .min(1, "At least one value is required")
+    .refine((arr) => new Set(arr).size === arr.length, {
+      message: "Duplicate values not allowed",
+    });
+
 /** Single naming rule */
 const namingRuleSchema = z
   .object({
-    extensions: uniqueArraySchema(z.string()), // e.g., ["ts", "tsx"] - no duplicates allowed
+    extensions: uniqueArraySchemaMin1(z.string()), // e.g., ["ts", "tsx"] - no duplicates allowed, at least one required
     file_case: caseTypeSchema,
     folder_case: caseTypeSchema,
     exclude: z.array(z.string()).optional(), // Glob patterns to exclude, e.g., ["tests/**"]

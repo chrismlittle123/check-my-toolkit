@@ -353,7 +353,11 @@ export class CoverageRunner extends BaseProcessToolRunner {
   private validateConfigCoverage(projectRoot: string, violations: Violation[]): void {
     const configResult = this.checkConfigCoverage(projectRoot);
 
-    if (!configResult.found) {
+    // If min_threshold is set in check.toml, that's a valid coverage config
+    // (no need for tool-specific config like vitest.config.ts or jest.config.js)
+    const hasCheckTomlThreshold = this.config.min_threshold !== undefined;
+
+    if (!configResult.found && !hasCheckTomlThreshold) {
       violations.push({
         rule: `${this.rule}.config`,
         tool: this.toolId,
@@ -363,7 +367,12 @@ export class CoverageRunner extends BaseProcessToolRunner {
       return;
     }
 
-    if (this.config.min_threshold !== undefined && configResult.threshold !== undefined) {
+    // If tool config exists, validate its threshold meets the minimum
+    if (
+      configResult.found &&
+      this.config.min_threshold !== undefined &&
+      configResult.threshold !== undefined
+    ) {
       if (configResult.threshold < this.config.min_threshold) {
         violations.push({
           rule: `${this.rule}.threshold`,

@@ -37,13 +37,13 @@ interface TriggerConfig {
 }
 
 interface WorkflowJob {
-  if?: string;
+  if?: string | boolean; // GitHub Actions allows boolean literals
   steps?: WorkflowStep[];
   uses?: string; // Reusable workflow reference
 }
 
 interface WorkflowStep {
-  if?: string;
+  if?: string | boolean; // GitHub Actions allows boolean literals
   run?: string;
   uses?: string;
 }
@@ -52,7 +52,7 @@ interface WorkflowStep {
 interface CommandSearchResult {
   found: boolean;
   conditional: boolean;
-  conditionExpression?: string;
+  conditionExpression?: string | boolean;
   commentedOut: boolean;
 }
 
@@ -146,11 +146,15 @@ export class CiRunner extends BaseProcessToolRunner {
     );
   }
 
-  private isUnconditionalExpression(expression: string | undefined): boolean {
-    if (!expression) {
+  private isUnconditionalExpression(expression: string | boolean | undefined): boolean {
+    if (expression === undefined) {
       return true;
     }
-    const expr = expression.trim().toLowerCase();
+    // Handle boolean values (YAML parses `if: true` as boolean)
+    if (typeof expression === "boolean") {
+      return expression;
+    }
+    const expr = String(expression).trim().toLowerCase();
     return ["true", "success()", "always()"].includes(expr);
   }
 
@@ -177,7 +181,7 @@ export class CiRunner extends BaseProcessToolRunner {
     step: WorkflowStep,
     requiredCommand: string,
     jobConditional: boolean,
-    jobCondition: string | undefined
+    jobCondition: string | boolean | undefined
   ): CommandSearchResult | null {
     if (!step.run) {
       return null;
@@ -353,6 +357,13 @@ export class CiRunner extends BaseProcessToolRunner {
         continue;
       }
       if (!workflow) {
+        violations.push({
+          rule: `${this.rule}.commands`,
+          tool: this.toolId,
+          file: `.github/workflows/${wf}`,
+          message: `Workflow file '${wf}' not found`,
+          severity: "error",
+        });
         continue;
       }
       if (!this.triggersPRToMain(workflow)) {
