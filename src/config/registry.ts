@@ -220,19 +220,6 @@ function mergeLinting(
   };
 }
 
-function mergeFormatting(
-  base: CodeConfig["formatting"],
-  override: CodeConfig["formatting"]
-): CodeConfig["formatting"] {
-  if (!override) {
-    return base;
-  }
-  return {
-    ...base,
-    prettier: mergeToolConfig(base?.prettier, override.prettier),
-  };
-}
-
 function mergeTypes(base: CodeConfig["types"], override: CodeConfig["types"]): CodeConfig["types"] {
   if (!override) {
     return base;
@@ -303,7 +290,6 @@ function mergeQuality(
 function mergeCodeSection(base: CodeConfig | undefined, override: CodeConfig): CodeConfig {
   return {
     linting: mergeLinting(base?.linting, override.linting),
-    formatting: mergeFormatting(base?.formatting, override.formatting),
     types: mergeTypes(base?.types, override.types),
     unused: mergeUnused(base?.unused, override.unused),
     coverage_run: mergeToolConfig(base?.coverage_run, override.coverage_run),

@@ -27,8 +27,6 @@ const DEFAULT_PATTERNS = [
   "# type: ignore",
   "# pylint: disable",
   "# pragma: no cover",
-  // Prettier
-  "prettier-ignore",
 ];
 
 /** Default file extensions to scan */

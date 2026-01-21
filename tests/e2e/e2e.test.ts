@@ -562,58 +562,6 @@ const testCases: TestCase[] = [
   },
 
   // ============================================================
-  // Ruff Format: Python code formatting
-  // ============================================================
-  {
-    name: "ruff-format/clean passes when code is formatted",
-    config: "tests/e2e/projects/ruff-format/clean/check.toml",
-    command: "check",
-    expectedExitCode: 0,
-    expectedPatterns: ["Ruff Format: passed", "All checks passed"],
-  },
-  {
-    name: "ruff-format/unformatted detects unformatted code",
-    config: "tests/e2e/projects/ruff-format/unformatted/check.toml",
-    command: "check",
-    expectedExitCode: 1,
-    expectedPatterns: ["Ruff Format:", "not formatted correctly"],
-  },
-  {
-    name: "ruff-format/disabled skips when format is false",
-    config: "tests/e2e/projects/ruff-format/disabled/check.toml",
-    command: "check",
-    expectedExitCode: 0,
-    expectedPatterns: ["Ruff: passed"],
-    notExpectedPatterns: ["Ruff Format"],
-  },
-
-  // ============================================================
-  // Prettier: JavaScript/TypeScript code formatting
-  // ============================================================
-  {
-    name: "prettier/clean passes when code is formatted",
-    config: "tests/e2e/projects/prettier/clean/check.toml",
-    command: "check",
-    expectedExitCode: 0,
-    expectedPatterns: ["Prettier: passed", "All checks passed"],
-  },
-  {
-    name: "prettier/unformatted detects unformatted code",
-    config: "tests/e2e/projects/prettier/unformatted/check.toml",
-    command: "check",
-    expectedExitCode: 1,
-    expectedPatterns: ["Prettier:", "not formatted correctly"],
-  },
-  {
-    name: "prettier/disabled skips when prettier is disabled",
-    config: "tests/e2e/projects/prettier/disabled/check.toml",
-    command: "check",
-    expectedExitCode: 0,
-    expectedPatterns: ["CODE"],
-    notExpectedPatterns: ["Prettier"],
-  },
-
-  // ============================================================
   // Coverage Run: Run tests and verify coverage threshold
   // ============================================================
   {

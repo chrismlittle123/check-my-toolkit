@@ -41,8 +41,6 @@ export {
   ESLintRunner,
   KnipRunner,
   NamingRunner,
-  PrettierRunner,
-  RuffFormatRunner,
   RuffRunner,
   runCodeChecks,
   TscRunner,

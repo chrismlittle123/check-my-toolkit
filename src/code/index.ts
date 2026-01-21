@@ -9,8 +9,6 @@ import {
   NamingRunner,
   PipAuditRunner,
   PnpmAuditRunner,
-  PrettierRunner,
-  RuffFormatRunner,
   RuffRunner,
   TscRunner,
   TyRunner,
@@ -21,8 +19,6 @@ import {
 const gitleaks = new GitleaksRunner();
 const knip = new KnipRunner();
 const pipaudit = new PipAuditRunner();
-const prettier = new PrettierRunner();
-const ruffFormat = new RuffFormatRunner();
 const ty = new TyRunner();
 const vulture = new VultureRunner();
 
@@ -34,8 +30,6 @@ export {
   ESLintRunner,
   KnipRunner,
   NamingRunner,
-  PrettierRunner,
-  RuffFormatRunner,
   RuffRunner,
   TscRunner,
   TyRunner,
@@ -91,7 +85,6 @@ function createRuffRunner(config: Config): RuffRunner {
   if (ruffConfig) {
     runner.setConfig({
       enabled: ruffConfig.enabled,
-      format: ruffConfig.format,
       "line-length": ruffConfig["line-length"],
       lint: ruffConfig.lint,
     });
@@ -154,11 +147,6 @@ function createPnpmAuditRunner(config: Config): PnpmAuditRunner {
 const toolRegistry: ToolEntry[] = [
   { isEnabled: (c) => isEnabled(c.code?.linting?.eslint), runner: createEslintRunner },
   { isEnabled: (c) => isEnabled(c.code?.linting?.ruff), runner: createRuffRunner },
-  {
-    isEnabled: (c) => isEnabled(c.code?.linting?.ruff) && c.code?.linting?.ruff?.format === true,
-    runner: ruffFormat,
-  },
-  { isEnabled: (c) => isEnabled(c.code?.formatting?.prettier), runner: prettier },
   { isEnabled: (c) => isEnabled(c.code?.types?.tsc), runner: createTscRunner },
   { isEnabled: (c) => isEnabled(c.code?.types?.ty), runner: ty },
   { isEnabled: (c) => isEnabled(c.code?.unused?.knip), runner: knip },
