@@ -1,0 +1,6 @@
+# Tickets validation - require in branch but branch doesn't have it
+[process.tickets]
+enabled = true
+pattern = "^JIRA-[0-9]+"
+require_in_commits = false
+require_in_branch = true

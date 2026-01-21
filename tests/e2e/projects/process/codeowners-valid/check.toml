@@ -1,0 +1,11 @@
+# CODEOWNERS validation - all required rules exist
+[process.codeowners]
+enabled = true
+
+[[process.codeowners.rules]]
+pattern = "*"
+owners = ["@myorg/engineering"]
+
+[[process.codeowners.rules]]
+pattern = "/docs/*"
+owners = ["@myorg/docs-team"]

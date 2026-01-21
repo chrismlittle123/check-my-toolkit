@@ -1,0 +1,6 @@
+# Dependencies command test
+[code.linting.eslint]
+enabled = true
+
+[code.types.tsc]
+enabled = true

@@ -1,0 +1,5 @@
+# Commits validation - valid conventional commit
+[process.commits]
+enabled = true
+types = ["feat", "fix", "docs", "chore"]
+max_subject_length = 72

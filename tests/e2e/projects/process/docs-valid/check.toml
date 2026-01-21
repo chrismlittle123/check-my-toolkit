@@ -1,0 +1,6 @@
+# Docs validation - valid structure
+[process.docs]
+enabled = true
+path = "docs/"
+enforcement = "block"
+allowlist = ["README.md"]

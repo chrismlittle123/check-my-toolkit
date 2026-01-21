@@ -1,0 +1,3 @@
+# Changesets disabled
+[process.changesets]
+enabled = false

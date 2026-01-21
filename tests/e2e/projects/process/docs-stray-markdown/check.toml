@@ -1,0 +1,6 @@
+# Docs validation - stray markdown file outside docs/
+[process.docs]
+enabled = true
+path = "docs/"
+enforcement = "block"
+allowlist = ["README.md"]

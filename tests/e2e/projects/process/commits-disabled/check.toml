@@ -1,0 +1,4 @@
+# Commits validation disabled
+[process.commits]
+enabled = false
+types = ["feat", "fix"]

@@ -1,4 +1,4 @@
-# Features - check-my-toolkit v1.5.5
+# Features - check-my-toolkit v1.7.0
 
 Unified project health checks for code quality, process compliance, and infrastructure validation.
 

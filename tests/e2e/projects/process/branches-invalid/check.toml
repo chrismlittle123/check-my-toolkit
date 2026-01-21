@@ -1,0 +1,6 @@
+# Branches validation - pattern that won't match 'main'
+# When running on main branch, this should fail
+[process.branches]
+enabled = true
+pattern = "^(feature|fix)/[0-9]+/.*"
+exclude = []

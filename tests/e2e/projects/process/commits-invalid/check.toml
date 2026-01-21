@@ -1,0 +1,4 @@
+# Commits validation - invalid commit type
+[process.commits]
+enabled = true
+types = ["feat", "fix"]

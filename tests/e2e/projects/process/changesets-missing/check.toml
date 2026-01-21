@@ -1,0 +1,4 @@
+# Changesets validation - no changesets present (only config.json)
+[process.changesets]
+enabled = true
+validate_format = true

@@ -1,0 +1,6 @@
+# Changesets validation - invalid format (missing description)
+[process.changesets]
+enabled = true
+validate_format = true
+require_description = true
+min_description_length = 10

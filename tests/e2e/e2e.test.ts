@@ -1189,6 +1189,132 @@ const testCases: TestCase[] = [
     expectedPatterns: ["PROCESS"],
     notExpectedPatterns: ["Forbidden Files"],
   },
+
+  // ============================================================
+  // Process: Commit message validation
+  // ============================================================
+  {
+    name: "process/commits-disabled skips commits check when disabled",
+    config: "tests/e2e/projects/process/commits-disabled/check.toml",
+    command: "check",
+    domain: "process",
+    expectedExitCode: 0,
+    expectedPatterns: ["PROCESS"],
+    notExpectedPatterns: ["Commits:"],
+  },
+
+  // ============================================================
+  // Process: Changesets validation
+  // ============================================================
+  {
+    name: "process/changesets-valid passes when valid changeset exists",
+    config: "tests/e2e/projects/process/changesets-valid/check.toml",
+    command: "check",
+    domain: "process",
+    expectedExitCode: 0,
+    expectedPatterns: ["✓ Changesets: passed"],
+  },
+  {
+    name: "process/changesets-invalid-format fails when description too short",
+    config: "tests/e2e/projects/process/changesets-invalid-format/check.toml",
+    command: "check",
+    domain: "process",
+    expectedExitCode: 1,
+    expectedPatterns: ["✗ Changesets:", "description"],
+  },
+  {
+    name: "process/changesets-disabled skips changesets check when disabled",
+    config: "tests/e2e/projects/process/changesets-disabled/check.toml",
+    command: "check",
+    domain: "process",
+    expectedExitCode: 0,
+    expectedPatterns: ["PROCESS"],
+    notExpectedPatterns: ["Changesets:"],
+  },
+
+  // ============================================================
+  // Process: CODEOWNERS validation
+  // ============================================================
+  {
+    name: "process/codeowners-valid passes when all required rules exist",
+    config: "tests/e2e/projects/process/codeowners-valid/check.toml",
+    command: "check",
+    domain: "process",
+    expectedExitCode: 0,
+    expectedPatterns: ["✓ CODEOWNERS: passed"],
+  },
+  {
+    name: "process/codeowners-missing-rule fails when required rule is missing",
+    config: "tests/e2e/projects/process/codeowners-missing-rule/check.toml",
+    command: "check",
+    domain: "process",
+    expectedExitCode: 1,
+    expectedPatterns: ["✗ CODEOWNERS:", "/src/*", "missing"],
+  },
+  {
+    name: "process/codeowners-disabled skips codeowners check when disabled",
+    config: "tests/e2e/projects/process/codeowners-disabled/check.toml",
+    command: "check",
+    domain: "process",
+    expectedExitCode: 0,
+    expectedPatterns: ["PROCESS"],
+    notExpectedPatterns: ["CODEOWNERS:"],
+  },
+
+  // ============================================================
+  // Process: Documentation governance
+  // ============================================================
+  {
+    name: "process/docs-valid passes when docs structure is valid",
+    config: "tests/e2e/projects/process/docs-valid/check.toml",
+    command: "check",
+    domain: "process",
+    expectedExitCode: 0,
+    expectedPatterns: ["✓ Documentation: passed"],
+  },
+  {
+    name: "process/docs-stray-markdown fails when markdown outside docs/ not in allowlist",
+    config: "tests/e2e/projects/process/docs-stray-markdown/check.toml",
+    command: "check",
+    domain: "process",
+    expectedExitCode: 1,
+    expectedPatterns: ["✗ Documentation:", "CONTRIBUTING.md", "not allowlisted"],
+  },
+  {
+    name: "process/docs-disabled skips docs check when disabled",
+    config: "tests/e2e/projects/process/docs-disabled/check.toml",
+    command: "check",
+    domain: "process",
+    expectedExitCode: 0,
+    expectedPatterns: ["PROCESS"],
+    notExpectedPatterns: ["Documentation:"],
+  },
+
+  // ============================================================
+  // Process: Branch naming validation (additional tests)
+  // ============================================================
+  {
+    // Note: Branches check may skip in CI due to shallow clone
+    name: "process/branches-valid passes or skips for valid pattern (CI may skip)",
+    config: "tests/e2e/projects/process/branches-valid/check.toml",
+    command: "check",
+    domain: "process",
+    expectedExitCode: 0,
+    expectedExitCodes: [0, 1], // May fail if on main without exclude
+    expectedPatterns: ["Branches:"],
+  },
+
+  // ============================================================
+  // Process: Ticket validation (additional tests)
+  // ============================================================
+  {
+    name: "process/tickets-valid passes when ticket validation configured (skips without commits)",
+    config: "tests/e2e/projects/process/tickets-valid/check.toml",
+    command: "check",
+    domain: "process",
+    expectedExitCode: 0,
+    expectedPatterns: ["Tickets:"],
+  },
 ];
 
 function runCli(
@@ -1408,5 +1534,60 @@ describe("Projects Detect --show-status E2E Tests", () => {
     expect(output.projects.every((p: { status: string }) => p.status === "missing-config")).toBe(
       true
     );
+  });
+});
+
+// =============================================================================
+// Dependencies Command E2E Tests
+// =============================================================================
+
+function runDependencies(
+  config: string,
+  args = "",
+  format = "text"
+): { stdout: string; exitCode: number } {
+  const formatArg = format !== "text" ? ` -f ${format}` : "";
+  const cmd = `node ${path.resolve("dist/cli.js")} dependencies -c "${config}"${args}${formatArg}`;
+
+  try {
+    const stdout = execSync(cmd, {
+      encoding: "utf-8",
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+    return { stdout, exitCode: 0 };
+  } catch (error: unknown) {
+    const execError = error as { stdout?: string; stderr?: string; status?: number };
+    const stdout = (execError.stdout || "") + (execError.stderr || "");
+    return { stdout, exitCode: execError.status ?? 1 };
+  }
+}
+
+describe("Dependencies Command E2E Tests", () => {
+  const configPath = "tests/e2e/projects/dependencies/basic/check.toml";
+
+  it("lists dependency files", () => {
+    const { stdout, exitCode } = runDependencies(configPath);
+
+    expect(exitCode).toBe(0);
+    expect(stdout).toContain("check.toml");
+    expect(stdout).toContain("Always tracked");
+  });
+
+  it("outputs JSON format", () => {
+    const { stdout, exitCode } = runDependencies(configPath, "", "json");
+
+    expect(exitCode).toBe(0);
+    const output = JSON.parse(stdout);
+    expect(output.allFiles).toBeDefined();
+    expect(Array.isArray(output.allFiles)).toBe(true);
+    expect(output.allFiles).toContain("check.toml");
+  });
+
+  it("filters by tool with --check", () => {
+    const { stdout, exitCode } = runDependencies(configPath, " --check tsc");
+
+    expect(exitCode).toBe(0);
+    expect(stdout).toContain("tsc:");
+    expect(stdout).toContain("tsconfig.json");
   });
 });

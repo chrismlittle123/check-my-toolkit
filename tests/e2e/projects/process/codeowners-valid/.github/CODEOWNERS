@@ -1,0 +1,5 @@
+# Default owners for everything
+* @myorg/engineering
+
+# Documentation
+/docs/* @myorg/docs-team

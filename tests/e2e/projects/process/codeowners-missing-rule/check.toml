@@ -1,0 +1,11 @@
+# CODEOWNERS validation - missing required rule
+[process.codeowners]
+enabled = true
+
+[[process.codeowners.rules]]
+pattern = "*"
+owners = ["@myorg/engineering"]
+
+[[process.codeowners.rules]]
+pattern = "/src/*"
+owners = ["@myorg/backend-team"]

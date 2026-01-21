@@ -1,0 +1,7 @@
+# Tickets validation
+# Note: This test validates commit messages, will skip if no commits
+[process.tickets]
+enabled = true
+pattern = "^(PROJ|TEST)-[0-9]+"
+require_in_commits = false
+require_in_branch = false
