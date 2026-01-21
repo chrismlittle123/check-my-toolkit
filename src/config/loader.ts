@@ -1,4 +1,3 @@
-/* eslint-disable max-lines -- config loading requires extensive merging logic across all domains */
 import * as fs from "node:fs";
 import * as path from "node:path";
 
