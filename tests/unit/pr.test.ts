@@ -656,4 +656,329 @@ describe("PrRunner", () => {
       expect(result.passed).toBe(true);
     });
   });
+
+  describe("exclude patterns", () => {
+    /** Helper to mock fetch for GitHub API */
+    function mockFetchPrFiles(files: { filename: string; additions: number; deletions: number }[]) {
+      vi.spyOn(global, "fetch").mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(files),
+      } as Response);
+    }
+
+    it("excludes files matching glob patterns from file count", async () => {
+      const eventPath = createEventPayload({
+        pull_request: {
+          number: 42,
+          changed_files: 5,
+          additions: 500,
+          deletions: 100,
+        },
+        repository: { full_name: "owner/repo" },
+      });
+      process.env.GITHUB_EVENT_PATH = eventPath;
+      process.env.GITHUB_TOKEN = "test-token";
+
+      mockFetchPrFiles([
+        { filename: "src/index.ts", additions: 50, deletions: 10 },
+        { filename: "src/utils.ts", additions: 30, deletions: 5 },
+        { filename: "package-lock.json", additions: 400, deletions: 80 },
+        { filename: "pnpm-lock.yaml", additions: 10, deletions: 3 },
+        { filename: "src/types.ts", additions: 10, deletions: 2 },
+      ]);
+
+      runner.setConfig({
+        enabled: true,
+        max_files: 3, // Would fail without exclude (5 files)
+        exclude: ["*-lock.json", "*-lock.yaml"],
+      });
+
+      const result = await runner.run(tempDir);
+      expect(result.passed).toBe(true); // Only 3 non-excluded files
+    });
+
+    it("excludes files matching glob patterns from line count", async () => {
+      const eventPath = createEventPayload({
+        pull_request: {
+          number: 42,
+          changed_files: 3,
+          additions: 500,
+          deletions: 100,
+        },
+        repository: { full_name: "owner/repo" },
+      });
+      process.env.GITHUB_EVENT_PATH = eventPath;
+      process.env.GITHUB_TOKEN = "test-token";
+
+      mockFetchPrFiles([
+        { filename: "src/index.ts", additions: 50, deletions: 10 },
+        { filename: "src/utils.ts", additions: 30, deletions: 5 },
+        { filename: "package-lock.json", additions: 400, deletions: 80 },
+      ]);
+
+      runner.setConfig({
+        enabled: true,
+        max_lines: 100, // Would fail without exclude (600 lines)
+        exclude: ["*-lock.json"],
+      });
+
+      const result = await runner.run(tempDir);
+      expect(result.passed).toBe(true); // Only 95 lines after excluding lock file
+    });
+
+    it("supports ** glob patterns", async () => {
+      const eventPath = createEventPayload({
+        pull_request: {
+          number: 42,
+          changed_files: 4,
+          additions: 200,
+          deletions: 50,
+        },
+        repository: { full_name: "owner/repo" },
+      });
+      process.env.GITHUB_EVENT_PATH = eventPath;
+      process.env.GITHUB_TOKEN = "test-token";
+
+      mockFetchPrFiles([
+        { filename: "src/index.ts", additions: 50, deletions: 10 },
+        { filename: "tests/unit/index.test.ts", additions: 100, deletions: 20 },
+        { filename: "tests/e2e/app.test.ts", additions: 30, deletions: 10 },
+        { filename: "src/utils.ts", additions: 20, deletions: 10 },
+      ]);
+
+      runner.setConfig({
+        enabled: true,
+        max_files: 2,
+        exclude: ["**/tests/**"],
+      });
+
+      const result = await runner.run(tempDir);
+      expect(result.passed).toBe(true); // Only 2 non-test files
+    });
+
+    it("falls back to aggregate counts when GITHUB_TOKEN is not set", async () => {
+      const eventPath = createEventPayload({
+        pull_request: {
+          number: 42,
+          changed_files: 5,
+          additions: 100,
+          deletions: 50,
+        },
+        repository: { full_name: "owner/repo" },
+      });
+      process.env.GITHUB_EVENT_PATH = eventPath;
+      delete process.env.GITHUB_TOKEN;
+
+      runner.setConfig({
+        enabled: true,
+        max_files: 3,
+        exclude: ["*.lock"],
+      });
+
+      const result = await runner.run(tempDir);
+      // Falls back to aggregate count (5 files), which exceeds limit
+      expect(result.passed).toBe(false);
+      expect(result.violations[0].message).toContain("5 files changed");
+    });
+
+    it("falls back to aggregate counts when API fails", async () => {
+      const eventPath = createEventPayload({
+        pull_request: {
+          number: 42,
+          changed_files: 5,
+          additions: 100,
+          deletions: 50,
+        },
+        repository: { full_name: "owner/repo" },
+      });
+      process.env.GITHUB_EVENT_PATH = eventPath;
+      process.env.GITHUB_TOKEN = "test-token";
+
+      vi.spyOn(global, "fetch").mockResolvedValue({
+        ok: false,
+        status: 403,
+      } as Response);
+
+      runner.setConfig({
+        enabled: true,
+        max_files: 3,
+        exclude: ["*.lock"],
+      });
+
+      const result = await runner.run(tempDir);
+      // Falls back to aggregate count (5 files)
+      expect(result.passed).toBe(false);
+      expect(result.violations[0].message).toContain("5 files changed");
+    });
+
+    it("falls back to aggregate counts when repository info is missing", async () => {
+      const eventPath = createEventPayload({
+        pull_request: {
+          number: 42,
+          changed_files: 5,
+          additions: 100,
+          deletions: 50,
+        },
+        // No repository field
+      });
+      process.env.GITHUB_EVENT_PATH = eventPath;
+      process.env.GITHUB_TOKEN = "test-token";
+
+      runner.setConfig({
+        enabled: true,
+        max_files: 3,
+        exclude: ["*.lock"],
+      });
+
+      const result = await runner.run(tempDir);
+      // Falls back to aggregate count (5 files)
+      expect(result.passed).toBe(false);
+    });
+
+    it("falls back to aggregate counts when PR number is missing", async () => {
+      const eventPath = createEventPayload({
+        pull_request: {
+          // No number field
+          changed_files: 5,
+          additions: 100,
+          deletions: 50,
+        },
+        repository: { full_name: "owner/repo" },
+      });
+      process.env.GITHUB_EVENT_PATH = eventPath;
+      process.env.GITHUB_TOKEN = "test-token";
+
+      runner.setConfig({
+        enabled: true,
+        max_files: 3,
+        exclude: ["*.lock"],
+      });
+
+      const result = await runner.run(tempDir);
+      // Falls back to aggregate count (5 files)
+      expect(result.passed).toBe(false);
+    });
+
+    it("works without exclude patterns (default behavior)", async () => {
+      const fetchSpy = vi.spyOn(global, "fetch");
+
+      const eventPath = createEventPayload({
+        pull_request: {
+          number: 42,
+          changed_files: 5,
+          additions: 100,
+          deletions: 50,
+        },
+        repository: { full_name: "owner/repo" },
+      });
+      process.env.GITHUB_EVENT_PATH = eventPath;
+      process.env.GITHUB_TOKEN = "test-token";
+
+      runner.setConfig({
+        enabled: true,
+        max_files: 10,
+        // No exclude patterns
+      });
+
+      const result = await runner.run(tempDir);
+      expect(result.passed).toBe(true);
+      // Should not call fetch when no exclude patterns
+      expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
+    it("handles empty exclude array", async () => {
+      const eventPath = createEventPayload({
+        pull_request: {
+          number: 42,
+          changed_files: 5,
+          additions: 100,
+          deletions: 50,
+        },
+        repository: { full_name: "owner/repo" },
+      });
+      process.env.GITHUB_EVENT_PATH = eventPath;
+      process.env.GITHUB_TOKEN = "test-token";
+
+      runner.setConfig({
+        enabled: true,
+        max_files: 10,
+        exclude: [], // Empty array
+      });
+
+      const result = await runner.run(tempDir);
+      expect(result.passed).toBe(true);
+    });
+
+    it("handles fetch network error gracefully", async () => {
+      const eventPath = createEventPayload({
+        pull_request: {
+          number: 42,
+          changed_files: 5,
+          additions: 100,
+          deletions: 50,
+        },
+        repository: { full_name: "owner/repo" },
+      });
+      process.env.GITHUB_EVENT_PATH = eventPath;
+      process.env.GITHUB_TOKEN = "test-token";
+
+      vi.spyOn(global, "fetch").mockRejectedValue(new Error("Network error"));
+
+      runner.setConfig({
+        enabled: true,
+        max_files: 3,
+        exclude: ["*.lock"],
+      });
+
+      const result = await runner.run(tempDir);
+      // Falls back to aggregate count (5 files)
+      expect(result.passed).toBe(false);
+    });
+
+    it("handles pagination for large PRs", async () => {
+      const eventPath = createEventPayload({
+        pull_request: {
+          number: 42,
+          changed_files: 150,
+          additions: 1500,
+          deletions: 500,
+        },
+        repository: { full_name: "owner/repo" },
+      });
+      process.env.GITHUB_EVENT_PATH = eventPath;
+      process.env.GITHUB_TOKEN = "test-token";
+
+      // Generate 150 files across 2 pages
+      const page1Files = Array.from({ length: 100 }, (_, i) => ({
+        filename: `src/file${i}.ts`,
+        additions: 10,
+        deletions: 3,
+      }));
+      const page2Files = Array.from({ length: 50 }, (_, i) => ({
+        filename: i < 25 ? `lock/file${i}.lock` : `src/extra${i}.ts`,
+        additions: 10,
+        deletions: 4,
+      }));
+
+      let callCount = 0;
+      vi.spyOn(global, "fetch").mockImplementation(() => {
+        callCount++;
+        const files = callCount === 1 ? page1Files : page2Files;
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve(files),
+        } as Response);
+      });
+
+      runner.setConfig({
+        enabled: true,
+        max_files: 130,
+        exclude: ["**/*.lock"],
+      });
+
+      const result = await runner.run(tempDir);
+      expect(result.passed).toBe(true); // 125 non-lock files
+      expect(callCount).toBe(2); // Should have made 2 API calls
+    });
+  });
 });

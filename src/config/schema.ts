@@ -518,6 +518,7 @@ const prConfigSchema = z
     max_lines: z.number().int().positive().optional(), // Max lines changed (additions + deletions)
     require_issue: z.boolean().optional().default(false), // Require issue reference in PR description
     issue_keywords: z.array(z.string()).optional(), // Keywords that link to issues (e.g., ["Closes", "Fixes", "Resolves"])
+    exclude: z.array(globPatternSchema).optional(), // Glob patterns to exclude from size calculation (e.g., ["*.lock", "**/*.snap"])
   })
   .strict()
   .optional();
