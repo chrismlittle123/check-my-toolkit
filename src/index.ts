@@ -89,3 +89,13 @@ export {
   type ValidateTierResult,
   validateTierRuleset,
 } from "./validate/index.js";
+
+// MCP Server
+export {
+  createServer as createMcpServer,
+  startServer as startMcpServer,
+  type Guideline,
+  type GuidelineFrontmatter,
+  type GuidelineListItem,
+  type Ruleset,
+} from "./mcp/index.js";

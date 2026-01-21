@@ -31,10 +31,13 @@
 
 ### Added
 
-- Add scan mode options to Gitleaks (`[code.security.secrets]`)
-  - `scan_mode`: Choose scanning scope - `branch` (default), `files`, `staged`, or `full`
-  - `base_branch`: Set base branch for branch mode comparison (default: `main`)
-  - Default changed from scanning entire git history to scanning only current branch commits
+- Add MCP server for dynamic standards composition (`cm mcp`)
+  - `get_standards`: Get composed coding standards matching a context string
+  - `list_guidelines`: List available guidelines with optional category filter
+  - `get_guideline`: Get a single guideline by ID
+  - `get_ruleset`: Get a tool configuration ruleset by ID
+  - Fetches standards from `palindrom-ai/standards` repository
+  - Smart keyword matching against guideline tags
 
 ## 1.9.2
 
