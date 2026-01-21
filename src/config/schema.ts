@@ -237,6 +237,11 @@ const coverageRunConfigSchema = z
 const secretsConfigSchema = z
   .object({
     enabled: z.boolean().optional().default(false),
+    scan_mode: z
+      .enum(["branch", "files", "staged", "full"])
+      .optional()
+      .default("branch"), // branch: scan current branch commits, files: scan filesystem, staged: staged files only, full: entire git history
+    base_branch: z.string().optional().default("main"), // Branch to compare against for "branch" mode
     dependencies: z.array(z.string()).optional(), // Custom dependency files for drift tracking
   })
   .strict()
@@ -761,7 +766,7 @@ export const defaultConfig: Config = {
       runner: "auto",
     },
     security: {
-      secrets: { enabled: false },
+      secrets: { enabled: false, scan_mode: "branch", base_branch: "main" },
       pnpmaudit: { enabled: false, exclude_dev: true },
       pipaudit: { enabled: false },
     },

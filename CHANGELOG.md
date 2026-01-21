@@ -14,11 +14,12 @@
 
 ## [Unreleased]
 
-### Removed
+### Added
 
-- Remove Prettier formatting check (`[code.formatting.prettier]`)
-- Remove Ruff Format check (`format = true` in `[code.linting.ruff]`)
-- CODE domain now has 12 tools (down from 14)
+- Add scan mode options to Gitleaks (`[code.security.secrets]`)
+  - `scan_mode`: Choose scanning scope - `branch` (default), `files`, `staged`, or `full`
+  - `base_branch`: Set base branch for branch mode comparison (default: `main`)
+  - Default changed from scanning entire git history to scanning only current branch commits
 
 ## 1.9.2
 

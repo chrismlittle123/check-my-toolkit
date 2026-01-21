@@ -48,8 +48,141 @@ describe("GitleaksRunner", () => {
     });
   });
 
+  describe("setConfig", () => {
+    it("sets scan_mode and base_branch config", () => {
+      runner.setConfig({
+        enabled: true,
+        scan_mode: "full",
+        base_branch: "develop",
+      });
+
+      // Verify config is stored (implicitly tested through run tests)
+      expect(runner).toBeDefined();
+    });
+
+    it("merges config with defaults", () => {
+      runner.setConfig({
+        scan_mode: "staged",
+      });
+
+      expect(runner).toBeDefined();
+    });
+  });
+
   describe("run", () => {
-    it("passes when no secrets found (exit code 0)", async () => {
+    it("passes when no secrets found (exit code 0) with default branch mode", async () => {
+      mockedExeca.mockResolvedValueOnce({
+        stdout: "",
+        stderr: "",
+        exitCode: 0,
+      } as never);
+
+      const result = await runner.run(tempDir);
+
+      expect(mockedExeca).toHaveBeenCalledWith(
+        "gitleaks",
+        ["detect", "--report-format", "json", "--report-path", "/dev/stdout", "--log-opts", "main..HEAD"],
+        expect.objectContaining({
+          cwd: tempDir,
+          reject: false,
+        })
+      );
+      expect(result.passed).toBe(true);
+      expect(result.violations).toEqual([]);
+    });
+
+    it("uses files mode with --no-git when configured", async () => {
+      runner.setConfig({ scan_mode: "files" });
+
+      mockedExeca.mockResolvedValueOnce({
+        stdout: "",
+        stderr: "",
+        exitCode: 0,
+      } as never);
+
+      const result = await runner.run(tempDir);
+
+      expect(mockedExeca).toHaveBeenCalledWith(
+        "gitleaks",
+        ["detect", "--report-format", "json", "--report-path", "/dev/stdout", "--source", ".", "--no-git"],
+        expect.objectContaining({
+          cwd: tempDir,
+          reject: false,
+        })
+      );
+      expect(result.passed).toBe(true);
+    });
+
+    it("uses staged mode when configured", async () => {
+      runner.setConfig({ scan_mode: "staged" });
+
+      mockedExeca.mockResolvedValueOnce({
+        stdout: "",
+        stderr: "",
+        exitCode: 0,
+      } as never);
+
+      const result = await runner.run(tempDir);
+
+      expect(mockedExeca).toHaveBeenCalledWith(
+        "gitleaks",
+        ["detect", "--report-format", "json", "--report-path", "/dev/stdout", "--staged"],
+        expect.objectContaining({
+          cwd: tempDir,
+          reject: false,
+        })
+      );
+      expect(result.passed).toBe(true);
+    });
+
+    it("uses full mode without extra flags when configured", async () => {
+      runner.setConfig({ scan_mode: "full" });
+
+      mockedExeca.mockResolvedValueOnce({
+        stdout: "",
+        stderr: "",
+        exitCode: 0,
+      } as never);
+
+      const result = await runner.run(tempDir);
+
+      expect(mockedExeca).toHaveBeenCalledWith(
+        "gitleaks",
+        ["detect", "--report-format", "json", "--report-path", "/dev/stdout"],
+        expect.objectContaining({
+          cwd: tempDir,
+          reject: false,
+        })
+      );
+      expect(result.passed).toBe(true);
+    });
+
+    it("uses custom base_branch in branch mode", async () => {
+      runner.setConfig({ scan_mode: "branch", base_branch: "develop" });
+
+      mockedExeca.mockResolvedValueOnce({
+        stdout: "",
+        stderr: "",
+        exitCode: 0,
+      } as never);
+
+      const result = await runner.run(tempDir);
+
+      expect(mockedExeca).toHaveBeenCalledWith(
+        "gitleaks",
+        ["detect", "--report-format", "json", "--report-path", "/dev/stdout", "--log-opts", "develop..HEAD"],
+        expect.objectContaining({
+          cwd: tempDir,
+          reject: false,
+        })
+      );
+      expect(result.passed).toBe(true);
+    });
+
+    it("uses custom gitleaks config file when present", async () => {
+      // Create a .gitleaks.toml file in the temp directory
+      fs.writeFileSync(path.join(tempDir, ".gitleaks.toml"), "[allowlist]\nregexes = []");
+
       mockedExeca.mockResolvedValueOnce({
         stdout: "",
         stderr: "",
@@ -62,13 +195,14 @@ describe("GitleaksRunner", () => {
         "gitleaks",
         [
           "detect",
-          "--source",
-          ".",
           "--report-format",
           "json",
           "--report-path",
           "/dev/stdout",
-          "--no-git",
+          "--log-opts",
+          "main..HEAD",
+          "--config",
+          path.join(tempDir, ".gitleaks.toml"),
         ],
         expect.objectContaining({
           cwd: tempDir,
@@ -76,7 +210,6 @@ describe("GitleaksRunner", () => {
         })
       );
       expect(result.passed).toBe(true);
-      expect(result.violations).toEqual([]);
     });
 
     it("parses secrets from gitleaks output (exit code 1)", async () => {

@@ -16,7 +16,6 @@ import {
 } from "./tools/index.js";
 
 // Tool runner instances (singletons for tools that don't need per-run config)
-const gitleaks = new GitleaksRunner();
 const knip = new KnipRunner();
 const pipaudit = new PipAuditRunner();
 const ty = new TyRunner();
@@ -143,6 +142,20 @@ function createPnpmAuditRunner(config: Config): PnpmAuditRunner {
   return runner;
 }
 
+/** Create a configured GitleaksRunner */
+function createGitleaksRunner(config: Config): GitleaksRunner {
+  const runner = new GitleaksRunner();
+  const secretsConfig = config.code?.security?.secrets;
+  if (secretsConfig) {
+    runner.setConfig({
+      enabled: secretsConfig.enabled,
+      scan_mode: secretsConfig.scan_mode,
+      base_branch: secretsConfig.base_branch,
+    });
+  }
+  return runner;
+}
+
 /** All available tools with their config predicates */
 const toolRegistry: ToolEntry[] = [
   { isEnabled: (c) => isEnabled(c.code?.linting?.eslint), runner: createEslintRunner },
@@ -151,7 +164,7 @@ const toolRegistry: ToolEntry[] = [
   { isEnabled: (c) => isEnabled(c.code?.types?.ty), runner: ty },
   { isEnabled: (c) => isEnabled(c.code?.unused?.knip), runner: knip },
   { isEnabled: (c) => isEnabled(c.code?.unused?.vulture), runner: vulture },
-  { isEnabled: (c) => isEnabled(c.code?.security?.secrets), runner: gitleaks },
+  { isEnabled: (c) => isEnabled(c.code?.security?.secrets), runner: createGitleaksRunner },
   { isEnabled: (c) => isEnabled(c.code?.security?.pnpmaudit), runner: createPnpmAuditRunner },
   { isEnabled: (c) => isEnabled(c.code?.security?.pipaudit), runner: pipaudit },
   { isEnabled: (c) => isEnabled(c.code?.coverage_run), runner: createCoverageRunRunner },
