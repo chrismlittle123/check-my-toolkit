@@ -119,9 +119,6 @@ enabled = true
 [code.types.tsc.require]
 strict = true
 
-[code.formatting.prettier]
-enabled = true
-
 [code.unused.knip]
 enabled = true
 

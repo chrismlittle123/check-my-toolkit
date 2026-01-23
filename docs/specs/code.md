@@ -47,10 +47,6 @@ eslint:
   - .eslintignore
   - eslint.config.js
 
-prettier:
-  - .prettierrc
-  - .prettierignore
-
 typescript:
   - tsconfig.json
   - tsconfig.build.json
@@ -71,7 +67,6 @@ Always tracked:
   "checkTomlPath": "./check.toml",
   "dependencies": {
     "eslint": [".eslintrc.js", ".eslintignore", "eslint.config.js"],
-    "prettier": [".prettierrc", ".prettierignore"],
     "typescript": ["tsconfig.json", "tsconfig.build.json"],
     "knip": ["knip.json"]
   },
@@ -81,8 +76,6 @@ Always tracked:
     ".eslintrc.js",
     ".eslintignore",
     "eslint.config.js",
-    ".prettierrc",
-    ".prettierignore",
     "tsconfig.json",
     "tsconfig.build.json",
     "knip.json",
@@ -110,7 +103,6 @@ dependencies = ["custom-tool.config.yaml", "custom-tool.rules.json"]
 | Check      | Default Dependencies                              |
 | ---------- | ------------------------------------------------- |
 | eslint     | `.eslintrc.*`, `eslint.config.*`, `.eslintignore` |
-| prettier   | `.prettierrc*`, `.prettierignore`                 |
 | typescript | `tsconfig*.json`                                  |
 | knip       | `knip.json`, `knip.config.ts`                     |
 | vitest     | `vitest.config.*`                                 |
