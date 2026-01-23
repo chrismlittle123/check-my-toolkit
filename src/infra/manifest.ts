@@ -20,7 +20,7 @@ import type { Manifest } from "./types.js";
 /**
  * Check if a resource identifier is valid (AWS ARN or GCP path)
  */
-export function isValidResource(resource: string): boolean {
+function isValidResource(resource: string): boolean {
   return isValidArn(resource) || isValidGcpResource(resource);
 }
 

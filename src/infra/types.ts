@@ -3,11 +3,6 @@
  */
 
 /**
- * Cloud provider types
- */
-export type CloudProvider = "aws" | "gcp";
-
-/**
  * Parsed ARN components (AWS)
  */
 export interface ParsedArn {
@@ -33,11 +28,6 @@ export interface ParsedGcpResource {
   resourceId: string; // Resource name/ID
   raw: string; // Original resource path
 }
-
-/**
- * Unified parsed resource type
- */
-export type ParsedResource = ParsedArn | ParsedGcpResource;
 
 /**
  * Result of checking a single resource

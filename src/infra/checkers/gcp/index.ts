@@ -52,10 +52,3 @@ export async function getGcpChecker(service: string): Promise<GcpResourceChecker
 
   return checker;
 }
-
-/**
- * Clear the GCP checker cache (useful for testing)
- */
-export function clearGcpCheckerCache(): void {
-  checkerCache.clear();
-}
