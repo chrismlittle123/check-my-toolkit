@@ -9,7 +9,7 @@ import type { InfraScanResult, ResourceCheckResult } from "./types.js";
 /**
  * Format scan result as text output
  */
-export function formatScanText(result: InfraScanResult): string {
+function formatScanText(result: InfraScanResult): string {
   const lines: string[] = [];
 
   formatHeader(lines, result);
@@ -106,7 +106,7 @@ function formatSummary(
 /**
  * Format scan result as JSON output
  */
-export function formatScanJson(result: InfraScanResult): string {
+function formatScanJson(result: InfraScanResult): string {
   return JSON.stringify(result, null, 2);
 }
 

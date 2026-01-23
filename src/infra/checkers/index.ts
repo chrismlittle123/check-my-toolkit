@@ -6,8 +6,6 @@
 
 import type { ResourceChecker } from "./types.js";
 
-export type { ResourceChecker } from "./types.js";
-
 /**
  * Supported AWS services for resource checking
  */
