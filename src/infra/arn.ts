@@ -43,6 +43,7 @@ export function parseArn(arn: string): ParsedArn | null {
   const { resourceType, resourceId } = parseResource(service, resource);
 
   return {
+    cloud: "aws" as const,
     partition,
     service,
     region,
