@@ -572,6 +572,34 @@ projectsCommand
 program.addCommand(projectsCommand);
 
 // =============================================================================
+// Infra subcommand
+// =============================================================================
+
+const infraCommand = configureExitOverride(
+  new Command("infra").description("Infrastructure resource verification")
+);
+
+// cm infra scan
+infraCommand
+  .command("scan")
+  .description("Verify AWS resources declared in manifest exist")
+  .option("-c, --config <path>", "Path to check.toml config file")
+  .option("-m, --manifest <path>", "Path to manifest file (overrides config)")
+  .addOption(
+    new Option("-f, --format <format>", "Output format").choices(["text", "json"]).default("text")
+  )
+  .action(async (options: { config?: string; manifest?: string; format: string }) => {
+    const { runInfraScan } = await import("./infra/index.js");
+    await runInfraScan({
+      configPath: options.config,
+      manifestPath: options.manifest,
+      format: options.format as "text" | "json",
+    });
+  });
+
+program.addCommand(infraCommand);
+
+// =============================================================================
 // Top-level aliases (run all domains)
 // =============================================================================
 

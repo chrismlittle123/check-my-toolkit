@@ -655,6 +655,19 @@ const docsConfigSchema = z
   .strict()
   .optional();
 
+// =============================================================================
+// Infra Domain Configuration
+// =============================================================================
+
+/** Infra domain configuration for AWS resource verification */
+const infraSchema = z
+  .object({
+    enabled: z.boolean().optional().default(false),
+    manifest: z.string().optional().default("infra-manifest.json"), // Path to manifest file
+  })
+  .strict()
+  .optional();
+
 /** Default ignore patterns for forbidden files scan */
 const DEFAULT_FORBIDDEN_FILES_IGNORE = ["**/node_modules/**", "**/.git/**"];
 
@@ -714,6 +727,7 @@ export const configSchema = z
     extends: extendsSchema,
     code: codeSchema,
     process: processSchema,
+    infra: infraSchema,
   })
   .strict();
 
@@ -807,5 +821,9 @@ export const defaultConfig: Config = {
     forbidden_files: {
       enabled: false,
     },
+  },
+  infra: {
+    enabled: false,
+    manifest: "infra-manifest.json",
   },
 };

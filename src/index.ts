@@ -99,3 +99,16 @@ export {
   type GuidelineListItem,
   type Ruleset,
 } from "./mcp/index.js";
+
+// Infra scan
+export {
+  isValidArn,
+  isSupportedService,
+  type InfraScanResult,
+  ManifestError,
+  parseArn,
+  type ResourceCheckResult,
+  scanInfra,
+  type ScanInfraOptions,
+  SUPPORTED_SERVICES,
+} from "./infra/index.js";
