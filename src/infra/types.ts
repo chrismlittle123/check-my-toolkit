@@ -3,9 +3,10 @@
  */
 
 /**
- * Parsed ARN components
+ * Parsed ARN components (AWS)
  */
 export interface ParsedArn {
+  cloud: "aws";
   partition: string; // "aws", "aws-cn", "aws-us-gov"
   service: string; // "s3", "lambda", "dynamodb", etc.
   region: string; // "us-east-1", "" for global services
@@ -13,6 +14,19 @@ export interface ParsedArn {
   resourceType: string; // Resource type if present
   resourceId: string; // Resource identifier
   raw: string; // Original ARN string
+}
+
+/**
+ * Parsed GCP resource path components
+ */
+export interface ParsedGcpResource {
+  cloud: "gcp";
+  project: string; // GCP project ID
+  service: string; // "run", "iam", "secretmanager", "artifactregistry"
+  location: string; // "us-central1", "global", etc.
+  resourceType: string; // "services", "serviceAccounts", "secrets", "repositories"
+  resourceId: string; // Resource name/ID
+  raw: string; // Original resource path
 }
 
 /**

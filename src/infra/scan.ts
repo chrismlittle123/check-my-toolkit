@@ -1,11 +1,17 @@
 /**
  * Scan logic for infra scan
  *
- * Orchestrates checking all resources in a manifest
+ * Orchestrates checking all resources in a manifest (AWS and GCP)
  */
 
-import { parseArn } from "./arn.js";
+import { isValidArn, parseArn } from "./arn.js";
 import { getChecker, isSupportedService, SUPPORTED_SERVICES } from "./checkers/index.js";
+import {
+  getGcpChecker,
+  isSupportedGcpService,
+  SUPPORTED_GCP_SERVICES,
+} from "./checkers/gcp/index.js";
+import { isValidGcpResource, parseGcpResource } from "./gcp.js";
 import type { InfraScanResult, InfraScanSummary, Manifest, ResourceCheckResult } from "./types.js";
 
 /**
@@ -65,49 +71,97 @@ async function checkResourcesWithConcurrency(
 }
 
 /**
- * Check a single resource
+ * Check a single resource (AWS or GCP)
  */
-async function checkResource(arn: string): Promise<ResourceCheckResult> {
-  // Parse the ARN
+async function checkResource(resource: string): Promise<ResourceCheckResult> {
+  // Detect cloud provider and route to appropriate checker
+  if (isValidArn(resource)) {
+    return checkAwsResource(resource);
+  }
+  if (isValidGcpResource(resource)) {
+    return checkGcpResource(resource);
+  }
+
+  return {
+    arn: resource,
+    exists: false,
+    error: "Invalid resource format (not a valid AWS ARN or GCP resource path)",
+    service: "unknown",
+    resourceType: "unknown",
+    resourceId: resource,
+  };
+}
+
+/**
+ * Check an AWS resource
+ */
+async function checkAwsResource(arn: string): Promise<ResourceCheckResult> {
   const parsed = parseArn(arn);
   if (!parsed) {
-    return {
-      arn,
-      exists: false,
-      error: "Invalid ARN format",
-      service: "unknown",
-      resourceType: "unknown",
-      resourceId: arn,
-    };
+    return errorResult({ arn, error: "Invalid ARN format" });
   }
 
-  // Check if the service is supported
   if (!isSupportedService(parsed.service)) {
-    return {
+    const msg = `Unsupported AWS service: ${parsed.service}. Supported: ${SUPPORTED_SERVICES.join(", ")}`;
+    return errorResult({
       arn,
-      exists: false,
-      error: `Unsupported service: ${parsed.service}. Supported: ${SUPPORTED_SERVICES.join(", ")}`,
+      error: msg,
       service: parsed.service,
       resourceType: parsed.resourceType,
       resourceId: parsed.resourceId,
-    };
+    });
   }
 
-  // Get the checker for this service
   const checker = await getChecker(parsed.service);
   if (!checker) {
-    return {
-      arn,
-      exists: false,
-      error: `No checker available for service: ${parsed.service}`,
+    return errorResult({ arn, error: `No checker for AWS service: ${parsed.service}`, service: parsed.service });
+  }
+
+  return checker.check(parsed);
+}
+
+/**
+ * Check a GCP resource
+ */
+async function checkGcpResource(resource: string): Promise<ResourceCheckResult> {
+  const parsed = parseGcpResource(resource);
+  if (!parsed) {
+    return errorResult({ arn: resource, error: "Invalid GCP resource path format" });
+  }
+
+  if (!isSupportedGcpService(parsed.service)) {
+    const msg = `Unsupported GCP service: ${parsed.service}. Supported: ${SUPPORTED_GCP_SERVICES.join(", ")}`;
+    return errorResult({
+      arn: resource,
+      error: msg,
       service: parsed.service,
       resourceType: parsed.resourceType,
       resourceId: parsed.resourceId,
-    };
+    });
   }
 
-  // Check the resource
+  const checker = await getGcpChecker(parsed.service);
+  if (!checker) {
+    return errorResult({ arn: resource, error: `No checker for GCP service: ${parsed.service}`, service: parsed.service });
+  }
+
   return checker.check(parsed);
+}
+
+interface ErrorResultParams {
+  arn: string;
+  error: string;
+  service?: string;
+  resourceType?: string;
+  resourceId?: string;
+}
+
+/**
+ * Create an error result
+ */
+function errorResult(params: ErrorResultParams): ResourceCheckResult {
+  const { arn, error, service = "unknown", resourceType = "unknown", resourceId = arn } = params;
+  return { arn, exists: false, error, service, resourceType, resourceId };
 }
 
 /**

@@ -2,15 +2,27 @@
  * Manifest reader for infra scan
  *
  * Supports two formats:
- * 1. JSON: { "project": "...", "resources": ["arn:..."] }
- * 2. TXT: One ARN per line, # for comments
+ * 1. JSON: { "project": "...", "resources": ["arn:...", "projects/..."] }
+ * 2. TXT: One resource per line, # for comments
+ *
+ * Resources can be:
+ * - AWS ARNs: arn:aws:s3:::bucket-name
+ * - GCP paths: projects/{project}/locations/{location}/services/{service}
  */
 
 import * as fs from "node:fs";
 import * as path from "node:path";
 
 import { isValidArn } from "./arn.js";
+import { isValidGcpResource } from "./gcp.js";
 import type { Manifest } from "./types.js";
+
+/**
+ * Check if a resource identifier is valid (AWS ARN or GCP path)
+ */
+function isValidResource(resource: string): boolean {
+  return isValidArn(resource) || isValidGcpResource(resource);
+}
 
 /**
  * Error thrown when manifest parsing fails
@@ -88,7 +100,7 @@ function validateJsonStructure(data: unknown, manifestPath: string): void {
 
 function extractAndValidateResources(items: unknown[], manifestPath: string): string[] {
   const resources: string[] = [];
-  const invalidArns: string[] = [];
+  const invalidResources: string[] = [];
 
   for (const item of items) {
     if (typeof item !== "string") {
@@ -96,16 +108,16 @@ function extractAndValidateResources(items: unknown[], manifestPath: string): st
         `Manifest ${manifestPath} contains non-string resource: ${JSON.stringify(item)}`
       );
     }
-    if (!isValidArn(item)) {
-      invalidArns.push(item);
+    if (!isValidResource(item)) {
+      invalidResources.push(item);
     } else {
       resources.push(item);
     }
   }
 
-  if (invalidArns.length > 0) {
+  if (invalidResources.length > 0) {
     throw new ManifestError(
-      `Manifest ${manifestPath} contains invalid ARNs: ${invalidArns.join(", ")}`
+      `Manifest ${manifestPath} contains invalid resources: ${invalidResources.join(", ")}`
     );
   }
 
@@ -113,12 +125,12 @@ function extractAndValidateResources(items: unknown[], manifestPath: string): st
 }
 
 /**
- * Parse a TXT format manifest (one ARN per line, # for comments)
+ * Parse a TXT format manifest (one resource per line, # for comments)
  */
 function parseTxtManifest(content: string, manifestPath: string): Manifest {
   const lines = content.split("\n");
   const resources: string[] = [];
-  const invalidArns: { line: number; value: string }[] = [];
+  const invalidResources: { line: number; value: string }[] = [];
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
@@ -128,16 +140,16 @@ function parseTxtManifest(content: string, manifestPath: string): Manifest {
       continue;
     }
 
-    if (!isValidArn(line)) {
-      invalidArns.push({ line: i + 1, value: line });
+    if (!isValidResource(line)) {
+      invalidResources.push({ line: i + 1, value: line });
     } else {
       resources.push(line);
     }
   }
 
-  if (invalidArns.length > 0) {
-    const details = invalidArns.map((a) => `line ${a.line}: "${a.value}"`).join(", ");
-    throw new ManifestError(`Manifest ${manifestPath} contains invalid ARNs: ${details}`);
+  if (invalidResources.length > 0) {
+    const details = invalidResources.map((a) => `line ${a.line}: "${a.value}"`).join(", ");
+    throw new ManifestError(`Manifest ${manifestPath} contains invalid resources: ${details}`);
   }
 
   return { resources };

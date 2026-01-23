@@ -27,7 +27,7 @@ describe("parseArn", () => {
   describe("S3 ARNs", () => {
     it("should parse S3 bucket ARN", () => {
       const result = parseArn("arn:aws:s3:::my-bucket");
-      expect(result).toEqual({
+      expect(result).toEqual({ cloud: "aws",
         partition: "aws",
         service: "s3",
         region: "",
@@ -40,7 +40,7 @@ describe("parseArn", () => {
 
     it("should parse S3 object ARN", () => {
       const result = parseArn("arn:aws:s3:::my-bucket/path/to/object.txt");
-      expect(result).toEqual({
+      expect(result).toEqual({ cloud: "aws",
         partition: "aws",
         service: "s3",
         region: "",
@@ -55,7 +55,7 @@ describe("parseArn", () => {
   describe("Lambda ARNs", () => {
     it("should parse Lambda function ARN", () => {
       const result = parseArn("arn:aws:lambda:us-east-1:123456789012:function:my-function");
-      expect(result).toEqual({
+      expect(result).toEqual({ cloud: "aws",
         partition: "aws",
         service: "lambda",
         region: "us-east-1",
@@ -68,7 +68,7 @@ describe("parseArn", () => {
 
     it("should parse Lambda function ARN with version", () => {
       const result = parseArn("arn:aws:lambda:us-east-1:123456789012:function:my-function:1");
-      expect(result).toEqual({
+      expect(result).toEqual({ cloud: "aws",
         partition: "aws",
         service: "lambda",
         region: "us-east-1",
@@ -81,7 +81,7 @@ describe("parseArn", () => {
 
     it("should parse Lambda layer ARN", () => {
       const result = parseArn("arn:aws:lambda:us-east-1:123456789012:layer:my-layer:1");
-      expect(result).toEqual({
+      expect(result).toEqual({ cloud: "aws",
         partition: "aws",
         service: "lambda",
         region: "us-east-1",
@@ -96,7 +96,7 @@ describe("parseArn", () => {
   describe("DynamoDB ARNs", () => {
     it("should parse DynamoDB table ARN", () => {
       const result = parseArn("arn:aws:dynamodb:us-east-1:123456789012:table/my-table");
-      expect(result).toEqual({
+      expect(result).toEqual({ cloud: "aws",
         partition: "aws",
         service: "dynamodb",
         region: "us-east-1",
@@ -111,7 +111,7 @@ describe("parseArn", () => {
       const result = parseArn(
         "arn:aws:dynamodb:us-east-1:123456789012:table/my-table/index/my-index"
       );
-      expect(result).toEqual({
+      expect(result).toEqual({ cloud: "aws",
         partition: "aws",
         service: "dynamodb",
         region: "us-east-1",
@@ -126,7 +126,7 @@ describe("parseArn", () => {
   describe("SQS ARNs", () => {
     it("should parse SQS queue ARN", () => {
       const result = parseArn("arn:aws:sqs:us-east-1:123456789012:my-queue");
-      expect(result).toEqual({
+      expect(result).toEqual({ cloud: "aws",
         partition: "aws",
         service: "sqs",
         region: "us-east-1",
@@ -141,7 +141,7 @@ describe("parseArn", () => {
   describe("SNS ARNs", () => {
     it("should parse SNS topic ARN", () => {
       const result = parseArn("arn:aws:sns:us-east-1:123456789012:my-topic");
-      expect(result).toEqual({
+      expect(result).toEqual({ cloud: "aws",
         partition: "aws",
         service: "sns",
         region: "us-east-1",
@@ -156,7 +156,7 @@ describe("parseArn", () => {
   describe("IAM ARNs", () => {
     it("should parse IAM role ARN", () => {
       const result = parseArn("arn:aws:iam::123456789012:role/my-role");
-      expect(result).toEqual({
+      expect(result).toEqual({ cloud: "aws",
         partition: "aws",
         service: "iam",
         region: "",
@@ -169,7 +169,7 @@ describe("parseArn", () => {
 
     it("should parse IAM policy ARN", () => {
       const result = parseArn("arn:aws:iam::123456789012:policy/my-policy");
-      expect(result).toEqual({
+      expect(result).toEqual({ cloud: "aws",
         partition: "aws",
         service: "iam",
         region: "",
@@ -182,7 +182,7 @@ describe("parseArn", () => {
 
     it("should parse IAM policy ARN with path", () => {
       const result = parseArn("arn:aws:iam::123456789012:policy/path/to/my-policy");
-      expect(result).toEqual({
+      expect(result).toEqual({ cloud: "aws",
         partition: "aws",
         service: "iam",
         region: "",
@@ -197,7 +197,7 @@ describe("parseArn", () => {
   describe("Secrets Manager ARNs", () => {
     it("should parse Secrets Manager secret ARN", () => {
       const result = parseArn("arn:aws:secretsmanager:us-east-1:123456789012:secret:my-secret-AbCdEf");
-      expect(result).toEqual({
+      expect(result).toEqual({ cloud: "aws",
         partition: "aws",
         service: "secretsmanager",
         region: "us-east-1",
@@ -212,7 +212,7 @@ describe("parseArn", () => {
   describe("CloudWatch Logs ARNs", () => {
     it("should parse log group ARN", () => {
       const result = parseArn("arn:aws:logs:us-east-1:123456789012:log-group:/aws/lambda/my-function");
-      expect(result).toEqual({
+      expect(result).toEqual({ cloud: "aws",
         partition: "aws",
         service: "logs",
         region: "us-east-1",
@@ -225,7 +225,7 @@ describe("parseArn", () => {
 
     it("should parse log group ARN with trailing :*", () => {
       const result = parseArn("arn:aws:logs:us-east-1:123456789012:log-group:/aws/lambda/my-function:*");
-      expect(result).toEqual({
+      expect(result).toEqual({ cloud: "aws",
         partition: "aws",
         service: "logs",
         region: "us-east-1",

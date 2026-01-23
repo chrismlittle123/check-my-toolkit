@@ -92,7 +92,7 @@ describe("readManifest", () => {
       expect(() => readManifest(manifestPath)).toThrow(/non-string resource/);
     });
 
-    it("should throw for invalid ARNs", () => {
+    it("should throw for invalid resources", () => {
       const manifestPath = path.join(tempDir, "manifest.json");
       fs.writeFileSync(
         manifestPath,
@@ -102,7 +102,7 @@ describe("readManifest", () => {
       );
 
       expect(() => readManifest(manifestPath)).toThrow(ManifestError);
-      expect(() => readManifest(manifestPath)).toThrow(/invalid ARNs.*not-an-arn/);
+      expect(() => readManifest(manifestPath)).toThrow(/invalid resources.*not-an-arn/);
     });
   });
 
@@ -147,7 +147,7 @@ arn:aws:s3:::my-bucket
       expect(result.resources).toEqual(["arn:aws:s3:::my-bucket"]);
     });
 
-    it("should throw for invalid ARNs with line numbers", () => {
+    it("should throw for invalid resources with line numbers", () => {
       const manifestPath = path.join(tempDir, "manifest.txt");
       fs.writeFileSync(
         manifestPath,

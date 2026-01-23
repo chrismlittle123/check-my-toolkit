@@ -51,7 +51,7 @@ describe("scanManifest", () => {
     const result = await scanManifest(manifest, "/path/to/manifest.json");
 
     expect(result.summary.errors).toBe(1);
-    expect(result.results[0].error).toContain("Unsupported service");
+    expect(result.results[0].error).toContain("Unsupported AWS service");
   });
 
   it("should handle invalid ARNs", async () => {
@@ -62,7 +62,7 @@ describe("scanManifest", () => {
     const result = await scanManifest(manifest, "/path/to/manifest.json");
 
     expect(result.summary.errors).toBe(1);
-    expect(result.results[0].error).toBe("Invalid ARN format");
+    expect(result.results[0].error).toContain("Invalid resource format");
   });
 
   it("should sort results by ARN", async () => {
