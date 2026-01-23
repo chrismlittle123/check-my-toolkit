@@ -133,7 +133,7 @@ describe("dependencies module", () => {
       const configPath = path.join(tempDir, "check.toml");
       fs.writeFileSync(configPath, "");
       fs.writeFileSync(path.join(tempDir, "eslint.config.js"), "");
-      fs.writeFileSync(path.join(tempDir, ".prettierrc"), "");
+      fs.writeFileSync(path.join(tempDir, "tsconfig.json"), "");
 
       mockedLoadConfigAsync.mockResolvedValueOnce({
         config: {
@@ -141,8 +141,8 @@ describe("dependencies module", () => {
             linting: {
               eslint: { enabled: true },
             },
-            formatting: {
-              prettier: { enabled: true },
+            types: {
+              tsc: { enabled: true },
             },
           },
         },
@@ -153,7 +153,7 @@ describe("dependencies module", () => {
       const result = await getDependencies({ config: configPath, check: "eslint" });
 
       expect(result.dependencies.eslint).toBeDefined();
-      expect(result.dependencies.prettier).toBeUndefined();
+      expect(result.dependencies.tsc).toBeUndefined();
     });
 
     it("includes custom dependencies from config", async () => {
