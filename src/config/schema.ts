@@ -718,6 +718,18 @@ const extendsSchema = z
   .optional();
 
 // =============================================================================
+// Monorepo Configuration
+// =============================================================================
+
+/** Monorepo project detection configuration */
+const monorepoSchema = z
+  .object({
+    exclude: z.array(globPatternSchema).optional(), // Glob patterns to exclude from project detection
+  })
+  .strict()
+  .optional();
+
+// =============================================================================
 // Full Configuration
 // =============================================================================
 
@@ -728,6 +740,7 @@ export const configSchema = z
     code: codeSchema,
     process: processSchema,
     infra: infraSchema,
+    monorepo: monorepoSchema,
   })
   .strict();
 
@@ -766,6 +779,7 @@ export const defaultConfig: Config = {
       "disable-comments": { enabled: false },
     },
   },
+  monorepo: {},
   process: {
     hooks: {
       enabled: false,
