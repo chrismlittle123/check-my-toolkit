@@ -18,6 +18,8 @@ export const SUPPORTED_SERVICES = [
   "iam",
   "secretsmanager",
   "logs",
+  "ecs",
+  "rds",
 ] as const;
 
 export type SupportedService = (typeof SUPPORTED_SERVICES)[number];
@@ -41,6 +43,8 @@ const checkerFactories: Record<SupportedService, () => Promise<ResourceChecker>>
   iam: async () => (await import("./iam.js")).IAMChecker,
   secretsmanager: async () => (await import("./secretsmanager.js")).SecretsManagerChecker,
   logs: async () => (await import("./cloudwatch.js")).CloudWatchLogsChecker,
+  ecs: async () => (await import("./ecs.js")).ECSChecker,
+  rds: async () => (await import("./rds.js")).RDSChecker,
 };
 
 /**
