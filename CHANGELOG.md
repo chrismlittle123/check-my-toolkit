@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.5.0
+
+### Minor Changes
+
+- d5de8fc: Add EC2, ElastiCache, and Elastic Load Balancing resource checkers for infra scan
+
+  - EC2 checker supports: instances, security groups, key pairs
+  - ElastiCache checker supports: clusters, subnet groups, replication groups
+  - ELB checker supports: load balancers, target groups, listeners
+
 ## 2.4.0
 
 ### Minor Changes
