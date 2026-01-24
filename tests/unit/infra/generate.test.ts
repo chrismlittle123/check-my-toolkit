@@ -156,5 +156,38 @@ describe("infra/generate", () => {
 
       expect(manifest.resources).toEqual(["arn:aws:s3:::my-bucket"]);
     });
+
+    it("strips Pulumi pipe suffixes from ARNs", () => {
+      const stackExport = {
+        deployment: {
+          resources: [
+            {
+              urn: "urn:pulumi:dev::my-project::aws:secretsmanager/secret:Secret::db-password",
+              outputs: {
+                // Pulumi sometimes appends internal metadata after a pipe
+                arn: "arn:aws:secretsmanager:us-east-1:123456789012:secret:db-password-abc123|terraform-20260123105935335800000004",
+              },
+            },
+            {
+              urn: "urn:pulumi:dev::my-project::aws:s3/bucket:Bucket::bucket",
+              outputs: {
+                // Normal ARN without pipe suffix
+                arn: "arn:aws:s3:::my-bucket",
+              },
+            },
+          ],
+        },
+      };
+
+      const manifest = parseStackExport(stackExport);
+
+      // The pipe suffix should be stripped
+      expect(manifest.resources).toContain("arn:aws:secretsmanager:us-east-1:123456789012:secret:db-password-abc123");
+      expect(manifest.resources).toContain("arn:aws:s3:::my-bucket");
+      // The raw ARN with pipe should NOT be in the manifest
+      expect(manifest.resources).not.toContain(
+        "arn:aws:secretsmanager:us-east-1:123456789012:secret:db-password-abc123|terraform-20260123105935335800000004"
+      );
+    });
   });
 });

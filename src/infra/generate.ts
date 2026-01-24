@@ -45,10 +45,31 @@ export interface GenerateManifestOptions {
 }
 
 /**
+ * Clean a resource identifier by stripping Pulumi internal suffixes
+ *
+ * Pulumi sometimes appends internal metadata to ARNs like:
+ * arn:aws:secretsmanager:...:secret:name|terraform-20260123...
+ *
+ * The pipe and everything after it should be stripped.
+ */
+function cleanResourceIdentifier(value: string): string {
+  const pipeIndex = value.indexOf("|");
+  if (pipeIndex !== -1) {
+    return value.substring(0, pipeIndex);
+  }
+  return value;
+}
+
+/**
  * Check if a value is a valid resource identifier (AWS ARN or GCP path)
  */
 function isValidResource(value: unknown): value is string {
-  return typeof value === "string" && (isValidArn(value) || isValidGcpResource(value));
+  if (typeof value !== "string") {
+    return false;
+  }
+  // Clean the value before validating (strip Pulumi suffixes)
+  const cleaned = cleanResourceIdentifier(value);
+  return isValidArn(cleaned) || isValidGcpResource(cleaned);
 }
 
 /**
@@ -80,14 +101,14 @@ function extractResourcesFromOutputs(outputs: Record<string, unknown>): string[]
   for (const field of arnFields) {
     const value = outputs[field];
     if (isValidResource(value)) {
-      resources.push(value);
+      resources.push(cleanResourceIdentifier(value));
     }
   }
 
   // Also check for any other fields that look like ARNs or GCP resources
   for (const [key, value] of Object.entries(outputs)) {
     if (!arnFields.includes(key) && isValidResource(value)) {
-      resources.push(value);
+      resources.push(cleanResourceIdentifier(value));
     }
   }
 
