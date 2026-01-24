@@ -4,6 +4,10 @@
 registry = "github:chrismlittle123/check-my-toolkit-registry-community"
 rulesets = ["typescript-internal"]
 
+# Exclude test fixture projects from monorepo detection
+[monorepo]
+exclude = ["tests/e2e/projects/**"]
+
 # Local overrides
 [code.linting.eslint]
 enabled = true
@@ -66,4 +70,3 @@ require_for_paths = ["src/**"]
 exclude_paths = ["**/*.test.ts", "**/*.md"]
 validate_format = true
 require_description = true
-
