@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.4.0
+
+### Minor Changes
+
+- 1968a72: Add ECS and RDS resource checkers for infra scan
+
+  - ECS checker supports: clusters, services, task definitions
+  - RDS checker supports: DB instances, DB clusters (Aurora), DB subnet groups
+
 ## 2.3.1
 
 ### Patch Changes
