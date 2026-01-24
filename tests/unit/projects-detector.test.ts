@@ -171,6 +171,67 @@ describe("detectProjects", () => {
       expect(result.projects.map((p) => p.path)).toEqual(["a-project", "m-project", "z-project"]);
     });
   });
+
+  describe("exclude patterns", () => {
+    it("excludes projects matching exact path pattern", async () => {
+      createFile("apps/web/package.json", JSON.stringify({ name: "web" }));
+      createFile("tests/e2e/fixtures/package.json", JSON.stringify({ name: "fixtures" }));
+
+      const result = await detectProjects(tempDir, {
+        excludePatterns: ["tests/e2e/fixtures"],
+      });
+
+      expect(result.projects).toHaveLength(1);
+      expect(result.projects[0].path).toBe("apps/web");
+    });
+
+    it("excludes projects matching glob pattern with **", async () => {
+      createFile("apps/web/package.json", JSON.stringify({ name: "web" }));
+      createFile("tests/e2e/projects/app1/package.json", JSON.stringify({ name: "app1" }));
+      createFile("tests/e2e/projects/app2/package.json", JSON.stringify({ name: "app2" }));
+
+      const result = await detectProjects(tempDir, {
+        excludePatterns: ["tests/e2e/projects/**"],
+      });
+
+      expect(result.projects).toHaveLength(1);
+      expect(result.projects[0].path).toBe("apps/web");
+    });
+
+    it("excludes projects matching multiple patterns", async () => {
+      createFile("apps/web/package.json", JSON.stringify({ name: "web" }));
+      createFile("tests/fixtures/package.json", JSON.stringify({ name: "fixtures" }));
+      createFile("examples/demo/package.json", JSON.stringify({ name: "demo" }));
+
+      const result = await detectProjects(tempDir, {
+        excludePatterns: ["tests/**", "examples/**"],
+      });
+
+      expect(result.projects).toHaveLength(1);
+      expect(result.projects[0].path).toBe("apps/web");
+    });
+
+    it("does not exclude when patterns do not match", async () => {
+      createFile("apps/web/package.json", JSON.stringify({ name: "web" }));
+      createFile("apps/api/package.json", JSON.stringify({ name: "api" }));
+
+      const result = await detectProjects(tempDir, {
+        excludePatterns: ["tests/**"],
+      });
+
+      expect(result.projects).toHaveLength(2);
+    });
+
+    it("handles empty exclude patterns array", async () => {
+      createFile("apps/web/package.json", JSON.stringify({ name: "web" }));
+
+      const result = await detectProjects(tempDir, {
+        excludePatterns: [],
+      });
+
+      expect(result.projects).toHaveLength(1);
+    });
+  });
 });
 
 describe("getProjectTypes", () => {
