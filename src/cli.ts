@@ -597,6 +597,21 @@ infraCommand
     });
   });
 
+// cm infra generate
+infraCommand
+  .command("generate")
+  .description("Generate infra-manifest.json from Pulumi stack export")
+  .option("-i, --input <path>", "Input file (reads from stdin if not provided)")
+  .option("-o, --output <path>", "Output file path (default: infra-manifest.json)")
+  .option("-p, --project <name>", "Project name (extracted from stack if not provided)")
+  .option("--stdout", "Output to stdout instead of file")
+  .action(
+    async (options: { input?: string; output?: string; project?: string; stdout?: boolean }) => {
+      const { runInfraGenerate } = await import("./infra/index.js");
+      await runInfraGenerate(options);
+    }
+  );
+
 program.addCommand(infraCommand);
 
 // =============================================================================
