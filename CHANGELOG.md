@@ -1,5 +1,20 @@
 # Changelog
 
+## 2.3.0
+
+### Minor Changes
+
+- e60ca5a: Add monorepo exclude patterns config
+
+  Added `[monorepo]` config section with `exclude` patterns to filter out directories from project detection. This allows excluding test fixtures and other directories that should not be treated as real projects.
+
+  Example:
+
+  ```toml
+  [monorepo]
+  exclude = ["tests/e2e/projects/**"]
+  ```
+
 ## 2.2.0
 
 ### Minor Changes
