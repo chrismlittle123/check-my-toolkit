@@ -22,6 +22,16 @@ export { ManifestError } from "./manifest.js";
 export { parseArn, isValidArn } from "./arn.js";
 export { SUPPORTED_SERVICES, isSupportedService } from "./checkers/index.js";
 
+// Re-export generate functionality
+export {
+  DEFAULT_MANIFEST_NAME,
+  generateManifestFromStdin,
+  generateManifestFromFile,
+  parseStackExport,
+  writeManifest,
+  type GenerateManifestOptions,
+} from "./generate.js";
+
 /**
  * Scan infrastructure resources declared in a manifest.
  *
@@ -103,4 +113,53 @@ function handleError(error: unknown, format: "text" | "json"): never {
   }
 
   process.exit(isConfigError ? ExitCode.CONFIG_ERROR : ExitCode.RUNTIME_ERROR);
+}
+
+/**
+ * Options for CLI generate command
+ */
+export interface RunInfraGenerateOptions {
+  /** Input file path (if not provided, reads from stdin) */
+  input?: string;
+  /** Output file path (defaults to infra-manifest.json) */
+  output?: string;
+  /** Project name override */
+  project?: string;
+  /** Output to stdout instead of file */
+  stdout?: boolean;
+}
+
+/**
+ * Run infra generate from CLI
+ */
+export async function runInfraGenerate(options: RunInfraGenerateOptions = {}): Promise<void> {
+  const {
+    generateManifestFromStdin,
+    generateManifestFromFile,
+    writeManifest,
+    DEFAULT_MANIFEST_NAME,
+  } = await import("./generate.js");
+
+  try {
+    let manifest;
+
+    if (options.input) {
+      manifest = generateManifestFromFile(options.input, { project: options.project });
+    } else {
+      manifest = await generateManifestFromStdin({ project: options.project });
+    }
+
+    writeManifest(manifest, { output: options.output, stdout: options.stdout });
+
+    if (!options.stdout) {
+      const outputPath = options.output || DEFAULT_MANIFEST_NAME;
+      console.error(chalk.green(`✓ Generated ${outputPath} with ${manifest.resources.length} resources`));
+    }
+
+    process.exit(ExitCode.SUCCESS);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    console.error(chalk.red(`Error: ${message}`));
+    process.exit(ExitCode.RUNTIME_ERROR);
+  }
 }
