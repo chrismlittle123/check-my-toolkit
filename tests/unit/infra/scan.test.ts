@@ -45,7 +45,7 @@ describe("scanManifest", () => {
 
   it("should handle unsupported services", async () => {
     const manifest: Manifest = {
-      resources: ["arn:aws:ec2:us-east-1:123456789012:instance/i-1234567890abcdef0"],
+      resources: ["arn:aws:appsync:us-east-1:123456789012:apis/abc123"],
     };
 
     const result = await scanManifest(manifest, "/path/to/manifest.json");
