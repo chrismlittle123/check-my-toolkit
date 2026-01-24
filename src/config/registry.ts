@@ -538,6 +538,14 @@ export function mergeConfigs(base: Config, override: Config): Config {
     merged.process = mergeProcessSection(base.process, override.process);
   }
 
+  if (override.infra) {
+    merged.infra = override.infra;
+  }
+
+  if (override.monorepo) {
+    merged.monorepo = override.monorepo;
+  }
+
   return merged;
 }
 
@@ -560,6 +568,8 @@ export async function resolveExtends(config: Config, configDir: string): Promise
   const localConfig: Config = {
     code: config.code,
     process: config.process,
+    infra: config.infra,
+    monorepo: config.monorepo,
   };
   return mergeConfigs(mergedConfig, localConfig);
 }
