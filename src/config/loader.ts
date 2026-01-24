@@ -388,6 +388,11 @@ function mergeWithDefaults(config: Config): Config {
   return {
     code: mergeCode(config, defaultConfig),
     process: mergeProcess(config, defaultConfig),
+    infra: {
+      enabled: config.infra?.enabled ?? defaultConfig.infra?.enabled ?? false,
+      manifest: config.infra?.manifest ?? defaultConfig.infra?.manifest ?? "infra-manifest.json",
+    },
+    monorepo: config.monorepo,
   };
 }
 
