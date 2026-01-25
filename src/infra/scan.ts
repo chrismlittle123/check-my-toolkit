@@ -12,7 +12,15 @@ import {
   SUPPORTED_GCP_SERVICES,
 } from "./checkers/gcp/index.js";
 import { isValidGcpResource, parseGcpResource } from "./gcp.js";
-import type { InfraScanResult, InfraScanSummary, Manifest, ResourceCheckResult } from "./types.js";
+import { getAllResources, isMultiAccountManifest, parseAccountKey } from "./manifest.js";
+import type {
+  AccountScanResult,
+  InfraScanResult,
+  InfraScanSummary,
+  Manifest,
+  MultiAccountManifest,
+  ResourceCheckResult,
+} from "./types.js";
 
 /**
  * Default concurrency for parallel checks
@@ -20,32 +28,115 @@ import type { InfraScanResult, InfraScanSummary, Manifest, ResourceCheckResult }
 const DEFAULT_CONCURRENCY = 10;
 
 /**
+ * Options for scanning
+ */
+interface ScanOptions {
+  /** Max number of parallel checks */
+  concurrency?: number;
+  /** Filter to specific account (by alias or account key) */
+  account?: string;
+}
+
+/**
  * Scan all resources in a manifest
  *
  * @param manifest - The manifest containing resources to check
  * @param manifestPath - Path to the manifest file (for result metadata)
- * @param concurrency - Max number of parallel checks (default: 10)
+ * @param options - Scan options
  * @returns Scan result with all resource check results and summary
  */
 export async function scanManifest(
   manifest: Manifest,
   manifestPath: string,
-  concurrency: number = DEFAULT_CONCURRENCY
+  options: ScanOptions = {}
 ): Promise<InfraScanResult> {
-  const { resources, project } = manifest;
+  const concurrency = options.concurrency ?? DEFAULT_CONCURRENCY;
 
-  // Check all resources with controlled concurrency
+  // For multi-account manifests, scan by account
+  if (isMultiAccountManifest(manifest)) {
+    return scanMultiAccountManifest(manifest, manifestPath, options);
+  }
+
+  // Legacy manifest - simple flat scan
+  const resources = getAllResources(manifest);
   const results = await checkResourcesWithConcurrency(resources, concurrency);
-
-  // Calculate summary
   const summary = calculateSummary(results);
 
   return {
     manifest: manifestPath,
-    project,
+    project: manifest.project,
     results,
     summary,
   };
+}
+
+/**
+ * Scan a multi-account manifest
+ */
+async function scanMultiAccountManifest(
+  manifest: MultiAccountManifest,
+  manifestPath: string,
+  options: ScanOptions = {}
+): Promise<InfraScanResult> {
+  const concurrency = options.concurrency ?? DEFAULT_CONCURRENCY;
+  const accountResults: Record<string, AccountScanResult> = {};
+  const allResults: ResourceCheckResult[] = [];
+
+  // Get accounts to scan (filter by account if specified)
+  const accountsToScan = filterAccounts(manifest, options.account);
+
+  for (const [accountKey, account] of Object.entries(accountsToScan)) {
+    const results = await checkResourcesWithConcurrency(account.resources, concurrency);
+    const summary = calculateSummary(results);
+
+    accountResults[accountKey] = {
+      alias: account.alias,
+      results,
+      summary,
+    };
+
+    allResults.push(...results);
+  }
+
+  // Calculate overall summary
+  const overallSummary = calculateSummary(allResults);
+
+  return {
+    manifest: manifestPath,
+    project: manifest.project,
+    results: allResults,
+    summary: overallSummary,
+    accountResults,
+  };
+}
+
+/**
+ * Filter accounts based on account filter
+ * Returns matching accounts or all accounts if no filter
+ */
+function filterAccounts(
+  manifest: MultiAccountManifest,
+  accountFilter?: string
+): Record<string, { alias?: string; resources: string[] }> {
+  if (!accountFilter) {
+    return manifest.accounts;
+  }
+
+  // Check if filter is an account key (e.g., "aws:123456")
+  const parsedKey = parseAccountKey(accountFilter);
+  if (parsedKey && manifest.accounts[accountFilter]) {
+    return { [accountFilter]: manifest.accounts[accountFilter] };
+  }
+
+  // Check if filter matches an alias
+  for (const [key, account] of Object.entries(manifest.accounts)) {
+    if (account.alias === accountFilter) {
+      return { [key]: account };
+    }
+  }
+
+  // No match found - return empty
+  return {};
 }
 
 /**

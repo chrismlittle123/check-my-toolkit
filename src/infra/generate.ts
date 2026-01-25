@@ -10,7 +10,12 @@ import * as readline from "node:readline";
 
 import { isValidArn } from "./arn.js";
 import { isValidGcpResource } from "./gcp.js";
-import type { Manifest } from "./types.js";
+import {
+  detectAccountFromResource,
+  isMultiAccountManifest,
+  ManifestError,
+} from "./manifest.js";
+import type { LegacyManifest, Manifest, ManifestAccount, MultiAccountManifest } from "./types.js";
 
 /**
  * Pulumi stack export structure (minimal typing for what we need)
@@ -42,6 +47,12 @@ export interface GenerateManifestOptions {
   output?: string;
   /** If true, output to stdout instead of file */
   stdout?: boolean;
+  /** Account alias (e.g., "prod-aws") for multi-account manifests */
+  account?: string;
+  /** Explicit account ID (e.g., "aws:111111111111") */
+  accountId?: string;
+  /** Merge into existing manifest instead of overwriting */
+  merge?: boolean;
 }
 
 /**
@@ -256,4 +267,242 @@ export function writeManifest(manifest: Manifest, options: { output?: string; st
     const outputPath = options.output || DEFAULT_MANIFEST_NAME;
     fs.writeFileSync(outputPath, json + "\n", "utf-8");
   }
+}
+
+/**
+ * Parse Pulumi stack export and create multi-account manifest
+ * Groups resources by detected account
+ */
+export function parseStackExportMultiAccount(
+  stackExport: unknown,
+  options: GenerateManifestOptions = {}
+): MultiAccountManifest {
+  if (!stackExport || typeof stackExport !== "object") {
+    throw new Error("Invalid stack export: expected an object");
+  }
+
+  const typed = stackExport as PulumiStackExport;
+  const deployment = typed.deployment;
+
+  if (!deployment?.resources) {
+    throw new Error("Invalid stack export: missing deployment.resources");
+  }
+
+  const resources: string[] = [];
+
+  // Extract resources from each Pulumi resource's outputs
+  for (const resource of deployment.resources) {
+    if (resource.outputs) {
+      const extracted = extractResourcesFromOutputs(resource.outputs);
+      resources.push(...extracted);
+    }
+  }
+
+  // Deduplicate resources
+  const uniqueResources = [...new Set(resources)];
+
+  // Determine project name
+  const projectName = options.project || extractProjectName(deployment.resources) || undefined;
+
+  // If explicit account ID provided, use it
+  if (options.accountId) {
+    const accounts: Record<string, ManifestAccount> = {
+      [options.accountId]: {
+        alias: options.account,
+        resources: uniqueResources,
+      },
+    };
+    return { version: 2, project: projectName, accounts };
+  }
+
+  // Group resources by auto-detected account
+  const accountsMap = new Map<string, ManifestAccount>();
+
+  for (const resource of uniqueResources) {
+    const accountKey = detectAccountFromResource(resource);
+
+    if (!accountsMap.has(accountKey)) {
+      accountsMap.set(accountKey, { resources: [] });
+    }
+    accountsMap.get(accountKey)!.resources.push(resource);
+  }
+
+  // If a single account alias is provided, apply it to the first (or only) account
+  const accounts: Record<string, ManifestAccount> = {};
+  const entries = Array.from(accountsMap.entries());
+
+  if (options.account && entries.length === 1) {
+    const [key, value] = entries[0];
+    accounts[key] = { alias: options.account, resources: value.resources };
+  } else {
+    for (const [key, value] of entries) {
+      accounts[key] = value;
+    }
+  }
+
+  return { version: 2, project: projectName, accounts };
+}
+
+/**
+ * Read existing manifest from file
+ * Returns null if file doesn't exist
+ */
+export function readExistingManifest(filePath: string): Manifest | null {
+  if (!fs.existsSync(filePath)) {
+    return null;
+  }
+
+  const content = fs.readFileSync(filePath, "utf-8");
+  try {
+    return JSON.parse(content) as Manifest;
+  } catch {
+    throw new ManifestError(`Invalid JSON in existing manifest: ${filePath}`);
+  }
+}
+
+/**
+ * Merge new resources into an existing manifest
+ */
+export function mergeIntoManifest(
+  existing: Manifest,
+  newResources: string[],
+  accountKey: string,
+  alias?: string
+): MultiAccountManifest {
+  // Convert existing to multi-account if it's legacy format
+  let multiAccount: MultiAccountManifest;
+
+  if (isMultiAccountManifest(existing)) {
+    multiAccount = { ...existing, accounts: { ...existing.accounts } };
+  } else {
+    // Convert legacy to multi-account by grouping by detected account
+    const legacyAccounts: Record<string, ManifestAccount> = {};
+    for (const resource of existing.resources) {
+      const key = detectAccountFromResource(resource);
+      if (!legacyAccounts[key]) {
+        legacyAccounts[key] = { resources: [] };
+      }
+      legacyAccounts[key].resources.push(resource);
+    }
+    multiAccount = {
+      version: 2,
+      project: existing.project,
+      accounts: legacyAccounts,
+    };
+  }
+
+  // Add or update the target account
+  const existingResources = multiAccount.accounts[accountKey]?.resources || [];
+  const existingAlias = multiAccount.accounts[accountKey]?.alias;
+  const mergedResources = [...new Set([...existingResources, ...newResources])];
+
+  multiAccount.accounts[accountKey] = {
+    alias: alias || existingAlias,
+    resources: mergedResources,
+  };
+
+  return multiAccount;
+}
+
+/**
+ * Generate multi-account manifest from stdin (Pulumi stack export)
+ */
+export async function generateMultiAccountFromStdin(
+  options: GenerateManifestOptions = {}
+): Promise<MultiAccountManifest> {
+  const content = await readStdin();
+
+  let stackExport: unknown;
+  try {
+    stackExport = JSON.parse(content);
+  } catch {
+    throw new Error("Invalid JSON input. Expected Pulumi stack export format.");
+  }
+
+  return parseStackExportMultiAccount(stackExport, options);
+}
+
+/**
+ * Generate multi-account manifest from a file
+ */
+export function generateMultiAccountFromFile(
+  filePath: string,
+  options: GenerateManifestOptions = {}
+): MultiAccountManifest {
+  if (!fs.existsSync(filePath)) {
+    throw new Error(`File not found: ${filePath}`);
+  }
+
+  const content = fs.readFileSync(filePath, "utf-8");
+
+  let stackExport: unknown;
+  try {
+    stackExport = JSON.parse(content);
+  } catch {
+    throw new Error(`Invalid JSON in file ${filePath}`);
+  }
+
+  return parseStackExportMultiAccount(stackExport, options);
+}
+
+/**
+ * Handle merge operation for manifest generation
+ */
+export async function generateWithMerge(
+  inputPath: string | undefined,
+  options: GenerateManifestOptions
+): Promise<Manifest> {
+  const outputPath = options.output || DEFAULT_MANIFEST_NAME;
+
+  // Generate new manifest
+  let newManifest: MultiAccountManifest;
+  if (inputPath) {
+    newManifest = generateMultiAccountFromFile(inputPath, options);
+  } else {
+    newManifest = await generateMultiAccountFromStdin(options);
+  }
+
+  // If not merging, just return the new manifest
+  if (!options.merge) {
+    return newManifest;
+  }
+
+  // Read existing manifest
+  const existing = readExistingManifest(outputPath);
+  if (!existing) {
+    // No existing manifest, return new one
+    return newManifest;
+  }
+
+  // Merge all accounts from new manifest into existing
+  let merged: MultiAccountManifest = isMultiAccountManifest(existing)
+    ? { ...existing, accounts: { ...existing.accounts } }
+    : {
+        version: 2,
+        project: existing.project,
+        accounts: {},
+      };
+
+  // If existing was legacy, convert it first
+  if (!isMultiAccountManifest(existing)) {
+    for (const resource of (existing as LegacyManifest).resources) {
+      const key = detectAccountFromResource(resource);
+      if (!merged.accounts[key]) {
+        merged.accounts[key] = { resources: [] };
+      }
+      merged.accounts[key].resources.push(resource);
+    }
+  }
+
+  // Merge in new accounts
+  for (const [key, account] of Object.entries(newManifest.accounts)) {
+    merged = mergeIntoManifest(merged, account.resources, key, account.alias);
+  }
+
+  // Preserve project from new manifest if provided
+  if (options.project) {
+    merged.project = options.project;
+  }
+
+  return merged;
 }

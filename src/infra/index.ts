@@ -17,8 +17,27 @@ import { scanManifest } from "./scan.js";
 import type { InfraScanResult, RunInfraScanOptions, ScanInfraOptions } from "./types.js";
 
 // Re-export types
-export type { InfraScanResult, ResourceCheckResult, ScanInfraOptions } from "./types.js";
-export { ManifestError } from "./manifest.js";
+export type {
+  AccountId,
+  AccountScanResult,
+  InfraScanResult,
+  LegacyManifest,
+  Manifest,
+  ManifestAccount,
+  MultiAccountManifest,
+  ResourceCheckResult,
+  ScanInfraOptions,
+} from "./types.js";
+export {
+  ManifestError,
+  isMultiAccountManifest,
+  isLegacyManifest,
+  parseAccountKey,
+  formatAccountKey,
+  normalizeManifest,
+  detectAccountFromResource,
+  getAllResources,
+} from "./manifest.js";
 export { parseArn, isValidArn } from "./arn.js";
 export { SUPPORTED_SERVICES, isSupportedService } from "./checkers/index.js";
 
@@ -27,7 +46,12 @@ export {
   DEFAULT_MANIFEST_NAME,
   generateManifestFromStdin,
   generateManifestFromFile,
+  generateMultiAccountFromStdin,
+  generateMultiAccountFromFile,
+  generateWithMerge,
+  mergeIntoManifest,
   parseStackExport,
+  parseStackExportMultiAccount,
   writeManifest,
   type GenerateManifestOptions,
 } from "./generate.js";
@@ -52,7 +76,7 @@ export {
 export async function scanInfra(options: ScanInfraOptions = {}): Promise<InfraScanResult> {
   const resolvedManifestPath = await resolveManifestPath(options);
   const manifest = readManifest(resolvedManifestPath);
-  return scanManifest(manifest, resolvedManifestPath);
+  return scanManifest(manifest, resolvedManifestPath, { account: options.account });
 }
 
 async function resolveManifestPath(options: ScanInfraOptions): Promise<string> {
@@ -80,10 +104,10 @@ async function resolveManifestPath(options: ScanInfraOptions): Promise<string> {
  * Run infra scan from CLI
  */
 export async function runInfraScan(options: RunInfraScanOptions = {}): Promise<void> {
-  const { format = "text", manifestPath, configPath } = options;
+  const { format = "text", manifestPath, configPath, account } = options;
 
   try {
-    const result = await scanInfra({ manifestPath, configPath });
+    const result = await scanInfra({ manifestPath, configPath, account });
     outputResult(result, format);
   } catch (error) {
     handleError(error, format);
@@ -127,6 +151,12 @@ export interface RunInfraGenerateOptions {
   project?: string;
   /** Output to stdout instead of file */
   stdout?: boolean;
+  /** Account alias (e.g., "prod-aws") for multi-account manifests */
+  account?: string;
+  /** Explicit account ID (e.g., "aws:111111111111") */
+  accountId?: string;
+  /** Merge into existing manifest instead of overwriting */
+  merge?: boolean;
 }
 
 /**
@@ -134,26 +164,34 @@ export interface RunInfraGenerateOptions {
  */
 export async function runInfraGenerate(options: RunInfraGenerateOptions = {}): Promise<void> {
   const {
-    generateManifestFromStdin,
-    generateManifestFromFile,
+    generateWithMerge,
     writeManifest,
     DEFAULT_MANIFEST_NAME,
   } = await import("./generate.js");
+  const { getAllResources, isMultiAccountManifest } = await import("./manifest.js");
 
   try {
-    let manifest;
-
-    if (options.input) {
-      manifest = generateManifestFromFile(options.input, { project: options.project });
-    } else {
-      manifest = await generateManifestFromStdin({ project: options.project });
-    }
+    const manifest = await generateWithMerge(options.input, {
+      project: options.project,
+      output: options.output,
+      account: options.account,
+      accountId: options.accountId,
+      merge: options.merge,
+    });
 
     writeManifest(manifest, { output: options.output, stdout: options.stdout });
 
     if (!options.stdout) {
       const outputPath = options.output || DEFAULT_MANIFEST_NAME;
-      console.error(chalk.green(`✓ Generated ${outputPath} with ${manifest.resources.length} resources`));
+      const resourceCount = getAllResources(manifest).length;
+      const accountCount = isMultiAccountManifest(manifest)
+        ? Object.keys(manifest.accounts).length
+        : 1;
+      const accountLabel = accountCount === 1 ? "account" : "accounts";
+
+      console.error(
+        chalk.green(`✓ Generated ${outputPath} with ${resourceCount} resources across ${accountCount} ${accountLabel}`)
+      );
     }
 
     process.exit(ExitCode.SUCCESS);
