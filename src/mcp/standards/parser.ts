@@ -11,7 +11,7 @@ import { type Guideline, type GuidelineListItem, type Ruleset } from "./types.js
 import { StandardsError } from "./fetcher.js";
 
 /** Zod schema for validating guideline frontmatter */
-const frontmatterSchema = z.object({
+export const frontmatterSchema = z.object({
   id: z.string(),
   title: z.string(),
   category: z.string(),

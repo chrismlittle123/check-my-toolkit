@@ -6,6 +6,7 @@ import { z } from "zod";
 
 import {
   fetchStandardsRepo,
+  fetchStandardsRepoFromSource,
   getGuidelinesDir,
   loadAllGuidelines,
   toListItems,
@@ -16,28 +17,44 @@ export const listGuidelinesInputSchema = {
   category: z.string().optional().describe("Optional category filter (e.g., 'security', 'infrastructure')"),
 };
 
-/** Handler for list_guidelines tool */
-export async function listGuidelinesHandler(args: { category?: string }): Promise<{
+/** Handler result type - must have index signature for MCP SDK */
+interface HandlerResult {
+  [x: string]: unknown;
   content: { type: "text"; text: string }[];
-}> {
-  const repoPath = await fetchStandardsRepo();
-  const guidelinesDir = getGuidelinesDir(repoPath);
-  let guidelines = loadAllGuidelines(guidelinesDir);
+}
 
-  // Filter by category if provided
-  if (args.category) {
-    const categoryLower = args.category.toLowerCase();
-    guidelines = guidelines.filter((g) => g.category.toLowerCase() === categoryLower);
-  }
+/**
+ * Create a list_guidelines handler with optional custom source.
+ * @param source - Optional standards source (e.g., "github:owner/repo" or local path)
+ */
+export function createListGuidelinesHandler(
+  source?: string
+): (args: { category?: string }) => Promise<HandlerResult> {
+  return async (args) => {
+    const repoPath = source
+      ? await fetchStandardsRepoFromSource(source)
+      : await fetchStandardsRepo();
+    const guidelinesDir = getGuidelinesDir(repoPath);
+    let guidelines = loadAllGuidelines(guidelinesDir);
 
-  const items = toListItems(guidelines);
+    // Filter by category if provided
+    if (args.category) {
+      const categoryLower = args.category.toLowerCase();
+      guidelines = guidelines.filter((g) => g.category.toLowerCase() === categoryLower);
+    }
 
-  return {
-    content: [
-      {
-        type: "text",
-        text: JSON.stringify(items, null, 2),
-      },
-    ],
+    const items = toListItems(guidelines);
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(items, null, 2),
+        },
+      ],
+    };
   };
 }
+
+/** Handler for list_guidelines tool (uses default source) */
+export const listGuidelinesHandler = createListGuidelinesHandler();

@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/* eslint-disable max-lines -- CLI entry point grows with commands */
 
 import * as fs from "node:fs";
 import * as path from "node:path";
@@ -309,6 +310,22 @@ validateCommand
     }
   });
 
+// cm validate guidelines <path> - validate guideline markdown files
+validateCommand
+  .command("guidelines <path>")
+  .description("Validate guideline markdown files against the frontmatter schema")
+  .addOption(
+    new Option("-f, --format <format>", "Output format").choices(["text", "json"]).default("text")
+  )
+  .action(async (dirPath: string, options: { format: string }) => {
+    try {
+      const { runValidateGuidelines } = await import("./validate/index.js");
+      await runValidateGuidelines(dirPath, options);
+    } catch (error) {
+      handleError(error);
+    }
+  });
+
 program.addCommand(validateCommand);
 
 // =============================================================================
@@ -326,6 +343,19 @@ schemaCommand
   .action(() => {
     const jsonSchema = zodToJsonSchema(configSchema, {
       name: "CheckTomlConfig",
+      $refStrategy: "none",
+    });
+    process.stdout.write(`${JSON.stringify(jsonSchema, null, 2)}\n`);
+  });
+
+// cm schema guidelines - output guideline frontmatter JSON schema
+schemaCommand
+  .command("guidelines")
+  .description("Output JSON schema for guideline frontmatter")
+  .action(async () => {
+    const { frontmatterSchema } = await import("./mcp/standards/index.js");
+    const jsonSchema = zodToJsonSchema(frontmatterSchema, {
+      name: "GuidelineFrontmatter",
       $refStrategy: "none",
     });
     process.stdout.write(`${JSON.stringify(jsonSchema, null, 2)}\n`);
