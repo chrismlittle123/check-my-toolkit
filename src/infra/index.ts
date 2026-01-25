@@ -52,6 +52,7 @@ export {
   mergeIntoManifest,
   parseStackExport,
   parseStackExportMultiAccount,
+  readExistingManifest,
   writeManifest,
   type GenerateManifestOptions,
 } from "./generate.js";
