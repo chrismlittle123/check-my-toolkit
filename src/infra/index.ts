@@ -182,7 +182,7 @@ export async function runInfraGenerate(options: RunInfraGenerateOptions = {}): P
     writeManifest(manifest, { output: options.output, stdout: options.stdout });
 
     if (!options.stdout) {
-      const outputPath = options.output || DEFAULT_MANIFEST_NAME;
+      const outputPath = options.output ?? DEFAULT_MANIFEST_NAME;
       const resourceCount = getAllResources(manifest).length;
       const accountCount = isMultiAccountManifest(manifest)
         ? Object.keys(manifest.accounts).length

@@ -12,7 +12,7 @@ import {
   SUPPORTED_GCP_SERVICES,
 } from "./checkers/gcp/index.js";
 import { isValidGcpResource, parseGcpResource } from "./gcp.js";
-import { getAllResources, isMultiAccountManifest, parseAccountKey } from "./manifest.js";
+import { getAllResources, isMultiAccountManifest } from "./manifest.js";
 import type {
   AccountScanResult,
   InfraScanResult,
@@ -123,9 +123,10 @@ function filterAccounts(
   }
 
   // Check if filter is an account key (e.g., "aws:123456")
-  const parsedKey = parseAccountKey(accountFilter);
-  if (parsedKey && manifest.accounts[accountFilter]) {
-    return { [accountFilter]: manifest.accounts[accountFilter] };
+  const matchedAccount: { alias?: string; resources: string[] } | undefined =
+    manifest.accounts[accountFilter];
+  if (matchedAccount !== undefined) {
+    return { [accountFilter]: matchedAccount };
   }
 
   // Check if filter matches an alias

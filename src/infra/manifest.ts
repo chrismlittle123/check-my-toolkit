@@ -61,7 +61,8 @@ export function isLegacyManifest(manifest: Manifest): manifest is LegacyManifest
  * @returns Parsed AccountId or null if invalid
  */
 export function parseAccountKey(key: string): AccountId | null {
-  const match = key.match(/^(aws|gcp):(.+)$/);
+  const regex = /^(aws|gcp):(.+)$/;
+  const match = regex.exec(key);
   if (!match) {
     return null;
   }
@@ -92,10 +93,12 @@ export function normalizeManifest(manifest: Manifest): MultiAccountManifest {
 
   for (const resource of manifest.resources) {
     const accountKey = detectAccountFromResource(resource);
-    if (!accounts[accountKey]) {
-      accounts[accountKey] = { resources: [] };
+    const existing: ManifestAccount | undefined = accounts[accountKey];
+    if (existing !== undefined) {
+      existing.resources.push(resource);
+    } else {
+      accounts[accountKey] = { resources: [resource] };
     }
-    accounts[accountKey].resources.push(resource);
   }
 
   return {
@@ -119,14 +122,14 @@ export function detectAccountFromResource(resource: string): string {
       if (accountId) {
         return formatAccountKey("aws", accountId);
       }
-      // For S3 buckets without account ID, extract from the region if possible
-      // or use a placeholder
+      // For S3 buckets without account ID, use a placeholder
       return "aws:unknown";
     }
   }
 
   // Check for GCP resource path: projects/{project}/...
-  const gcpMatch = resource.match(/^projects\/([^/]+)\//);
+  const gcpRegex = /^projects\/([^/]+)\//;
+  const gcpMatch = gcpRegex.exec(resource);
   if (gcpMatch) {
     return formatAccountKey("gcp", gcpMatch[1]);
   }
@@ -201,6 +204,36 @@ function parseJsonManifest(content: string, manifestPath: string): Manifest {
 }
 
 /**
+ * Validate and parse a single account entry from manifest
+ */
+function parseAccountEntry(
+  key: string,
+  value: unknown,
+  manifestPath: string
+): ManifestAccount {
+  const parsedKey = parseAccountKey(key);
+  if (!parsedKey) {
+    throw new ManifestError(
+      `Manifest ${manifestPath} has invalid account key: "${key}". Expected format: "aws:<account-id>" or "gcp:<project-id>"`
+    );
+  }
+
+  if (!value || typeof value !== "object") {
+    throw new ManifestError(`Manifest ${manifestPath} account "${key}" must be an object`);
+  }
+
+  const accountObj = value as Record<string, unknown>;
+  if (!Array.isArray(accountObj.resources)) {
+    throw new ManifestError(`Manifest ${manifestPath} account "${key}" must have a "resources" array`);
+  }
+
+  const resources = extractAndValidateResources(accountObj.resources, manifestPath);
+  const alias = typeof accountObj.alias === "string" ? accountObj.alias : undefined;
+
+  return { alias, resources };
+}
+
+/**
  * Parse a multi-account (v2) manifest
  */
 function parseMultiAccountManifest(obj: Record<string, unknown>, manifestPath: string): MultiAccountManifest {
@@ -208,40 +241,12 @@ function parseMultiAccountManifest(obj: Record<string, unknown>, manifestPath: s
   const accounts: Record<string, ManifestAccount> = {};
 
   for (const [key, value] of Object.entries(accountsRaw)) {
-    // Validate account key format
-    const parsedKey = parseAccountKey(key);
-    if (!parsedKey) {
-      throw new ManifestError(
-        `Manifest ${manifestPath} has invalid account key: "${key}". Expected format: "aws:<account-id>" or "gcp:<project-id>"`
-      );
-    }
-
-    if (!value || typeof value !== "object") {
-      throw new ManifestError(
-        `Manifest ${manifestPath} account "${key}" must be an object`
-      );
-    }
-
-    const accountObj = value as Record<string, unknown>;
-    if (!Array.isArray(accountObj.resources)) {
-      throw new ManifestError(
-        `Manifest ${manifestPath} account "${key}" must have a "resources" array`
-      );
-    }
-
-    const resources = extractAndValidateResources(accountObj.resources, manifestPath);
-    const alias = typeof accountObj.alias === "string" ? accountObj.alias : undefined;
-
-    accounts[key] = { alias, resources };
+    accounts[key] = parseAccountEntry(key, value, manifestPath);
   }
 
   const project = typeof obj.project === "string" ? obj.project : undefined;
 
-  return {
-    version: 2,
-    project,
-    accounts,
-  };
+  return { version: 2, project, accounts };
 }
 
 function parseJsonContent(content: string, manifestPath: string): unknown {

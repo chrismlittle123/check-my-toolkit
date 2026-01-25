@@ -270,6 +270,61 @@ export function writeManifest(manifest: Manifest, options: { output?: string; st
 }
 
 /**
+ * Extract and deduplicate resources from a Pulumi deployment
+ */
+function extractDeploymentResources(deployment: PulumiDeployment): string[] {
+  const resources: string[] = [];
+  for (const resource of deployment.resources ?? []) {
+    if (resource.outputs) {
+      const extracted = extractResourcesFromOutputs(resource.outputs);
+      resources.push(...extracted);
+    }
+  }
+  return [...new Set(resources)];
+}
+
+/**
+ * Group resources by detected account
+ */
+function groupResourcesByAccount(resources: string[]): Map<string, ManifestAccount> {
+  const accountsMap = new Map<string, ManifestAccount>();
+
+  for (const resource of resources) {
+    const accountKey = detectAccountFromResource(resource);
+    const existing = accountsMap.get(accountKey);
+    if (existing) {
+      existing.resources.push(resource);
+    } else {
+      accountsMap.set(accountKey, { resources: [resource] });
+    }
+  }
+
+  return accountsMap;
+}
+
+/**
+ * Convert accounts map to record, optionally applying alias
+ */
+function buildAccountsRecord(
+  accountsMap: Map<string, ManifestAccount>,
+  alias?: string
+): Record<string, ManifestAccount> {
+  const accounts: Record<string, ManifestAccount> = {};
+  const entries = Array.from(accountsMap.entries());
+
+  if (alias && entries.length === 1) {
+    const [key, value] = entries[0];
+    accounts[key] = { alias, resources: value.resources };
+  } else {
+    for (const [key, value] of entries) {
+      accounts[key] = value;
+    }
+  }
+
+  return accounts;
+}
+
+/**
  * Parse Pulumi stack export and create multi-account manifest
  * Groups resources by detected account
  */
@@ -288,57 +343,23 @@ export function parseStackExportMultiAccount(
     throw new Error("Invalid stack export: missing deployment.resources");
   }
 
-  const resources: string[] = [];
-
-  // Extract resources from each Pulumi resource's outputs
-  for (const resource of deployment.resources) {
-    if (resource.outputs) {
-      const extracted = extractResourcesFromOutputs(resource.outputs);
-      resources.push(...extracted);
-    }
-  }
-
-  // Deduplicate resources
-  const uniqueResources = [...new Set(resources)];
-
-  // Determine project name
-  const projectName = options.project || extractProjectName(deployment.resources) || undefined;
+  const uniqueResources = extractDeploymentResources(deployment);
+  const projectName = options.project ?? extractProjectName(deployment.resources);
 
   // If explicit account ID provided, use it
   if (options.accountId) {
-    const accounts: Record<string, ManifestAccount> = {
-      [options.accountId]: {
-        alias: options.account,
-        resources: uniqueResources,
+    return {
+      version: 2,
+      project: projectName,
+      accounts: {
+        [options.accountId]: { alias: options.account, resources: uniqueResources },
       },
     };
-    return { version: 2, project: projectName, accounts };
   }
 
   // Group resources by auto-detected account
-  const accountsMap = new Map<string, ManifestAccount>();
-
-  for (const resource of uniqueResources) {
-    const accountKey = detectAccountFromResource(resource);
-
-    if (!accountsMap.has(accountKey)) {
-      accountsMap.set(accountKey, { resources: [] });
-    }
-    accountsMap.get(accountKey)!.resources.push(resource);
-  }
-
-  // If a single account alias is provided, apply it to the first (or only) account
-  const accounts: Record<string, ManifestAccount> = {};
-  const entries = Array.from(accountsMap.entries());
-
-  if (options.account && entries.length === 1) {
-    const [key, value] = entries[0];
-    accounts[key] = { alias: options.account, resources: value.resources };
-  } else {
-    for (const [key, value] of entries) {
-      accounts[key] = value;
-    }
-  }
+  const accountsMap = groupResourcesByAccount(uniqueResources);
+  const accounts = buildAccountsRecord(accountsMap, options.account);
 
   return { version: 2, project: projectName, accounts };
 }
@@ -361,6 +382,23 @@ export function readExistingManifest(filePath: string): Manifest | null {
 }
 
 /**
+ * Convert legacy manifest to multi-account format
+ */
+function convertLegacyToMultiAccount(legacy: LegacyManifest): MultiAccountManifest {
+  const legacyAccounts: Record<string, ManifestAccount> = {};
+  for (const resource of legacy.resources) {
+    const key = detectAccountFromResource(resource);
+    const existing: ManifestAccount | undefined = legacyAccounts[key];
+    if (existing !== undefined) {
+      existing.resources.push(resource);
+    } else {
+      legacyAccounts[key] = { resources: [resource] };
+    }
+  }
+  return { version: 2, project: legacy.project, accounts: legacyAccounts };
+}
+
+/**
  * Merge new resources into an existing manifest
  */
 export function mergeIntoManifest(
@@ -370,34 +408,18 @@ export function mergeIntoManifest(
   alias?: string
 ): MultiAccountManifest {
   // Convert existing to multi-account if it's legacy format
-  let multiAccount: MultiAccountManifest;
-
-  if (isMultiAccountManifest(existing)) {
-    multiAccount = { ...existing, accounts: { ...existing.accounts } };
-  } else {
-    // Convert legacy to multi-account by grouping by detected account
-    const legacyAccounts: Record<string, ManifestAccount> = {};
-    for (const resource of existing.resources) {
-      const key = detectAccountFromResource(resource);
-      if (!legacyAccounts[key]) {
-        legacyAccounts[key] = { resources: [] };
-      }
-      legacyAccounts[key].resources.push(resource);
-    }
-    multiAccount = {
-      version: 2,
-      project: existing.project,
-      accounts: legacyAccounts,
-    };
-  }
+  const multiAccount: MultiAccountManifest = isMultiAccountManifest(existing)
+    ? { ...existing, accounts: { ...existing.accounts } }
+    : convertLegacyToMultiAccount(existing);
 
   // Add or update the target account
-  const existingResources = multiAccount.accounts[accountKey]?.resources || [];
-  const existingAlias = multiAccount.accounts[accountKey]?.alias;
+  const existingAccount: ManifestAccount | undefined = multiAccount.accounts[accountKey];
+  const existingResources = existingAccount !== undefined ? existingAccount.resources : [];
+  const existingAlias = existingAccount !== undefined ? existingAccount.alias : undefined;
   const mergedResources = [...new Set([...existingResources, ...newResources])];
 
   multiAccount.accounts[accountKey] = {
-    alias: alias || existingAlias,
+    alias: alias !== undefined ? alias : existingAlias,
     resources: mergedResources,
   };
 
@@ -446,21 +468,53 @@ export function generateMultiAccountFromFile(
 }
 
 /**
+ * Generate new manifest from input
+ */
+async function generateNewManifest(
+  inputPath: string | undefined,
+  options: GenerateManifestOptions
+): Promise<MultiAccountManifest> {
+  if (inputPath) {
+    return generateMultiAccountFromFile(inputPath, options);
+  }
+  return generateMultiAccountFromStdin(options);
+}
+
+/**
+ * Merge new manifest accounts into existing manifest
+ */
+function mergeManifests(
+  existing: Manifest,
+  newManifest: MultiAccountManifest,
+  projectOverride?: string
+): MultiAccountManifest {
+  // Start with existing converted to multi-account
+  let merged: MultiAccountManifest = isMultiAccountManifest(existing)
+    ? { ...existing, accounts: { ...existing.accounts } }
+    : convertLegacyToMultiAccount(existing);
+
+  // Merge in new accounts
+  for (const [key, account] of Object.entries(newManifest.accounts)) {
+    merged = mergeIntoManifest(merged, account.resources, key, account.alias);
+  }
+
+  // Apply project override if provided
+  if (projectOverride) {
+    merged.project = projectOverride;
+  }
+
+  return merged;
+}
+
+/**
  * Handle merge operation for manifest generation
  */
 export async function generateWithMerge(
   inputPath: string | undefined,
   options: GenerateManifestOptions
 ): Promise<Manifest> {
-  const outputPath = options.output || DEFAULT_MANIFEST_NAME;
-
-  // Generate new manifest
-  let newManifest: MultiAccountManifest;
-  if (inputPath) {
-    newManifest = generateMultiAccountFromFile(inputPath, options);
-  } else {
-    newManifest = await generateMultiAccountFromStdin(options);
-  }
+  const outputPath = options.output ?? DEFAULT_MANIFEST_NAME;
+  const newManifest = await generateNewManifest(inputPath, options);
 
   // If not merging, just return the new manifest
   if (!options.merge) {
@@ -470,39 +524,8 @@ export async function generateWithMerge(
   // Read existing manifest
   const existing = readExistingManifest(outputPath);
   if (!existing) {
-    // No existing manifest, return new one
     return newManifest;
   }
 
-  // Merge all accounts from new manifest into existing
-  let merged: MultiAccountManifest = isMultiAccountManifest(existing)
-    ? { ...existing, accounts: { ...existing.accounts } }
-    : {
-        version: 2,
-        project: existing.project,
-        accounts: {},
-      };
-
-  // If existing was legacy, convert it first
-  if (!isMultiAccountManifest(existing)) {
-    for (const resource of (existing as LegacyManifest).resources) {
-      const key = detectAccountFromResource(resource);
-      if (!merged.accounts[key]) {
-        merged.accounts[key] = { resources: [] };
-      }
-      merged.accounts[key].resources.push(resource);
-    }
-  }
-
-  // Merge in new accounts
-  for (const [key, account] of Object.entries(newManifest.accounts)) {
-    merged = mergeIntoManifest(merged, account.resources, key, account.alias);
-  }
-
-  // Preserve project from new manifest if provided
-  if (options.project) {
-    merged.project = options.project;
-  }
-
-  return merged;
+  return mergeManifests(existing, newManifest, options.project);
 }
