@@ -100,15 +100,108 @@ export {
   type Ruleset,
 } from "./mcp/index.js";
 
-// Infra scan
-export {
-  isValidArn,
-  isSupportedService,
-  type InfraScanResult,
-  ManifestError,
-  parseArn,
-  type ResourceCheckResult,
-  scanInfra,
-  type ScanInfraOptions,
-  SUPPORTED_SERVICES,
+// Infra scan - Types
+export type {
+  AccountId,
+  AccountScanResult,
+  Arn,
+  CloudProvider,
+  GcpResourcePath,
+  InfraScanResult,
+  InfraScanSummary,
+  LegacyManifest,
+  Manifest,
+  ManifestAccount,
+  MultiAccountManifest,
+  ParsedArn,
+  ParsedGcpResource,
+  PulumiResource,
+  PulumiStackExport,
+  ResourceCheckResult,
+  ResourceIdentifier,
+  ScanInfraOptions,
+  GenerateManifestOptions,
 } from "./infra/index.js";
+
+// Infra scan - Zod schemas
+export {
+  ArnSchema,
+  AccountIdSchema,
+  AccountKeySchema,
+  CloudProviderSchema,
+  GcpResourcePathSchema,
+  InfraScanResultSchema,
+  InfraScanSummarySchema,
+  LegacyManifestSchema,
+  ManifestAccountSchema,
+  ManifestSchema,
+  MultiAccountManifestSchema,
+  ParsedArnSchema,
+  ParsedGcpResourceSchema,
+  PulumiResourceSchema,
+  PulumiStackExportSchema,
+  ResourceCheckResultSchema,
+  ResourceIdentifierSchema,
+} from "./infra/index.js";
+
+// Infra scan - Validation functions
+export {
+  isValidArnFormat,
+  isValidGcpResourcePath,
+  isValidAccountKey,
+  isMultiAccountManifestSchema,
+  isLegacyManifestSchema,
+  validateArn,
+  validateGcpResourcePath,
+  validateAccountKey,
+  validateManifest,
+  validateMultiAccountManifest,
+  validateLegacyManifest,
+  validateStackExport,
+} from "./infra/index.js";
+
+// Infra scan - Manifest utilities
+export {
+  ManifestError,
+  isMultiAccountManifest,
+  isLegacyManifest,
+  parseAccountKey,
+  formatAccountKey,
+  normalizeManifest,
+  detectAccountFromResource,
+  getAllResources,
+} from "./infra/index.js";
+
+// Infra scan - ARN/GCP parsing
+export {
+  parseArn,
+  isValidArn,
+  parseGcpResource,
+  isValidGcpResource,
+} from "./infra/index.js";
+
+// Infra scan - Service constants
+export {
+  SUPPORTED_SERVICES,
+  isSupportedService,
+  SUPPORTED_GCP_SERVICES,
+  isSupportedGcpService,
+} from "./infra/index.js";
+
+// Infra scan - Generate functions
+export {
+  DEFAULT_MANIFEST_NAME,
+  generateManifestFromStdin,
+  generateManifestFromFile,
+  generateMultiAccountFromStdin,
+  generateMultiAccountFromFile,
+  generateWithMerge,
+  mergeIntoManifest,
+  parseStackExport,
+  parseStackExportMultiAccount,
+  readExistingManifest,
+  writeManifest,
+} from "./infra/index.js";
+
+// Infra scan - Main API
+export { scanInfra } from "./infra/index.js";
