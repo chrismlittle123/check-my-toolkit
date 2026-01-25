@@ -615,14 +615,16 @@ infraCommand
   .description("Verify AWS resources declared in manifest exist")
   .option("-c, --config <path>", "Path to check.toml config file")
   .option("-m, --manifest <path>", "Path to manifest file (overrides config)")
+  .option("-a, --account <name>", "Filter to specific account (by alias or account key like 'aws:123')")
   .addOption(
     new Option("-f, --format <format>", "Output format").choices(["text", "json"]).default("text")
   )
-  .action(async (options: { config?: string; manifest?: string; format: string }) => {
+  .action(async (options: { config?: string; manifest?: string; account?: string; format: string }) => {
     const { runInfraScan } = await import("./infra/index.js");
     await runInfraScan({
       configPath: options.config,
       manifestPath: options.manifest,
+      account: options.account,
       format: options.format as "text" | "json",
     });
   });
@@ -634,9 +636,20 @@ infraCommand
   .option("-i, --input <path>", "Input file (reads from stdin if not provided)")
   .option("-o, --output <path>", "Output file path (default: infra-manifest.json)")
   .option("-p, --project <name>", "Project name (extracted from stack if not provided)")
+  .option("-a, --account <alias>", "Account alias (e.g., 'prod-aws')")
+  .option("--account-id <id>", "Explicit account ID (e.g., 'aws:111111111111')")
+  .option("--merge", "Merge into existing manifest instead of overwriting")
   .option("--stdout", "Output to stdout instead of file")
   .action(
-    async (options: { input?: string; output?: string; project?: string; stdout?: boolean }) => {
+    async (options: {
+      input?: string;
+      output?: string;
+      project?: string;
+      account?: string;
+      accountId?: string;
+      merge?: boolean;
+      stdout?: boolean;
+    }) => {
       const { runInfraGenerate } = await import("./infra/index.js");
       await runInfraGenerate(options);
     }
