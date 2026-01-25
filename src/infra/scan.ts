@@ -123,10 +123,8 @@ function filterAccounts(
   }
 
   // Check if filter is an account key (e.g., "aws:123456")
-  const matchedAccount: { alias?: string; resources: string[] } | undefined =
-    manifest.accounts[accountFilter];
-  if (matchedAccount !== undefined) {
-    return { [accountFilter]: matchedAccount };
+  if (accountFilter in manifest.accounts) {
+    return { [accountFilter]: manifest.accounts[accountFilter] };
   }
 
   // Check if filter matches an alias

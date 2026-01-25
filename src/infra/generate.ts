@@ -172,7 +172,7 @@ export function parseStackExport(stackExport: unknown, project?: string): Manife
   const uniqueResources = [...new Set(resources)];
 
   // Determine project name
-  const projectName = project || extractProjectName(deployment.resources) || "unknown";
+  const projectName = project ?? extractProjectName(deployment.resources) ?? "unknown";
 
   return {
     project: projectName,
@@ -197,7 +197,7 @@ async function readStdin(): Promise<string> {
     });
 
     rl.on("line", (line) => {
-      data += line + "\n";
+      data += `${line}\n`;
     });
 
     rl.on("close", () => {
@@ -262,10 +262,10 @@ export function writeManifest(manifest: Manifest, options: { output?: string; st
   const json = JSON.stringify(manifest, null, 2);
 
   if (options.stdout) {
-    process.stdout.write(json + "\n");
+    process.stdout.write(`${json}\n`);
   } else {
-    const outputPath = options.output || DEFAULT_MANIFEST_NAME;
-    fs.writeFileSync(outputPath, json + "\n", "utf-8");
+    const outputPath = options.output ?? DEFAULT_MANIFEST_NAME;
+    fs.writeFileSync(outputPath, `${json}\n`, "utf-8");
   }
 }
 
@@ -388,9 +388,8 @@ function convertLegacyToMultiAccount(legacy: LegacyManifest): MultiAccountManife
   const legacyAccounts: Record<string, ManifestAccount> = {};
   for (const resource of legacy.resources) {
     const key = detectAccountFromResource(resource);
-    const existing: ManifestAccount | undefined = legacyAccounts[key];
-    if (existing !== undefined) {
-      existing.resources.push(resource);
+    if (key in legacyAccounts) {
+      legacyAccounts[key].resources.push(resource);
     } else {
       legacyAccounts[key] = { resources: [resource] };
     }
@@ -413,13 +412,13 @@ export function mergeIntoManifest(
     : convertLegacyToMultiAccount(existing);
 
   // Add or update the target account
-  const existingAccount: ManifestAccount | undefined = multiAccount.accounts[accountKey];
-  const existingResources = existingAccount !== undefined ? existingAccount.resources : [];
-  const existingAlias = existingAccount !== undefined ? existingAccount.alias : undefined;
+  const hasExisting = accountKey in multiAccount.accounts;
+  const existingResources = hasExisting ? multiAccount.accounts[accountKey].resources : [];
+  const existingAlias = hasExisting ? multiAccount.accounts[accountKey].alias : undefined;
   const mergedResources = [...new Set([...existingResources, ...newResources])];
 
   multiAccount.accounts[accountKey] = {
-    alias: alias !== undefined ? alias : existingAlias,
+    alias: alias ?? existingAlias,
     resources: mergedResources,
   };
 

@@ -93,9 +93,8 @@ export function normalizeManifest(manifest: Manifest): MultiAccountManifest {
 
   for (const resource of manifest.resources) {
     const accountKey = detectAccountFromResource(resource);
-    const existing: ManifestAccount | undefined = accounts[accountKey];
-    if (existing !== undefined) {
-      existing.resources.push(resource);
+    if (accountKey in accounts) {
+      accounts[accountKey].resources.push(resource);
     } else {
       accounts[accountKey] = { resources: [resource] };
     }
