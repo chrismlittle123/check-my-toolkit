@@ -1,5 +1,36 @@
 # Changelog
 
+## 2.6.0
+
+### Minor Changes
+
+- f06eed2: feat(mcp): Add configurable standards repository and guideline validation
+
+  - Add `mcp.standards.source` configuration option supporting GitHub repos and local paths
+  - Add `cm validate guidelines <path>` CLI command to validate guideline frontmatter
+  - Add `cm schema guidelines` CLI command to output JSON schema for guidelines
+  - MCP server now loads config to get the standards source at startup
+
+- 5468966: Add multi-account infrastructure manifest support
+
+  - New manifest v2 format with resources grouped by cloud account (AWS accounts and GCP projects)
+  - Account keys in format `aws:<account-id>` or `gcp:<project-id>` with optional aliases
+  - Backward compatible with v1 flat format
+  - New CLI options:
+    - `cm infra scan --account <name>` - Filter scan to specific account
+    - `cm infra generate --account <alias>` - Set account alias
+    - `cm infra generate --account-id <id>` - Set explicit account ID
+    - `cm infra generate --merge` - Merge into existing manifest
+
+### Patch Changes
+
+- 620d3b5: Fix CI self-check failures
+
+  - Remove unused MCP handler exports flagged by Knip
+  - Make internal MCP types private (GitHubSource, LocalSource, ParsedSource)
+  - Add `gh` CLI to Knip ignoreBinaries
+  - Exclude cli.ts from disable-comments check (legitimate max-lines disable)
+
 ## 2.5.1
 
 ### Patch Changes
