@@ -15,12 +15,17 @@ import * as path from "node:path";
 
 import { isValidArn } from "./arn.js";
 import { isValidGcpResource } from "./gcp.js";
-import type {
-  AccountId,
-  LegacyManifest,
-  Manifest,
-  ManifestAccount,
-  MultiAccountManifest,
+import {
+  isValidAccountKey,
+  isLegacyManifestSchema,
+  isMultiAccountManifestSchema,
+  validateLegacyManifest,
+  validateMultiAccountManifest,
+  type AccountId,
+  type LegacyManifest,
+  type Manifest,
+  type ManifestAccount,
+  type MultiAccountManifest,
 } from "./types.js";
 
 /**
@@ -61,14 +66,16 @@ export function isLegacyManifest(manifest: Manifest): manifest is LegacyManifest
  * @returns Parsed AccountId or null if invalid
  */
 export function parseAccountKey(key: string): AccountId | null {
-  const regex = /^(aws|gcp):(.+)$/;
-  const match = regex.exec(key);
-  if (!match) {
+  // Use schema validation first
+  if (!isValidAccountKey(key)) {
     return null;
   }
+
+  // Extract components (we know the format is valid from schema check)
+  const colonIndex = key.indexOf(":");
   return {
-    cloud: match[1] as "aws" | "gcp",
-    id: match[2],
+    cloud: key.substring(0, colonIndex) as "aws" | "gcp",
+    id: key.substring(colonIndex + 1),
   };
 }
 
@@ -177,7 +184,7 @@ export function readManifest(manifestPath: string): Manifest {
 }
 
 /**
- * Parse a JSON format manifest
+ * Parse a JSON format manifest using Zod schema validation
  */
 function parseJsonManifest(content: string, manifestPath: string): Manifest {
   const data = parseJsonContent(content, manifestPath);
@@ -187,19 +194,120 @@ function parseJsonManifest(content: string, manifestPath: string): Manifest {
     throw new ManifestError(`Manifest ${manifestPath} must be a JSON object`);
   }
 
-  const obj = data as Record<string, unknown>;
-
-  // Detect format: v2 (multi-account) vs v1 (legacy)
-  if ("accounts" in obj && typeof obj.accounts === "object") {
-    return parseMultiAccountManifest(obj, manifestPath);
+  // Try multi-account (v2) format first using Zod schema
+  if (isMultiAccountManifestSchema(data)) {
+    return validateMultiAccountManifestWithResources(data, manifestPath);
   }
 
-  // Legacy v1 format
-  validateJsonStructure(data, manifestPath);
+  // Try legacy (v1) format using Zod schema
+  if (isLegacyManifestSchema(data)) {
+    return validateLegacyManifestWithResources(data, manifestPath);
+  }
+
+  // Fallback to manual validation for better error messages
+  return parseFallbackManifest(data as Record<string, unknown>, manifestPath);
+}
+
+/**
+ * Fallback parser for manifests that don't match Zod schemas
+ */
+function parseFallbackManifest(obj: Record<string, unknown>, manifestPath: string): Manifest {
+  if ("accounts" in obj) {
+    return parseMultiAccountManifestFallback(obj, manifestPath);
+  }
+
+  validateJsonStructure(obj, manifestPath);
   const resources = extractAndValidateResources(obj.resources as unknown[], manifestPath);
   const project = typeof obj.project === "string" ? obj.project : undefined;
 
   return { project, resources };
+}
+
+/**
+ * Validate multi-account manifest and its resources
+ */
+function validateMultiAccountManifestWithResources(
+  data: unknown,
+  manifestPath: string
+): MultiAccountManifest {
+  try {
+    const manifest = validateMultiAccountManifest(data);
+
+    // Validate account keys and resources
+    for (const [accountKey, account] of Object.entries(manifest.accounts)) {
+      // Validate account key format (must be "aws:xxx" or "gcp:xxx")
+      if (!isValidAccountKey(accountKey)) {
+        throw new ManifestError(
+          `Manifest ${manifestPath} has invalid account key: "${accountKey}". Expected format: "aws:<account-id>" or "gcp:<project-id>"`
+        );
+      }
+
+      // Validate each resource is a valid ARN or GCP path
+      const invalidResources = account.resources.filter((r) => !isValidResource(r));
+      if (invalidResources.length > 0) {
+        throw new ManifestError(
+          `Manifest ${manifestPath} account "${accountKey}" contains invalid resources: ${invalidResources.join(", ")}`
+        );
+      }
+    }
+
+    return manifest;
+  } catch (error) {
+    if (error instanceof ManifestError) {
+      throw error;
+    }
+    // Convert Zod errors to ManifestError
+    const message = error instanceof Error ? error.message : "Unknown error";
+    throw new ManifestError(`Invalid manifest ${manifestPath}: ${message}`);
+  }
+}
+
+/**
+ * Validate legacy manifest and its resources
+ */
+function validateLegacyManifestWithResources(
+  data: unknown,
+  manifestPath: string
+): LegacyManifest {
+  try {
+    const manifest = validateLegacyManifest(data);
+
+    // Additionally validate each resource is a valid ARN or GCP path
+    const invalidResources = manifest.resources.filter((r) => !isValidResource(r));
+    if (invalidResources.length > 0) {
+      throw new ManifestError(
+        `Manifest ${manifestPath} contains invalid resources: ${invalidResources.join(", ")}`
+      );
+    }
+
+    return manifest;
+  } catch (error) {
+    if (error instanceof ManifestError) {
+      throw error;
+    }
+    // Convert Zod errors to ManifestError
+    const message = error instanceof Error ? error.message : "Unknown error";
+    throw new ManifestError(`Invalid manifest ${manifestPath}: ${message}`);
+  }
+}
+
+/**
+ * Fallback parser for multi-account manifest with detailed error messages
+ */
+function parseMultiAccountManifestFallback(
+  obj: Record<string, unknown>,
+  manifestPath: string
+): MultiAccountManifest {
+  const accountsRaw = obj.accounts as Record<string, unknown>;
+  const accounts: Record<string, ManifestAccount> = {};
+
+  for (const [key, value] of Object.entries(accountsRaw)) {
+    accounts[key] = parseAccountEntry(key, value, manifestPath);
+  }
+
+  const project = typeof obj.project === "string" ? obj.project : undefined;
+
+  return { version: 2, project, accounts };
 }
 
 /**
@@ -230,22 +338,6 @@ function parseAccountEntry(
   const alias = typeof accountObj.alias === "string" ? accountObj.alias : undefined;
 
   return { alias, resources };
-}
-
-/**
- * Parse a multi-account (v2) manifest
- */
-function parseMultiAccountManifest(obj: Record<string, unknown>, manifestPath: string): MultiAccountManifest {
-  const accountsRaw = obj.accounts as Record<string, unknown>;
-  const accounts: Record<string, ManifestAccount> = {};
-
-  for (const [key, value] of Object.entries(accountsRaw)) {
-    accounts[key] = parseAccountEntry(key, value, manifestPath);
-  }
-
-  const project = typeof obj.project === "string" ? obj.project : undefined;
-
-  return { version: 2, project, accounts };
 }
 
 function parseJsonContent(content: string, manifestPath: string): unknown {
