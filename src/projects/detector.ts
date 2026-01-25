@@ -2,8 +2,15 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 
 import { glob } from "glob";
+import { minimatch } from "minimatch";
 
 import type { DetectedProject, DetectionResult, ProjectMarker, ProjectType } from "./types.js";
+
+/** Options for project detection */
+export interface DetectProjectsOptions {
+  /** Glob patterns to exclude from detection */
+  excludePatterns?: string[];
+}
 
 /** Marker files that identify project types */
 const PROJECT_MARKERS: ProjectMarker[] = [
@@ -132,11 +139,24 @@ async function findMarkerFiles(
   });
 }
 
+/** Check if a path matches any of the exclude patterns */
+function isExcluded(projectPath: string, excludePatterns: string[]): boolean {
+  return excludePatterns.some((pattern) => minimatch(projectPath, pattern, { dot: true }));
+}
+
 /**
  * Detect all projects in a directory tree.
  * Identifies projects by marker files and skips workspace roots.
+ *
+ * @param searchRoot - Root directory to search
+ * @param options - Detection options including exclude patterns
  */
-export async function detectProjects(searchRoot: string): Promise<DetectionResult> {
+export async function detectProjects(
+  searchRoot: string,
+  options: DetectProjectsOptions = {}
+): Promise<DetectionResult> {
+  const { excludePatterns = [] } = options;
+
   const ctx: ProcessingContext = {
     searchRoot,
     seenPaths: new Set<string>(),
@@ -153,6 +173,11 @@ export async function detectProjects(searchRoot: string): Promise<DetectionResul
     for (const markerFile of markerFiles) {
       processMarkerFile(ctx, markerFile, marker);
     }
+  }
+
+  // Filter out excluded projects
+  if (excludePatterns.length > 0) {
+    ctx.projects = ctx.projects.filter((p) => !isExcluded(p.path, excludePatterns));
   }
 
   // Sort for consistent output

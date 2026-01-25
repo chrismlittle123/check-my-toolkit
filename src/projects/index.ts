@@ -2,6 +2,7 @@ import * as path from "node:path";
 
 import chalk from "chalk";
 
+import { loadConfigAsync } from "../config/index.js";
 import { detectProjects, getProjectTypes } from "./detector.js";
 import { createCheckToml, createRegistry } from "./templates.js";
 import { loadProjectTier } from "./tier-loader.js";
@@ -312,7 +313,12 @@ function handleFix(
 /** Main entry point for the detect command */
 export async function runDetect(options: DetectOptions): Promise<void> {
   const searchRoot = process.cwd();
-  const result = await detectProjects(searchRoot);
+
+  // Load config to get monorepo exclude patterns
+  const { config } = await loadConfigAsync();
+  const excludePatterns = config.monorepo?.exclude ?? [];
+
+  const result = await detectProjects(searchRoot, { excludePatterns });
 
   // Enrich projects with tier info when --show-status
   const enrichedProjects = enrichProjects(result, searchRoot, options);

@@ -1,5 +1,70 @@
 # Changelog
 
+## 2.5.1
+
+### Patch Changes
+
+- db27e2f: Strip Pulumi internal pipe suffixes from ARNs during manifest generation
+
+  Pulumi sometimes appends internal metadata to ARNs like `|terraform-...` which are not valid AWS ARN formats. These suffixes are now automatically stripped when generating the infra manifest.
+
+## 2.5.0
+
+### Minor Changes
+
+- d5de8fc: Add EC2, ElastiCache, and Elastic Load Balancing resource checkers for infra scan
+
+  - EC2 checker supports: instances, security groups, key pairs
+  - ElastiCache checker supports: clusters, subnet groups, replication groups
+  - ELB checker supports: load balancers, target groups, listeners
+
+## 2.4.0
+
+### Minor Changes
+
+- 1968a72: Add ECS and RDS resource checkers for infra scan
+
+  - ECS checker supports: clusters, services, task definitions
+  - RDS checker supports: DB instances, DB clusters (Aurora), DB subnet groups
+
+## 2.3.1
+
+### Patch Changes
+
+- 3607e6c: Fix monorepo and infra config being dropped during extends resolution
+
+  The `mergeConfigs` function was not preserving `monorepo` and `infra` sections when merging registry config with local config during `extends` resolution. This caused monorepo exclude patterns to be silently dropped.
+
+## 2.3.0
+
+### Minor Changes
+
+- e60ca5a: Add monorepo exclude patterns config
+
+  Added `[monorepo]` config section with `exclude` patterns to filter out directories from project detection. This allows excluding test fixtures and other directories that should not be treated as real projects.
+
+  Example:
+
+  ```toml
+  [monorepo]
+  exclude = ["tests/e2e/projects/**"]
+  ```
+
+## 2.2.0
+
+### Minor Changes
+
+- 38b332f: feat(infra): add GCP support to cm infra scan
+
+  Adds support for checking GCP resources in infrastructure manifests:
+
+  - Cloud Run services
+  - Service Accounts (IAM)
+  - Secret Manager secrets
+  - Artifact Registry repositories
+
+  GCP resource paths follow the pattern: `projects/{project}/locations/{location}/services/{service}`
+
 ## 2.1.1
 
 ### Patch Changes
