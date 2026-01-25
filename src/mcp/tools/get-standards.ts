@@ -64,6 +64,3 @@ export function createGetStandardsHandler(
     };
   };
 }
-
-/** Handler for get_standards tool (uses default source) */
-export const getStandardsHandler = createGetStandardsHandler();

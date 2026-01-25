@@ -55,6 +55,3 @@ export function createListGuidelinesHandler(
     };
   };
 }
-
-/** Handler for list_guidelines tool (uses default source) */
-export const listGuidelinesHandler = createListGuidelinesHandler();

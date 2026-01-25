@@ -12,7 +12,7 @@ const DEFAULT_REPO = "standards";
 const CACHE_DIR = path.join(os.tmpdir(), "cm-standards-cache");
 
 /** Parsed GitHub source */
-export interface GitHubSource {
+interface GitHubSource {
   type: "github";
   owner: string;
   repo: string;
@@ -20,13 +20,13 @@ export interface GitHubSource {
 }
 
 /** Parsed local source */
-export interface LocalSource {
+interface LocalSource {
   type: "local";
   path: string;
 }
 
 /** Parsed source type */
-export type ParsedSource = GitHubSource | LocalSource;
+type ParsedSource = GitHubSource | LocalSource;
 
 /** Parse github:owner/repo[@ref] format */
 function parseGitHubSource(source: string): GitHubSource {
@@ -57,7 +57,7 @@ function parseGitHubSource(source: string): GitHubSource {
  * - "github:owner/repo@ref" - GitHub with branch/tag
  * - Local filesystem path (absolute or relative)
  */
-export function parseSource(source: string): ParsedSource {
+function parseSource(source: string): ParsedSource {
   if (source.startsWith("github:")) {
     return parseGitHubSource(source);
   }
