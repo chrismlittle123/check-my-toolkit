@@ -83,7 +83,9 @@ export {
   getAllResources,
 } from "./manifest.js";
 export { parseArn, isValidArn } from "./arn.js";
+export { parseGcpResource, isValidGcpResource } from "./gcp.js";
 export { SUPPORTED_SERVICES, isSupportedService } from "./checkers/index.js";
+export { SUPPORTED_GCP_SERVICES, isSupportedGcpService } from "./checkers/gcp/index.js";
 
 // Re-export generate functionality
 export {
