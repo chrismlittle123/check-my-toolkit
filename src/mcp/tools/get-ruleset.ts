@@ -61,6 +61,3 @@ export function createGetRulesetHandler(
     };
   };
 }
-
-/** Handler for get_ruleset tool (uses default source) */
-export const getRulesetHandler = createGetRulesetHandler();

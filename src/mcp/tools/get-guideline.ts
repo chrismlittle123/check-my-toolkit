@@ -62,6 +62,3 @@ export function createGetGuidelineHandler(
     };
   };
 }
-
-/** Handler for get_guideline tool (uses default source) */
-export const getGuidelineHandler = createGetGuidelineHandler();

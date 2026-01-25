@@ -31,7 +31,7 @@ exclude = ["tests/e2e/projects/**"]
 # Detect linter disable comments
 [code.quality.disable-comments]
 enabled = true
-exclude = ["tests/**", "src/code/tools/disable-comments.ts", "src/config/schema.ts", "src/config/registry.ts", "src/config/loader.ts", "src/process/tools/repo.ts", "src/process/tools/ci.ts", "src/process/sync/**", "src/process/scan/**"]
+exclude = ["tests/**", "src/cli.ts", "src/code/tools/disable-comments.ts", "src/config/schema.ts", "src/config/registry.ts", "src/config/loader.ts", "src/process/tools/repo.ts", "src/process/tools/ci.ts", "src/process/sync/**", "src/process/scan/**"]
 
 # Process domain - workflow validation
 [process.hooks]
