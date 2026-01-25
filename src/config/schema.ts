@@ -656,6 +656,31 @@ const docsConfigSchema = z
   .optional();
 
 // =============================================================================
+// MCP Configuration
+// =============================================================================
+
+/** MCP standards source configuration */
+const mcpStandardsSchema = z
+  .object({
+    source: z
+      .string()
+      .optional()
+      .describe(
+        'Standards repository source: "github:owner/repo", "github:owner/repo@ref", or local path'
+      ),
+  })
+  .strict()
+  .optional();
+
+/** MCP configuration */
+const mcpSchema = z
+  .object({
+    standards: mcpStandardsSchema,
+  })
+  .strict()
+  .optional();
+
+// =============================================================================
 // Infra Domain Configuration
 // =============================================================================
 
@@ -728,6 +753,7 @@ export const configSchema = z
     code: codeSchema,
     process: processSchema,
     infra: infraSchema,
+    mcp: mcpSchema,
   })
   .strict();
 
@@ -825,5 +851,10 @@ export const defaultConfig: Config = {
   infra: {
     enabled: false,
     manifest: "infra-manifest.json",
+  },
+  mcp: {
+    standards: {
+      source: undefined,
+    },
   },
 };
