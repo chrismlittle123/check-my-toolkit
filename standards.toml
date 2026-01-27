@@ -1,7 +1,7 @@
-# check-my-toolkit configuration
+# standards configuration
 
 [extends]
-registry = "github:chrismlittle123/check-my-toolkit-registry-community"
+registry = "github:chrismlittle123/standards-community"
 rulesets = ["typescript-internal"]
 
 # Exclude test fixture projects from monorepo detection
@@ -70,3 +70,6 @@ require_for_paths = ["src/**"]
 exclude_paths = ["**/*.test.ts", "**/*.md"]
 validate_format = true
 require_description = true
+
+[metadata]
+tier = "internal"
